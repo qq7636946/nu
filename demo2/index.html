@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="lenis">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>On-Scroll Text Motion × Seamless Intro</title>
+  <meta name="description" content="Merged: Award-winning intro + on-scroll text motion effects" />
+
+  <!-- Fonts: Typekit (demo2) + Google Fonts (demo3) -->
+  <link rel="stylesheet" href="https://use.typekit.net/upd0woi.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Syncopate:wght@700&display=swap" rel="stylesheet">
+
+  <!-- GSAP + Plugins (local — demo2 deps) -->
+  <script src="js/gsap.min.js"></script>
+  <script src="js/ScrollTrigger.min.js"></script>
+  <script src="js/Flip.min.js"></script>
+  <script src="js/ScrambleTextPlugin.min.js"></script>
+
+  <!-- Lenis Smooth Scroll (replaces ScrollSmoother for unified control) -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+
+  <!-- demo2 base styles -->
+  <link rel="stylesheet" type="text/css" href="css/base.css" />
+
+  <style>
+    /* =====================================================
+       DEMO3 — Global & Cursor
+       ===================================================== */
+    :root {
+      --cursor-color: #0022FF;
+      --ease-main: cubic-bezier(0.19, 1, 0.22, 1);
+      --progress: 0;
+    }
+
+    /* Override cursor: demo2 base.css sets cursor:pointer on links */
+    * { cursor: none !important; }
+
+    html.lenis { height: auto; }
+    .lenis.lenis-smooth { scroll-behavior: auto; }
+    .lenis.lenis-stopped { overflow: hidden; }
+
+    /* Custom cursor */
+    .custom-cursor {
+      position: fixed;
+      top: 0; left: 0;
+      pointer-events: none;
+      z-index: 999999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      will-change: transform;
+    }
+    .cursor__bullet {
+      position: absolute;
+      width: 8px; height: 8px;
+      background-color: var(--cursor-color);
+      border-radius: 30px;
+      transition: width 0.4s var(--ease-main), height 0.4s var(--ease-main);
+    }
+    .cursor__text {
+      position: relative;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: opacity 0.4s var(--ease-main), transform 0.4s var(--ease-main);
+    }
+    .custom-cursor.expanded .cursor__bullet { width: 140px; height: 32px; }
+    .custom-cursor.expanded .cursor__text { opacity: 1; transform: scale(1); }
+
+    /* =====================================================
+       DEMO3 — Fixed UI: Logo & Nav
+       ===================================================== */
+    .d3-logo {
+      position: fixed;
+      top: 36px; left: 48px;
+      z-index: 200;
+      mix-blend-mode: difference;
+      display: inline-flex;
+      align-items: center;
+      font-family: 'Inter', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+    .d3-logo__dot {
+      width: 6px; height: 6px;
+      background-color: var(--cursor-color);
+      border-radius: 50%;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .d3-logo__dash {
+      display: inline-block;
+      width: 12px; height: 2px;
+      background-color: #fff;
+      margin: 0 6px;
+      transition: width 0.5s var(--ease-main);
+    }
+    .d3-logo:hover .d3-logo__dash { width: 32px; }
+
+    .d3-nav {
+      position: fixed;
+      bottom: 48px; left: 48px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      mix-blend-mode: difference;
+    }
+    .d3-nav-link {
+      text-decoration: none;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+    .line-mask {
+      display: inline-flex;
+      flex-direction: column;
+      height: 1.2em;
+      overflow: hidden;
+    }
+    .d3-line {
+      line-height: 1.2em;
+      transition: transform 0.5s var(--ease-main);
+    }
+    .d3-nav-link:hover .d3-line { transform: translateY(-100%); }
+
+    /* =====================================================
+       DEMO3 — Intro Curtain + Rolling Text
+       ===================================================== */
+    .intro-curtain {
+      position: fixed;
+      inset: 0;
+      background-color: #050505;
+      z-index: 140;
+      pointer-events: none;
+    }
+    .intro-text-wrapper {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 160;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      pointer-events: none;
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(32px, 4vw, 56px);
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -0.02em;
+      will-change: transform, opacity, filter;
+    }
+    .intro-rolling {
+      height: 1.2em;
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+    }
+    .intro-rolling-inner {
+      display: flex;
+      flex-direction: column;
+      will-change: transform;
+    }
+    .intro-rolling-inner span { line-height: 1.2em; padding: 0 4px; }
+
+    /* =====================================================
+       DEMO3 — Center Bar (Morphing Loader)
+       ===================================================== */
+    .center-bar-container {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px; height: 2px;
+      background-color: rgba(255,255,255,0.15);
+      z-index: 150;
+      will-change: width, height, background-color;
+      opacity: 0;
+    }
+    .loading-counter {
+      position: absolute;
+      bottom: 12px; left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Syncopate', sans-serif;
+      font-size: 10px; font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.15em;
+      white-space: nowrap;
+      opacity: 0;
+    }
+    .loading-counter span { display: inline-block; min-width: 2ch; text-align: right; }
+    .center-bar-loader {
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%; width: 0%;
+      background-color: #fff;
+      box-shadow: 0 0 12px rgba(255,255,255,0.8);
+      z-index: 2;
+    }
+    .center-bar-content {
+      opacity: 0;
+      width: 100%; height: 100%;
+      position: relative;
+    }
+    .cb-text {
+      position: absolute;
+      font-size: 9px; font-weight: 800;
+      color: #050505;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      height: 12px; overflow: hidden;
+    }
+    .cb-top-left    { top: 16px; left: 24px; }
+    .cb-bottom-left { bottom: 16px; left: 24px; }
+    .cb-top-right   { top: 16px; right: 24px; }
+    .cb-bottom-right{ bottom: 16px; right: 24px; }
+    .panel__scroller {
+      display: flex; flex-direction: column;
+      transform: translateY(calc(var(--progress) * -80%));
+    }
+    .panel__scroller > div { height: 12px; line-height: 12px; }
+    .cb-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 340px; height: 130px;
+      overflow: hidden;
+      clip-path: url(#nd-mask);
+      -webkit-clip-path: url(#nd-mask);
+    }
+    .panel__thumbs__scroller {
+      display: flex; flex-direction: column;
+      height: 500%;
+      transform: translateY(calc(var(--progress) * -80%));
+    }
+    .thumb-img {
+      width: 100%; height: 20%;
+      object-fit: cover;
+      filter: blur(5px); opacity: 0.6;
+      transition: filter 0.5s var(--ease-main), opacity 0.5s var(--ease-main);
+    }
+    .thumb-img.is-active { filter: blur(0px); opacity: 1; }
+
+    /* =====================================================
+       DEMO3 — Full-screen Sections (5 panels)
+       ===================================================== */
+    .d3-scroll-wrapper { position: relative; width: 100%; }
+    .d3-section {
+      position: relative;
+      width: 100%; height: 100vh;
+      display: flex; justify-content: center; align-items: center;
+      overflow: hidden;
+    }
+    .d3-section-bg {
+      position: absolute;
+      top: -15vh; left: 0;
+      width: 100%; height: 130vh;
+      object-fit: cover;
+      z-index: 1; will-change: transform;
+    }
+    .d3-section-overlay {
+      position: absolute; inset: 0;
+      background-color: rgba(0,0,0,0.35);
+      z-index: 2;
+    }
+
+    /* =====================================================
+       TRANSITION: Demo3 → Demo2 crossfade band
+       ===================================================== */
+    .section-transition {
+      position: relative;
+      height: 20vh;
+      background: linear-gradient(to bottom, #000 0%, #000 100%);
+      z-index: 10;
+    }
+
+    /* =====================================================
+       DEMO2 — Content section wrapper
+       Fixed logo override (use d3-logo instead)
+       ===================================================== */
+    /* Hide the original demo2 frame header — we use d3-logo */
+    .frame { display: none; }
+
+    /* The big demo2 "MENS ABSENS" logo fixed in center —
+       override to use d3-logo instead, so hide default .logo.fixed */
+    .logo.fixed { display: none !important; }
+
+    /* demo2 content reveal: initially hidden, fades in */
+    .demo2-content-wrapper {
+      opacity: 0;
+      will-change: opacity;
+    }
+
+    /* =====================================================
+       DEMO3 — Ecommerce Section
+       ===================================================== */
+    .ecommerce-section {
+      position: relative;
+      background-color: #050505;
+      color: #fff;
+      min-height: 100vh;
+      padding: 10vh 5vw;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 5vw;
+      align-items: center;
+      opacity: 0;
+    }
+    .ecommerce-video-wrap {
+      position: relative;
+      width: 100%; height: 70vh;
+      overflow: hidden;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      transform: translateX(-50px);
+    }
+    .ecommerce-video { width: 100%; height: 100%; object-fit: cover; }
+    .ecommerce-content {
+      display: flex; flex-direction: column; gap: 24px;
+      transform: translateX(50px);
+    }
+    .ecommerce-tag {
+      display: inline-block;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--cursor-color);
+      margin-bottom: -12px;
+    }
+    .ecommerce-title {
+      font-family: 'Syncopate', sans-serif;
+      font-size: clamp(2.5rem, 4vw, 5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .ecommerce-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 16px; line-height: 1.6;
+      color: rgba(255,255,255,0.8);
+      max-width: 480px;
+    }
+    .ecommerce-btn {
+      display: inline-flex; align-items: center; gap: 12px;
+      margin-top: 16px;
+      text-decoration: none; color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .btn-circle {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background-color: var(--cursor-color);
+      display: flex; justify-content: center; align-items: center;
+      transition: transform 0.3s var(--ease-main);
+    }
+    .ecommerce-btn:hover .btn-circle { transform: scale(1.15); }
+
+    /* Background logo video */
+    .bg-video-logo {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 980px; height: auto;
+      z-index: 0;
+      opacity: 0.18;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+  </style>
+</head>
+
+<body class="demo-1">
+
+  <!-- SVG Clip Mask (demo3 N-D text shape) -->
+  <svg style="position:absolute;width:0;height:0;" aria-hidden="true">
+    <defs>
+      <clipPath id="nd-mask">
+        <text x="170" y="65" dy="0.35em"
+          font-family="'Syncopate', sans-serif"
+          font-size="110px" font-weight="700"
+          text-anchor="middle" letter-spacing="-0.05em">N-D</text>
+      </clipPath>
+    </defs>
+  </svg>
+
+  <!-- Background logo video -->
+  <video class="bg-video-logo" src="logo.mp4" autoplay loop muted playsinline></video>
+
+  <!-- ====== DEMO3: Intro Curtain ====== -->
+  <div class="intro-curtain js-curtain"></div>
+
+  <!-- ====== DEMO3: Rolling Text Intro ====== -->
+  <div class="intro-text-wrapper js-intro-text-wrapper">
+    <div>Digital</div>
+    <div class="intro-rolling">
+      <div class="intro-rolling-inner js-rolling-text">
+        <span>Pixel</span>
+        <span>Visual</span>
+        <span>Dynamic</span>
+        <span>Experience</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Custom Cursor ====== -->
+  <div class="custom-cursor js-cursor">
+    <div class="cursor__bullet"></div>
+    <span class="cursor__text js-cursor-text">KEEP SCROLLING</span>
+  </div>
+
+  <!-- ====== Fixed Logo (d3 style) ====== -->
+  <a href="#" class="d3-logo js-ui-elem" data-cursor="DISCOVER">
+    <span class="d3-logo__dot"></span>
+    <span class="js-logo-text">MENS ABSENS</span>
+    <span class="d3-logo__dash"></span>
+  </a>
+
+  <!-- ====== Fixed Nav ====== -->
+  <nav class="d3-nav js-ui-elem">
+    <a href="#" class="d3-nav-link" data-cursor="CLICK">
+      <span class="line-mask"><span class="d3-line">WORKS</span><span class="d3-line">WORKS</span></span>
+    </a>
+    <a href="#" class="d3-nav-link" data-cursor="CLICK">
+      <span class="line-mask"><span class="d3-line">ABOUT</span><span class="d3-line">ABOUT</span></span>
+    </a>
+    <a href="#" class="d3-nav-link" data-cursor="CLICK">
+      <span class="line-mask"><span class="d3-line">CONTACT</span><span class="d3-line">CONTACT</span></span>
+    </a>
+  </nav>
+
+  <!-- ====== DEMO3: Center Bar (Morphing Loader) ====== -->
+  <div class="center-bar-container js-center-bar" data-cursor="WAIT">
+    <div class="loading-counter js-counter">[ <span class="js-counter-num">00</span> ]</div>
+    <div class="center-bar-loader js-bar-loader"></div>
+    <div class="center-bar-content js-bar-content">
+      <div class="cb-text cb-top-left">
+        <div class="panel__scroller">
+          <div>01</div><div>02</div><div>03</div><div>04</div><div>05</div>
+        </div>
+      </div>
+      <div class="cb-text cb-bottom-left">
+        <div class="panel__scroller">
+          <div>N23 — BALANCE YOUR HEALTH</div>
+          <div>LA VIARTE COLLECTION</div>
+          <div>ZIJA — PREMIUM SERUM</div>
+          <div>DESPERADOS — THE BEER WITH A VIBE</div>
+          <div>MECHANICAL BODY</div>
+        </div>
+      </div>
+      <div class="cb-center">
+        <div class="panel__thumbs__scroller">
+          <img class="thumb-img js-thumb" src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=800" alt="">
+          <img class="thumb-img js-thumb" src="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&q=80&w=800" alt="">
+          <img class="thumb-img js-thumb" src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=800" alt="">
+          <img class="thumb-img js-thumb" src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=800" alt="">
+          <img class="thumb-img js-thumb" src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&q=80&w=800" alt="">
+        </div>
+      </div>
+      <div class="cb-text cb-top-right">
+        <div style="line-height:12px">05</div>
+      </div>
+      <div class="cb-text cb-bottom-right">
+        <div class="panel__scroller">
+          <div>STRATEGY, BRANDING, PACK</div>
+          <div>BRANDING, PACK</div>
+          <div>BRANDING, PACK</div>
+          <div>BRANDING, ADV</div>
+          <div>STRATEGY, BRANDING</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== DEMO3: 5 Full-screen Sections ====== -->
+  <div class="d3-scroll-wrapper js-d3-scroll-wrapper">
+    <section class="d3-section">
+      <img class="d3-section-bg js-first-bg" src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=1920" alt="">
+      <div class="d3-section-overlay"></div>
+    </section>
+    <section class="d3-section">
+      <img class="d3-section-bg" src="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&q=80&w=1920" alt="">
+      <div class="d3-section-overlay"></div>
+    </section>
+    <section class="d3-section">
+      <img class="d3-section-bg" src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=1920" alt="">
+      <div class="d3-section-overlay"></div>
+    </section>
+    <section class="d3-section">
+      <img class="d3-section-bg" src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=1920" alt="">
+      <div class="d3-section-overlay"></div>
+    </section>
+    <section class="d3-section">
+      <img class="d3-section-bg" src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&q=80&w=1920" alt="">
+      <div class="d3-section-overlay"></div>
+    </section>
+  </div>
+
+  <!-- ====== TRANSITION BAND ====== -->
+  <div class="section-transition"></div>
+
+  <!-- ====== DEMO2: Text Motion Content ====== -->
+  <div class="demo2-content-wrapper js-demo2-wrapper">
+    <main id="smooth-content">
+      <div class="content">
+        <div class="group">
+          <div class="el pos-4" data-alt-pos="pos-2">Signal</div>
+          <div class="el pos-4" data-alt-pos="pos-2">Vacant orbit</div>
+          <div class="el pos-4" data-alt-pos="pos-2">Quantum waves</div>
+        </div>
+        <div class="group">
+          <div class="el pos-1" data-alt-pos="pos-3">Neural glow</div>
+          <div class="el pos-1" data-alt-pos="pos-3">Micro distortions</div>
+          <div class="el pos-1" data-alt-pos="pos-3">Data streams</div>
+          <div class="el pos-1" data-alt-pos="pos-3">Spark</div>
+          <div class="el pos-1" data-alt-pos="pos-3">Cold radiance</div>
+        </div>
+        <div class="group">
+          <div class="el el--xl pos-1" data-alt-pos="pos-2" data-scramble-duration="2.5">M</div>
+        </div>
+        <div class="group">
+          <div class="el pos-1" data-alt-pos="pos-3" data-scramble-duration="0">アクセス権限がありません</div>
+          <div class="el pos-1 typing-indicator" data-alt-pos="pos-3" data-scramble-duration="0">█</div>
+        </div>
+        <div class="group">
+          <div class="el pos-2" data-alt-pos="pos-5">Beacon</div>
+          <div class="el pos-2" data-alt-pos="pos-5">Synthetic veil</div>
+          <div class="el pos-2" data-alt-pos="pos-5">Hidden strata</div>
+        </div>
+        <div class="group">
+          <div class="el el--xl pos-3" data-alt-pos="pos-9" data-scramble-duration="2.5">S</div>
+        </div>
+        <div class="group">
+          <div class="el pos-3" data-alt-pos="pos-2">Nebula</div>
+          <div class="el pos-3" data-alt-pos="pos-2">Digital scatter</div>
+          <div class="el pos-3" data-alt-pos="pos-2">Orbital drift</div>
+          <div class="el pos-3" data-alt-pos="pos-2">Photon shards</div>
+        </div>
+        <div class="group">
+          <div class="el pos-1" data-alt-pos="pos-3" data-scramble-duration="0">操作は許可されていません</div>
+          <div class="el pos-1 typing-indicator" data-alt-pos="pos-3" data-scramble-duration="0">█</div>
+        </div>
+        <div class="group">
+          <div class="el pos-2" data-alt-pos="pos-4">Anomaly</div>
+          <div class="el pos-2" data-alt-pos="pos-4">Dark offset</div>
+          <div class="el pos-2" data-alt-pos="pos-4">Gradual decay</div>
+          <div class="el pos-2" data-alt-pos="pos-4">Temporal imprint</div>
+          <div class="el pos-2" data-alt-pos="pos-4">Stable rupture</div>
+          <div class="el pos-2" data-alt-pos="pos-4">Harmonic field</div>
+        </div>
+        <div class="group">
+          <div class="el el--xl pos-1" data-alt-pos="pos-3" data-scramble-duration="2.5">A</div>
+        </div>
+        <div class="group">
+          <div class="el pos-2" data-alt-pos="pos-9">Latent energy</div>
+          <div class="el pos-2" data-alt-pos="pos-9">Spectral imprint</div>
+          <div class="el pos-2" data-alt-pos="pos-9">Muted emission</div>
+          <div class="el pos-2" data-alt-pos="pos-9">Archived potential</div>
+          <div class="el pos-2" data-alt-pos="pos-9">Quantum impulse</div>
+          <div class="el pos-2" data-alt-pos="pos-9">Distributed field</div>
+        </div>
+        <div class="group">
+          <div class="el el--xl pos-3" data-alt-pos="pos-10" data-scramble-duration="2.5" data-flip-ease="expo.in">B</div>
+        </div>
+        <div class="group">
+          <div class="el pos-4" data-alt-pos="pos-3">Flare</div>
+          <div class="el pos-4" data-alt-pos="pos-3">Phase transit</div>
+          <div class="el pos-4" data-alt-pos="pos-3">Slow orbit</div>
+          <div class="el pos-4" data-alt-pos="pos-3">Merged signal</div>
+        </div>
+        <div class="group">
+          <div class="el pos-1" data-alt-pos="pos-3" data-scramble-duration="0">権限が不足しています</div>
+          <div class="el pos-1 typing-indicator" data-alt-pos="pos-3" data-scramble-duration="0">█</div>
+        </div>
+        <div class="group">
+          <div class="el pos-3" data-alt-pos="pos-5">Latent charge</div>
+          <div class="el pos-3" data-alt-pos="pos-5">Nano beacon</div>
+          <div class="el pos-3" data-alt-pos="pos-5">Photon trail</div>
+          <div class="el pos-3" data-alt-pos="pos-5">Diffuse render</div>
+        </div>
+        <div class="group">
+          <div class="el el--xl pos-2" data-alt-pos="pos-3" data-scramble-duration="2.5">N</div>
+        </div>
+        <div class="group">
+          <div class="el pos-3" data-alt-pos="pos-6">Silent current</div>
+          <div class="el pos-3" data-alt-pos="pos-6">Orbital marker</div>
+          <div class="el pos-3" data-alt-pos="pos-6">Radiant vector</div>
+          <div class="el pos-3" data-alt-pos="pos-6">Soft projection</div>
+        </div>
+        <div class="group">
+          <div class="el pos-2" data-alt-pos="pos-7">Quantum residue</div>
+          <div class="el pos-2" data-alt-pos="pos-7">Signal anchor</div>
+          <div class="el pos-2" data-alt-pos="pos-7">Luminous path</div>
+          <div class="el pos-2" data-alt-pos="pos-7">Ambient blur</div>
+        </div>
+        <div class="group">
+          <div class="el pos-3" data-alt-pos="pos-8">Dormant voltage</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Micro relay</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Spectral trace</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Diffuse mapping</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Residual energy</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Nano transmitter</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Photon residue</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Soft raster</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Stored impulse</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Quantum locator</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Radiant filament</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Light diffusion</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Static potential</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Signal node</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Energy wake</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Blurred output</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Hidden current</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Data beacon</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Lumen echo</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Soft synthesis</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Quantum latency</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Neural marker</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Optic trail</div>
+          <div class="el pos-3" data-alt-pos="pos-8">Diffuse signal</div>
+        </div>
+        <div class="group">
+          <div class="el pos-1" data-alt-pos="pos-1">Residual charge</div>
+          <div class="el pos-1" data-alt-pos="pos-2">Optical trace</div>
+          <div class="el pos-1" data-alt-pos="pos-4">Soft output</div>
+          <div class="el pos-1" data-alt-pos="pos-5">Stored voltage</div>
+          <div class="el pos-1" data-alt-pos="pos-6">Nano impulse</div>
+          <div class="el pos-1" data-alt-pos="pos-4">Diffuse field</div>
+        </div>
+      </div>
+
+      <!-- ====== DEMO3: Ecommerce Section ====== -->
+      <section class="ecommerce-section js-ecommerce-section" data-cursor="WATCH">
+        <div class="ecommerce-video-wrap js-ecom-video">
+          <video class="ecommerce-video" autoplay muted loop playsinline>
+            <source src="logo.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="ecommerce-content js-ecom-content">
+          <span class="ecommerce-tag">Featured Project</span>
+          <h2 class="ecommerce-title">ECOMMERCE EXPERIENCE</h2>
+          <p class="ecommerce-desc">We create seamless, high-converting online experiences. Strategic branding, cutting-edge technology, and performance design — built to scale and captivate.</p>
+          <a href="#" class="ecommerce-btn">
+            <div class="btn-circle">→</div>
+            <span>View Case Study</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- ====== DEMO2: Related Section ====== -->
+      <section class="related">
+        <p>You might also like</p>
+        <div class="grid">
+          <a class="grid__item" href="https://tympanus.net/Development/LineTextHoverAnimations/index.html" target="_blank">
+            <div class="grid__item-img" style="background-image:url(https://tympanus.net/codrops/wp-content/uploads/2024/06/terminalhover_feat.jpg)"></div>
+            <h3 class="grid__item-title">Hover Animations for Terminal-like Typography</h3>
+          </a>
+          <a class="grid__item" href="https://tympanus.net/Development/ScrollBlurTypography/" target="_blank">
+            <div class="grid__item-img" style="background-image:url(https://tympanus.net/codrops/wp-content/uploads/2024/04/blurrytext_featured.jpg)"></div>
+            <h3 class="grid__item-title">Blurry Text Reveal on Scroll</h3>
+          </a>
+          <a class="grid__item" href="https://tympanus.net/Development/OnScrollTextHighlight/" target="_blank">
+            <div class="grid__item-img" style="background-image:url(https://tympanus.net/codrops/wp-content/uploads/2024/04/TextHighlight.jpg)"></div>
+            <h3 class="grid__item-title">Some On-Scroll Text Highlight Animations</h3>
+          </a>
+          <a class="grid__item" href="https://tympanus.net/Development/ImageExpansionTypography/" target="_blank">
+            <div class="grid__item-img" style="background-image:url(https://tympanus.net/codrops/wp-content/uploads/2024/04/expandimage_feat.jpg)"></div>
+            <h3 class="grid__item-title">On-Scroll Expanding Image Animation within Typography</h3>
+          </a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ====================================================
+       SCRIPTS
+       ==================================================== -->
+
+  <!-- Demo2 plugins (Flip + ScrambleText) - NO ScrollSmoother -->
+  <script src="js/Flip.min.js"></script>
+  <script src="js/ScrambleTextPlugin.min.js"></script>
+
+  <script>
+    // -------------------------------------------------------
+    // REGISTER GSAP PLUGINS
+    // -------------------------------------------------------
+    gsap.registerPlugin(ScrollTrigger, Flip, ScrambleTextPlugin);
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // -------------------------------------------------------
+      // LENIS — Unified smooth scroll
+      // -------------------------------------------------------
+      const lenis = new Lenis({
+        duration: 1.4,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        smoothTouch: false,
+      });
+      lenis.on('scroll', () => ScrollTrigger.update());
+      function lenisRAF(time) { lenis.raf(time); requestAnimationFrame(lenisRAF); }
+      requestAnimationFrame(lenisRAF);
+
+      // Stop scroll during intro
+      lenis.stop();
+      window.scrollTo(0, 0);
+
+      // -------------------------------------------------------
+      // CUSTOM CURSOR
+      // -------------------------------------------------------
+      const cursor = document.querySelector('.js-cursor');
+      const cursorText = document.querySelector('.js-cursor-text');
+      gsap.set(cursor, { xPercent: -50, yPercent: -50 });
+      const xTo = gsap.quickTo(cursor, 'x', { duration: 0.15, ease: 'power3' });
+      const yTo = gsap.quickTo(cursor, 'y', { duration: 0.15, ease: 'power3' });
+      window.addEventListener('mousemove', e => { xTo(e.clientX); yTo(e.clientY); });
+
+      let scrollTimer;
+      lenis.on('scroll', () => {
+        cursor.classList.add('expanded');
+        cursorText.textContent = 'KEEP SCROLLING';
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => cursor.classList.remove('expanded'), 300);
+      });
+      document.querySelectorAll('[data-cursor]').forEach(el => {
+        el.addEventListener('mouseenter', () => {
+          cursor.classList.add('expanded');
+          cursorText.textContent = el.dataset.cursor;
+        });
+        el.addEventListener('mouseleave', () => cursor.classList.remove('expanded'));
+      });
+
+      // -------------------------------------------------------
+      // INTRO ANIMATION (demo3 morphing center bar)
+      // -------------------------------------------------------
+      gsap.set('.js-ui-elem', { y: 20, opacity: 0 });
+      gsap.set('.js-first-bg', { scale: 1.15, filter: 'blur(15px)' });
+      gsap.set('.js-rolling-text', { yPercent: 0 });
+      gsap.set('.js-demo2-wrapper', { opacity: 0 });
+
+      const progressObj = { val: 0 };
+
+      // Init scroll effects early so ScrollTrigger markers exist
+      initScrollEffects();
+      initDemo2Effects();
+
+      const tlIntro = gsap.timeline({ onComplete: () => lenis.start() });
+
+      tlIntro
+        .to('.js-rolling-text', { yPercent: -25, duration: 0.6, ease: 'expo.inOut', delay: 0.5 })
+        .to('.js-rolling-text', { yPercent: -50, duration: 0.6, ease: 'expo.inOut', delay: 0.2 })
+        .to('.js-rolling-text', { yPercent: -75, duration: 0.6, ease: 'expo.inOut', delay: 0.2 })
+        .to('.js-intro-text-wrapper', { scaleY: 0, scaleX: 0.5, opacity: 0, filter: 'blur(10px)', duration: 0.5, ease: 'expo.in', delay: 0.4 })
+        .fromTo('.js-center-bar', { opacity: 1, width: '0px' }, { width: '200px', duration: 0.6, ease: 'expo.out' }, '-=0.1')
+        .fromTo('.js-counter',     { opacity: 0, y: 10 },       { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, '-=0.2')
+        .to(progressObj, {
+          val: 100, duration: 1.5, ease: 'power4.inOut',
+          onUpdate: () => {
+            const p = Math.round(progressObj.val);
+            document.querySelector('.js-counter-num').innerText = (p < 10 ? '0' : '') + p;
+            document.querySelector('.js-bar-loader').style.width = p + '%';
+          }
+        })
+        .to('.js-counter',    { opacity: 0, y: -10, duration: 0.3, ease: 'power2.in' })
+        .to('.js-center-bar', { width: '80px', duration: 0.4, ease: 'back.in(1.5)' }, '-=0.3')
+        .to('.js-center-bar', { width: '65vw', height: '130px', backgroundColor: '#ffffff', duration: 0.9, ease: 'expo.out' })
+        .to('.js-bar-loader',  { opacity: 0, duration: 0.1 }, '-=0.9')
+        .to('.js-bar-content', { opacity: 1, duration: 0.6 }, '-=0.4')
+        .to('.js-curtain',    { opacity: 0, duration: 1.2, ease: 'power2.inOut' }, '-=1.0')
+        .to('.js-first-bg',   { scale: 1, filter: 'blur(0px)', duration: 1.8, ease: 'power3.out' }, '-=1.0')
+        .to('.js-ui-elem',    { y: 0, opacity: 1, duration: 1, stagger: 0.1, ease: 'power3.out' }, '-=1.2');
+
+      // -------------------------------------------------------
+      // SCROLL EFFECTS — Demo3 sections + transitions
+      // -------------------------------------------------------
+      function initScrollEffects() {
+        const d3sections = document.querySelectorAll('.d3-section');
+        const thumbs = document.querySelectorAll('.js-thumb');
+
+        // Snap + progress tracking for 5 sections
+        ScrollTrigger.create({
+          trigger: '.js-d3-scroll-wrapper',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 0,
+          snap: {
+            snapTo: 1 / (d3sections.length - 1),
+            duration: { min: 0.4, max: 0.8 },
+            ease: 'power1.inOut'
+          },
+          onUpdate: (self) => {
+            document.documentElement.style.setProperty('--progress', self.progress);
+          }
+        });
+
+        d3sections.forEach((sec, i) => {
+          const bg = sec.querySelector('.d3-section-bg');
+          // Parallax on each bg image
+          gsap.fromTo(bg,
+            { yPercent: -10 },
+            { yPercent: 10, ease: 'none',
+              scrollTrigger: { trigger: sec, start: 'top bottom', end: 'bottom top', scrub: true }
+            }
+          );
+          // Thumb highlight
+          ScrollTrigger.create({
+            trigger: sec, start: 'top 50%', end: 'bottom 50%',
+            onToggle: (self) => {
+              if (self.isActive) {
+                thumbs.forEach(t => t.classList.remove('is-active'));
+                if (thumbs[i]) thumbs[i].classList.add('is-active');
+              }
+            }
+          });
+        });
+        if (thumbs[0]) thumbs[0].classList.add('is-active');
+
+        // ---- Center bar exit when demo2 content enters ----
+        ScrollTrigger.create({
+          trigger: '.js-demo2-wrapper',
+          start: 'top 80%',
+          onEnter: () => {
+            gsap.timeline()
+              .to('.js-bar-content', { opacity: 0, duration: 0.25 })
+              .to('.js-center-bar', { height: '2px', duration: 0.4, ease: 'expo.inOut' }, '-=0.2')
+              .to('.js-center-bar', { width: '0px', duration: 0.5, ease: 'expo.inOut' });
+          },
+          onLeaveBack: () => {
+            gsap.timeline()
+              .to('.js-center-bar', { width: '65vw', duration: 0.4, ease: 'expo.inOut' })
+              .to('.js-center-bar', { height: '130px', duration: 0.4, ease: 'expo.inOut' })
+              .to('.js-bar-content', { opacity: 1, duration: 0.3 }, '-=0.2');
+          }
+        });
+
+
+        // ---- Demo2 wrapper fade in ----
+        ScrollTrigger.create({
+          trigger: '.js-demo2-wrapper',
+          start: 'top 85%',
+          onEnter: () => gsap.to('.js-demo2-wrapper', { opacity: 1, duration: 1.2, ease: 'power2.out' }),
+          onLeaveBack: () => gsap.to('.js-demo2-wrapper', { opacity: 0, duration: 0.6, ease: 'power2.in' }),
+        });
+
+        // ---- Ecommerce Section enter ----
+        ScrollTrigger.create({
+          trigger: '.js-ecommerce-section',
+          start: 'top 75%',
+          onEnter: () => {
+            gsap.to('.js-ecommerce-section', { opacity: 1, duration: 0.8 });
+            gsap.to('.js-ecom-video',   { x: 0, duration: 1,   ease: 'power3.out' });
+            gsap.to('.js-ecom-content', { x: 0, duration: 1,   ease: 'power3.out', delay: 0.2 });
+          },
+          onLeaveBack: () => {
+            gsap.to('.js-ecommerce-section', { opacity: 0, duration: 0.5 });
+            gsap.to('.js-ecom-video',   { x: -50, duration: 0.5, ease: 'power2.in' });
+            gsap.to('.js-ecom-content', { x:  50, duration: 0.5, ease: 'power2.in' });
+          }
+        });
+      }
+
+      // -------------------------------------------------------
+      // DEMO2 EFFECTS — Flip positions + ScrambleText
+      // -------------------------------------------------------
+      function initDemo2Effects() {
+        const textElements = document.querySelectorAll('.el');
+        const logoEl       = document.querySelector('.js-logo-text');
+        const relatedEl    = document.querySelector('.related');
+        const relatedItems = relatedEl ? relatedEl.querySelectorAll('.grid__item') : [];
+        const scrambleChars = 'upperAndLowerCase';
+
+        // Store original texts
+        textElements.forEach(el => { el.dataset.text = el.textContent; });
+        if (logoEl) logoEl.dataset.text = logoEl.textContent;
+
+        // --- Flip ---
+        function initFlips() {
+          textElements.forEach(el => {
+            gsap.set(el, { clearProps: 'transform,opacity,filter' });
+          });
+          textElements.forEach(el => {
+            const originalClass = [...el.classList].find(c => c.startsWith('pos-'));
+            const targetClass   = el.dataset.altPos;
+            const flipEase      = el.dataset.flipEase || 'expo.inOut';
+            if (!originalClass || !targetClass) return;
+
+            el.classList.add(targetClass);
+            el.classList.remove(originalClass);
+            const flipState = Flip.getState(el, { props: 'opacity, filter, width' });
+            el.classList.add(originalClass);
+            el.classList.remove(targetClass);
+
+            Flip.to(flipState, {
+              ease: flipEase,
+              scrollTrigger: { trigger: el, start: 'clamp(bottom bottom-=10%)', end: 'clamp(center center)', scrub: true }
+            });
+            Flip.from(flipState, {
+              ease: flipEase,
+              scrollTrigger: { trigger: el, start: 'clamp(center center)', end: 'clamp(top top)', scrub: true }
+            });
+          });
+        }
+
+        // --- Scramble ---
+        function scramble(el, { duration, revealDelay = 0 } = {}) {
+          const text = el.dataset.text ?? el.textContent;
+          const finalDuration = duration ?? (el.dataset.scrambleDuration ? parseFloat(el.dataset.scrambleDuration) : 1);
+          gsap.killTweensOf(el);
+          gsap.fromTo(el,
+            { scrambleText: { text: '', chars: '' } },
+            { scrambleText: { text, chars: scrambleChars, revealDelay }, duration: finalDuration }
+          );
+        }
+
+        function killScrambleTriggers() {
+          ScrollTrigger.getAll().forEach(st => { if (st.vars.id === 'scramble') st.kill(); });
+        }
+
+        function initScramble() {
+          killScrambleTriggers();
+          textElements.forEach(el => {
+            ScrollTrigger.create({
+              id: 'scramble',
+              trigger: el,
+              start: 'top bottom', end: 'bottom top',
+              onEnter:     () => scramble(el),
+              onEnterBack: () => scramble(el),
+            });
+          });
+          if (logoEl) scramble(logoEl, { revealDelay: 0.5 });
+        }
+
+        // --- Related demos ---
+        if (relatedItems.length) {
+          gsap.set(relatedItems, { xPercent: 100, scale: 0, opacity: 0 });
+          ScrollTrigger.create({
+            trigger: relatedEl,
+            start: 'top center+=25%',
+            onEnter: () => {
+              gsap.to(logoEl, { duration: 0.7, ease: 'expo', opacity: 0 });
+              gsap.fromTo(relatedItems,
+                { xPercent: 100, scale: 0, opacity: 0 },
+                { duration: 0.7, ease: 'expo', stagger: 0.1, xPercent: 0, scale: 1, opacity: 1 }
+              );
+            },
+            onLeaveBack: () => {
+              gsap.to(logoEl, { duration: 0.5, ease: 'power3.in', opacity: 1 });
+              gsap.to(relatedItems, { duration: 0.5, ease: 'power3.in', scale: 0, opacity: 0, xPercent: 100, stagger: 0.05 });
+            }
+          });
+        }
+
+        // Init
+        initFlips();
+        initScramble();
+
+        // Resize
+        window.addEventListener('resize', () => {
+          ScrollTrigger.refresh(true);
+          initFlips();
+          initScramble();
+        });
+      }
+
+    }); // DOMContentLoaded
+  </script>
+
+</body>
+</html>

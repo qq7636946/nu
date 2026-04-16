@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Norte Image Studio - Elite Header & Video Zoom</title>
+
+  <!-- 引入 Google 字體 DM Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900;1,9..40,400&display=swap"
+    rel="stylesheet">
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+
+  <!-- 引入 GSAP 與 ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
+  <link rel="stylesheet" href="https://use.typekit.net/rue2ale.css" />
+
+  <!-- Dual Wave Animation CSS -->
+  <style>
+    /* ===== Dual Wave Section ===== */
+    .dual-wave-section {
+      background: #000;
+      position: relative;
+      z-index: 10;
+    }
+    .dw-spacer {
+      height: 75svh;
+    }
+    .dw-spacer-bottom {
+      height: 100svh;
+    }
+    .dual-wave-wrapper {
+      display: flex;
+      width: 100%;
+      position: relative;
+      gap: 25vw;
+    }
+    .wave-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      font-size: clamp(2rem, 10vw, 3rem);
+      font-family: 'forma-djr-mono', monospace;
+      font-weight: 400;
+      line-height: 0.7;
+      position: relative;
+      z-index: 100;
+    }
+    .wave-column-left  { align-items: flex-start; }
+    .wave-column-right { align-items: flex-end; }
+    .animated-text {
+      width: max-content;
+      color: #4d4d4d;
+      text-transform: uppercase;
+      transition: color 300ms ease-out;
+    }
+    .animated-text.focused { color: #fff; z-index: 2; }
+    .image-thumbnail-wrapper {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translate(-50%, 0);
+      width: 15vw;
+      height: auto;
+      z-index: 1;
+      pointer-events: none;
+      display: grid;
+      place-items: center;
+    }
+    .image-thumbnail {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 30vh;
+    }
+    @media (max-width: 1023px) {
+      .dual-wave-wrapper { gap: 10vw; }
+      .wave-column { gap: 2.5rem; font-size: 5vw; }
+      .image-thumbnail-wrapper { width: 50vw; }
+    }
+  </style>
+
+  <style>
+    /* ================= 基礎重置 ================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body,
+    html {
+      width: 100%;
+      background-color: #000000;
+      color: #ffffff;
+      font-family: 'DM Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ================= 全新 NUDOT HERO 區塊 ================= */
+    .new-hero-container {
+      width: 100vw;
+      min-height: 100vh;
+      padding: 4vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 10;
+      color: #fff;
+    }
+
+    .nh-top-bar {
+      position: absolute;
+      top: 4vw;
+      left: 4vw;
+      right: 4vw;
+      display: flex;
+      justify-content: space-between;
+      font-family: 'DM Mono', monospace;
+      font-size: 1.2vw;
+      font-weight: 500;
+      color: #a0a0a0;
+    }
+
+    .nh-main-wrapper {
+      margin-top: 15vw;
+      position: relative;
+      width: 100%;
+    }
+
+    .nh-big-text {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14vw;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .nh-dash-group {
+      display: flex;
+      align-items: center;
+      position: relative;
+      flex: 1;
+      justify-content: flex-start;
+      margin-left: 2vw;
+    }
+
+    .nh-fly-left, .nh-fly-right {
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .nh-small-label {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      margin-bottom: 0.5vw;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8vw;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      color: #ccc;
+    }
+
+    .nh-dash {
+      width: 8vw;
+      height: 1.5vw;
+      background-color: #fff;
+      margin-right: 0.5vw;
+    }
+
+    .nh-quote {
+      font-size: 0.5em;
+      line-height: 0;
+      transform: translateY(-0.35em);
+    }
+
+    .nh-video-box {
+      width: 18vw;
+      height: 0.72em;
+      background-color: #d9d9d9;
+      display: inline-flex;
+      overflow: hidden;
+      margin: 0 2vw;
+    }
+
+    .nh-video-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .nh-divider {
+      width: 100%;
+      height: 1px;
+      background-color: rgba(255, 255, 255, 0.3);
+      margin-top: 2vw;
+      margin-bottom: 0.8vw;
+    }
+
+    .nh-info-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8vw;
+      font-weight: 500;
+      margin-bottom: 8vw;
+      color: #ccc;
+    }
+
+    .nh-bottom-row {
+      display: grid;
+      grid-template-columns: 1.5fr 1.5fr 1fr 1fr;
+      gap: 2vw;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9vw;
+      font-weight: 500;
+      line-height: 1.6;
+      margin-bottom: 2vw;
+      color: #ccc;
+    }
+
+    .nh-bottom-row a {
+      color: #ccc;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      transition: opacity 0.3s, color 0.3s;
+    }
+
+    .nh-bottom-row a:hover {
+      opacity: 0.8;
+      color: #fff;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    /* ================= 滾動放大滿版特效區 ================= */
+    .video-zoom-section {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background-color: transparent;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .bottom-creative {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      flex-wrap: nowrap;
+    }
+
+    .text-mask {
+      overflow: visible;
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .giant-text {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 18vw;
+      font-weight: 900;
+      line-height: 0.75;
+      letter-spacing: -0.03em;
+      display: inline-block;
+    }
+
+    .video-square {
+      width: 14vw;
+      height: 14vw;
+      background-color: #222;
+      margin: 0 2.5vw;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      will-change: width, height, margin;
+    }
+
+    .video-square video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.7);
+    }
+
+    .center-play-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 3vw;
+      height: 3vw;
+      fill: #ffffff;
+      opacity: 0.8;
+      z-index: 2;
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    .fullscreen-ui {
+      position: absolute;
+      bottom: 10vh;
+      left: 0;
+      width: 100%;
+      padding: 0 8vw;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #ffffff;
+      opacity: 0;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .fullscreen-ui div {
+      text-transform: uppercase;
+      line-height: 1.6;
+      opacity: 0.8;
+    }
+
+    .fullscreen-ui span {
+      display: block;
+      color: #a3a3a3;
+    }
+
+    /* ================= 第三區塊：Strategy 灰色文字版塊 ================= */
+    .better-off-section {
+      width: 100%;
+      background-color: #E8E9E3;
+      /* 近似圖片的質感灰底色 */
+      color: #1A1A1A;
+      padding: 10vw 4vw;
+      position: relative;
+      z-index: 10;
+    }
+
+    .bo-header {
+      max-width: 80%;
+      margin-bottom: 10vw;
+    }
+
+    .bo-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 3.5vw;
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #1A1A1A;
+      margin-bottom: 2vw;
+    }
+
+    /* 底部多欄排版區塊 */
+    .bo-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .bo-col-left {
+      width: 25%;
+      font-size: 1vw;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #1A1A1A;
+    }
+
+    .bo-col-center {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      gap: 4vw;
+    }
+
+    .bo-item h3 {
+      font-size: 1.1vw;
+      font-weight: 600;
+      color: #1A1A1A;
+      margin-bottom: 1.2vw;
+    }
+
+    .bo-item p {
+      font-size: 1.2vw;
+      font-weight: 500;
+      line-height: 1.4;
+      color: #8A8A8A;
+      /* 淺灰色內文 */
+    }
+
+    .bo-col-right {
+      width: 25%;
+      text-align: right;
+      font-size: 1vw;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #1A1A1A;
+    }
+
+    /* ================= RWD 響應式調整 ================= */
+    @media (max-width: 1024px) {
+      .hr-text {
+        font-size: 14px;
+      }
+
+      .header-left {
+        width: 320px;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 5vw;
+      }
+
+      .giant-text {
+        font-size: 22vw;
+      }
+
+      .video-square {
+        width: 18vw;
+        height: 18vw;
+      }
+
+      .list-header,
+      .list-row {
+        grid-template-columns: 0.5fr 2fr 1fr 3fr 0.5fr;
+      }
+
+      .hide-tablet {
+        display: none;
+      }
+
+      /* Better Off Section RWD */
+      .bo-header {
+        max-width: 90%;
+        margin-bottom: 12vw;
+      }
+
+      .bo-title {
+        font-size: 5vw;
+      }
+
+      .bo-col-left {
+        width: 30%;
+        font-size: 1.5vw;
+      }
+
+      .bo-col-center {
+        width: 50%;
+      }
+
+      .bo-item h3 {
+        font-size: 2vw;
+        margin-bottom: 1.5vw;
+      }
+
+      .bo-item p {
+        font-size: 1.8vw;
+      }
+
+      .bo-col-right {
+        font-size: 1.5vw;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .elite-header {
+        height: 70px;
+      }
+
+      .header-left {
+        width: 60%;
+        clip-path: polygon(0 0, 100% 0, 100% 64px, 120px 64px, 110px 70px, 20px 70px, 0 40px);
+      }
+
+      .hl-logo-area svg {
+        width: 32px;
+        height: auto;
+      }
+
+      .hr-text {
+        display: none;
+      }
+
+      .hr-btn {
+        padding: 12px 16px;
+        font-size: 10px;
+      }
+
+      .container {
+        padding: 6vw 4vw;
+      }
+
+      .hero-title {
+        font-size: 16vw;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 2vw;
+        margin-top: 4vw;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 8vw;
+        margin-bottom: 20vw;
+        font-size: 12px;
+      }
+
+      .info-col .copyright {
+        margin-top: 5vw;
+      }
+
+      .toggle-switch {
+        margin-top: 3vw;
+      }
+
+      .list-header,
+      .list-row {
+        grid-template-columns: 15% 70% 15%;
+        font-size: 12px;
+      }
+
+      .hide-mobile {
+        display: none;
+      }
+
+      .giant-text {
+        font-size: 28vw;
+      }
+
+      .video-square {
+        width: 35vw;
+        height: 35vw;
+        margin: 0 4vw;
+      }
+
+      .center-play-icon {
+        width: 10vw;
+        height: 10vw;
+      }
+
+      .fullscreen-ui {
+        flex-direction: column;
+        align-items: center;
+        gap: 3vh;
+        bottom: 8vh;
+        font-size: 10px;
+      }
+
+      .fullscreen-ui div {
+        text-align: center !important;
+      }
+
+      /* Better Off Section Mobile */
+      .better-off-section {
+        padding: 15vw 6vw;
+      }
+
+      .bo-header {
+        max-width: 100%;
+        margin-bottom: 15vw;
+      }
+
+      .bo-title {
+        font-size: 7.5vw;
+      }
+
+      .bo-grid {
+        flex-direction: column;
+        gap: 8vw;
+      }
+
+      .bo-col-left,
+      .bo-col-right {
+        width: 100%;
+        font-size: 3.5vw;
+        text-align: left;
+      }
+
+      .bo-col-right {
+        order: -1;
+        margin-bottom: 5vw;
+      }
+
+      /* 將 (BO - 01) 往上移 */
+      .bo-col-center {
+        width: 100%;
+        gap: 8vw;
+      }
+
+      .bo-item h3 {
+        font-size: 4.5vw;
+        margin-bottom: 2vw;
+      }
+
+      .bo-item p {
+        font-size: 3.8vw;
+      }
+    }
+
+    /* ================= 第四區塊：滿版圖片左刷 ================= */
+    .wipe-reveal-section {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      background: #000;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    .wipe-wrapper {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .wipe-global-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 50;
+      pointer-events: none;
+      width: 100%;
+    }
+
+    .wipe-global-text h2 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 8vw;
+      font-weight: 900;
+      line-height: 0.9;
+      letter-spacing: -0.04em;
+      color: #FFF;
+      text-transform: uppercase;
+      margin: 0;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .wipe-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .wipe-panel img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      /* Improve crispness during parallax scale/pan */
+      will-change: transform;
+    }
+
+    .panel-2, .panel-3 {
+      /* Initially hidden pushing from right */
+      clip-path: inset(0% 0% 0% 100%);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ================= 背景影片 ================= -->
+  <video class="bg-video" src="images/bg.mp4" autoplay loop muted playsinline
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 0; opacity: 0.6;"></video>
+
+  <!-- ================= 全新 NUDOT HERO 區塊 ================= -->
+  <div class="new-hero-container">
+    <!-- 頂部 Header -->
+    <div class="nh-main-nav" style="position: absolute; top: 4vw; left: 4vw; right: 4vw; display: flex; justify-content: space-between; align-items: center; z-index: 20;">
+      <div class="nav-logo" style="display:flex; align-items:center; gap:0.5vw;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 4H8V14L16 4H20V20H16V10L8 20H4V4Z" />
+        </svg>
+        <span style="font-weight:900; letter-spacing: 0.1em; font-size:1vw; font-family:'Inter', 'DM Sans', sans-serif;">NUDOT</span>
+      </div>
+      <div class="nav-links" style="display:flex; gap:3vw; font-family:'DM Mono', monospace; font-size:0.8vw; font-weight: 500; color: #a0a0a0;">
+        <a href="#" style="color:#fff; text-decoration:none; transition:color 0.3s;">ABOUT</a>
+        <a href="#" style="color:#a0a0a0; text-decoration:none; transition:color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#a0a0a0'">PROJECTS</a>
+        <a href="#" style="color:#a0a0a0; text-decoration:none; transition:color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#a0a0a0'">LABS</a>
+        <a href="#" style="color:#a0a0a0; text-decoration:none; transition:color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#a0a0a0'">CONTACT</a>
+      </div>
+    </div>
+
+    <!-- 中間填補空白，把內容推到底部 -->
+    <div style="flex:1"></div>
+
+    <div class="nh-divider" style="margin-bottom: 2vw;"></div>
+
+    <div class="nh-info-row" style="margin-bottom: 5vw;">
+      <div style="flex: 1;">( Brand Direction )</div>
+      <div style="flex: 1.2; text-align: center;">( Performance Marketing )</div>
+      <div style="flex: 1; text-align: right;">( Advanced Tech )</div>
+    </div>
+
+    <div class="nh-bottom-row" style="margin-bottom: 2vw;">
+      <div class="nh-col">
+        Strategy, Design, and<br>
+        Development. Lightning-fast, lean,<br>
+        and sensibly priced.
+      </div>
+      <div class="nh-col" style="transform: translateX(-4vw);">
+        nuclearxlab@gmail.com<br>
+        NUDOT Creative, 2026©
+      </div>
+      <div class="nh-col"></div>
+      <div class="nh-col text-right">
+        <a href="#" style="display:inline-block; margin-bottom:0.4vw;">Instagram</a><br>
+        <a href="#" style="display:inline-block; margin-bottom:0.4vw;">Threads</a><br>
+        <a href="#" style="display:inline-block;">Facebook</a>
+      </div>
+    </div>
+
+    <div class="nh-main-wrapper" style="margin-top: 0;">
+      <div class="nh-big-text" style="display: flex; align-items: flex-end; justify-content: space-between; font-size: 15vw; line-height: 0.82;">
+        
+        <!-- 左側：N — 'D -->
+        <div class="nh-fly-left" style="display: flex; align-items: center; letter-spacing: -0.04em;">
+          <div>N</div>
+          <div style="width: 8vw; height: 1.2vw; background-color: #fff; margin: 0 1vw;"></div>
+          <div>'D</div>
+        </div>
+
+        <!-- 中間：影片框 -->
+        <div class="nh-video-box" style="width: 16vw; height: 10vw; background-color: #222; margin-left: 2vw; margin-right: auto; flex-shrink: 0; align-self: flex-end; border-radius: 4px; overflow: hidden; position: relative;">
+          <!-- NUDOT 卡片文字效果 (純裝飾) -->
+          <div style="position: absolute; top:0; left:0; width:100%; height:100%; display:flex; pointer-events:none; z-index:10; background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, transparent 100%); padding: 1vw;">
+             <span style="font-size:0.6vw; font-family:'DM Mono', monospace; font-weight:700; transform:rotate(-90deg); transform-origin:bottom left; align-self:flex-start; margin-top:2vw;">NUDOT</span>
+          </div>
+          <!-- TODO: 更換為指定的影像或影片 -->
+          <video src="images/bg.mp4" autoplay loop muted playsinline style="width:100%; height:100%; object-fit:cover; filter: grayscale(80%);"></video>
+        </div>
+
+        <!-- 右側：資料表 (Table) -->
+        <div class="nh-fly-right" style="flex: 1; margin-left: 5vw; display: flex; flex-direction: column; font-family: 'DM Mono', monospace; font-size: 0.75vw; color: #ccc; letter-spacing: 0.05em; font-weight: 500; line-height: 1.6; align-self: flex-end; padding-bottom: 0.5vw;">
+          <div style="display:flex; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 0.8vw; margin-bottom: 0.8vw;">
+            <div style="flex:1; color:#fff;">ACTIVE INGREDIENTS</div>
+            <div style="flex:1;">GSAP</div>
+          </div>
+          <div style="display:flex; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 0.8vw; margin-bottom: 0.8vw;">
+            <div style="flex:1; color:#fff;">CHAPTERS</div>
+            <div style="flex:1;">01 ABOUT</div>
+          </div>
+          <div style="display:flex;">
+            <div style="flex:1;"></div>
+            <div style="flex:1;">02. DESIGN + DEV</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Dual Wave Text Animation Section ================= -->
+  <section class="dual-wave-section">
+    <div id="dw-smooth-wrapper">
+      <div id="dw-smooth-content" style="padding: 0 1.5rem;">
+        <div class="dw-spacer"></div>
+        <div
+          class="dual-wave-wrapper"
+          data-animation="dual-wave"
+          data-wave-number="12"
+          data-wave-speed="1"
+        >
+          <div class="wave-column wave-column-left">
+            <div class="animated-text" data-image="demo1/public/tesla.webp">Volt R2</div>
+            <div class="animated-text" data-image="demo1/public/chanel.webp">Éclat</div>
+            <div class="animated-text" data-image="demo1/public/apple.webp">Project Ion</div>
+            <div class="animated-text" data-image="demo1/public/BMW.webp">AeroLine</div>
+            <div class="animated-text" data-image="demo1/public/YSL.webp">Série Noir</div>
+            <div class="animated-text" data-image="demo1/public/nike.webp">UltraRun</div>
+            <div class="animated-text" data-image="demo1/public/hermes.webp">Atelier 03</div>
+            <div class="animated-text" data-image="demo1/public/adidas.webp">Pulse One</div>
+            <div class="animated-text" data-image="demo1/public/prada.webp">Linea 24</div>
+            <div class="animated-text" data-image="demo1/public/google.webp">Echo Series</div>
+            <div class="animated-text" data-image="demo1/public/polestar.webp">Zero</div>
+            <div class="animated-text" data-image="demo1/public/balenciaga.webp">Shift/Black</div>
+            <div class="animated-text" data-image="demo1/public/audi.webp">Solar Drift</div>
+            <div class="animated-text" data-image="demo1/public/valentino.webp">Nº 27</div>
+            <div class="animated-text" data-image="demo1/public/samsung.webp">Mode/3</div>
+            <div class="animated-text" data-image="demo1/public/bottega.webp">Pure Form</div>
+            <div class="animated-text" data-image="demo1/public/sony.webp">Edge</div>
+            <div class="animated-text" data-image="demo1/public/aesop.webp">Stillwater</div>
+            <div class="animated-text" data-image="demo1/public/dior.webp">Parfum Nº8</div>
+            <div class="animated-text" data-image="demo1/public/porsche.webp">Vantage</div>
+            <div class="animated-text" data-image="demo1/public/microsoft.webp">Core</div>
+            <div class="animated-text" data-image="demo1/public/lexus.webp">Archive Green</div>
+            <div class="animated-text" data-image="demo1/public/mercedes.webp">Rosso Linea</div>
+            <div class="animated-text" data-image="demo1/public/huawei.webp">A-17</div>
+            <div class="animated-text" data-image="demo1/public/tesla.webp">Volt R2</div>
+            <div class="animated-text" data-image="demo1/public/chanel.webp">Éclat</div>
+            <div class="animated-text" data-image="demo1/public/apple.webp">Project Ion</div>
+            <div class="animated-text" data-image="demo1/public/BMW.webp">AeroLine</div>
+            <div class="animated-text" data-image="demo1/public/YSL.webp">Série Noir</div>
+            <div class="animated-text" data-image="demo1/public/nike.webp">UltraRun</div>
+            <div class="animated-text" data-image="demo1/public/hermes.webp">Atelier 03</div>
+            <div class="animated-text" data-image="demo1/public/adidas.webp">Pulse One</div>
+            <div class="animated-text" data-image="demo1/public/prada.webp">Linea 24</div>
+            <div class="animated-text" data-image="demo1/public/google.webp">Echo Series</div>
+            <div class="animated-text" data-image="demo1/public/polestar.webp">Zero</div>
+            <div class="animated-text" data-image="demo1/public/balenciaga.webp">Shift/Black</div>
+            <div class="animated-text" data-image="demo1/public/audi.webp">Solar Drift</div>
+            <div class="animated-text" data-image="demo1/public/valentino.webp">Nº 27</div>
+            <div class="animated-text" data-image="demo1/public/samsung.webp">Mode/3</div>
+            <div class="animated-text" data-image="demo1/public/bottega.webp">Pure Form</div>
+            <div class="animated-text" data-image="demo1/public/sony.webp">Edge</div>
+            <div class="animated-text" data-image="demo1/public/aesop.webp">Stillwater</div>
+            <div class="animated-text" data-image="demo1/public/dior.webp">Parfum Nº8</div>
+            <div class="animated-text" data-image="demo1/public/porsche.webp">Vantage</div>
+            <div class="animated-text" data-image="demo1/public/microsoft.webp">Core</div>
+            <div class="animated-text" data-image="demo1/public/lexus.webp">Archive Green</div>
+            <div class="animated-text" data-image="demo1/public/mercedes.webp">Rosso Linea</div>
+            <div class="animated-text" data-image="demo1/public/huawei.webp">A-17</div>
+          </div>
+          <div class="image-thumbnail-wrapper">
+            <img src="demo1/public/tesla.webp" alt="Campaign Image" class="image-thumbnail" />
+          </div>
+          <div class="wave-column wave-column-right">
+            <div class="animated-text">Tesla</div>
+            <div class="animated-text">Chanel</div>
+            <div class="animated-text">Apple</div>
+            <div class="animated-text">BMW</div>
+            <div class="animated-text">Saint Laurent</div>
+            <div class="animated-text">Nike</div>
+            <div class="animated-text">Hermès</div>
+            <div class="animated-text">Adidas</div>
+            <div class="animated-text">Prada</div>
+            <div class="animated-text">Google</div>
+            <div class="animated-text">Polestar</div>
+            <div class="animated-text">Balenciaga</div>
+            <div class="animated-text">Audi</div>
+            <div class="animated-text">Valentino</div>
+            <div class="animated-text">Samsung</div>
+            <div class="animated-text">Bottega Veneta</div>
+            <div class="animated-text">Sony</div>
+            <div class="animated-text">Aesop</div>
+            <div class="animated-text">Dior</div>
+            <div class="animated-text">Porsche</div>
+            <div class="animated-text">Microsoft</div>
+            <div class="animated-text">Lexus</div>
+            <div class="animated-text">Mercedes-Benz</div>
+            <div class="animated-text">Huawei</div>
+            <div class="animated-text">Tesla</div>
+            <div class="animated-text">Chanel</div>
+            <div class="animated-text">Apple</div>
+            <div class="animated-text">BMW</div>
+            <div class="animated-text">Saint Laurent</div>
+            <div class="animated-text">Nike</div>
+            <div class="animated-text">Hermès</div>
+            <div class="animated-text">Adidas</div>
+            <div class="animated-text">Prada</div>
+            <div class="animated-text">Google</div>
+            <div class="animated-text">Polestar</div>
+            <div class="animated-text">Balenciaga</div>
+            <div class="animated-text">Audi</div>
+            <div class="animated-text">Valentino</div>
+            <div class="animated-text">Samsung</div>
+            <div class="animated-text">Bottega Veneta</div>
+            <div class="animated-text">Sony</div>
+            <div class="animated-text">Aesop</div>
+            <div class="animated-text">Dior</div>
+            <div class="animated-text">Porsche</div>
+            <div class="animated-text">Microsoft</div>
+            <div class="animated-text">Lexus</div>
+            <div class="animated-text">Mercedes-Benz</div>
+            <div class="animated-text">Huawei</div>
+          </div>
+        </div>
+        <div class="dw-spacer-bottom"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 第三區塊：Strategy 灰色文字版塊 ================= -->
+  <section class="better-off-section">
+    <div class="bo-header">
+      <h2 class="bo-title anim-bo-title">Strategy, Design, and Development. Lightning-fast, lean, and sensibly priced.
+      </h2>
+      <br>
+      <h2 class="bo-title anim-bo-title">Get max value and velocity in a turnkey platform that promises your brand will
+        be Better Off&reg;.</h2>
+    </div>
+    <div class="bo-grid">
+      <div class="bo-col-left anim-bo-elem">
+        <span>&#9679; CREATIVE AS IT SHOULD BE</span>
+      </div>
+      <div class="bo-col-center">
+        <div class="bo-item anim-bo-elem">
+          <h3>Fully Loaded</h3>
+          <p>From complex strategies to intricate identities to bleeding-edge digital development, every project is now
+            possible with a click.</p>
+        </div>
+        <div class="bo-item anim-bo-elem">
+          <h3>Flat Fee Flex</h3>
+          <p>We don't haggle over hours. Our plans are nimble and allow plenty of wiggle room to account for shifting
+            priorities and rethinking.</p>
+        </div>
+        <div class="bo-item anim-bo-elem">
+          <h3>Creative Control</h3>
+          <p>We don't want our clients to ever feel trapped or locked into anything. If you want to pump the brakes or
+            step on the gas, feel free to pause, cancel, or upgrade anytime.</p>
+        </div>
+      </div>
+      <div class="bo-col-right anim-bo-elem">
+        <span>(BO&reg; &mdash; 01)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 第四區塊：滿版圖片左刷揭示特效 ================= -->
+  <section class="wipe-reveal-section">
+    <!-- 固定文字層 -->
+    <div class="wipe-global-text">
+      <h2>ECOMMERCE<br>INNOVATION<br>AGENCY</h2>
+    </div>
+    <div class="wipe-wrapper">
+      <!-- Panel 1: 底層 -->
+      <div class="wipe-panel panel-1">
+        <img src="images/slider1.jpg" alt="Image 1">
+      </div>
+      <!-- Panel 2: 中層 -->
+      <div class="wipe-panel panel-2">
+        <img src="images/slider2.jpg" alt="Image 2">
+      </div>
+      <!-- Panel 3: 頂層 -->
+      <div class="wipe-panel panel-3">
+        <img src="images/slider3.jpg" alt="Image 3">
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GSAP 動畫邏輯 ================= -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      gsap.registerPlugin(ScrollTrigger);
+
+      /* =====================================================
+         1. 第一區塊開場入場動畫
+         ===================================================== */
+      const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
+      tl.fromTo(".nh-big-text div", { y: "100%", opacity: 0 }, { y: "0%", opacity: 1, duration: 1.2, stagger: 0.1 });
+      tl.fromTo(".nh-top-bar, .nh-info-row, .nh-bottom-row", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 1, stagger: 0.1 }, "-=0.8");
+
+      /* =====================================================
+         2. 第二區塊：影片 zoom-in 滿版（pinned scrub）
+         ===================================================== */
+      let tlZoom = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".new-hero-container",
+          start: "top top",
+          end: "+=150%",
+          pin: true,
+          scrub: 1,
+        }
+      });
+      tlZoom.to(".new-hero-container", { padding: 0, ease: "power2.inOut" }, 0);
+      tlZoom.to(".nh-main-wrapper", { marginTop: 0, ease: "power2.inOut" }, 0);
+      tlZoom.to(".nh-video-box", { width: "100vw", height: "100vh", margin: 0, ease: "power2.inOut" }, 0);
+      
+      tlZoom.to(".nh-fly-left",  { width: 0, x: "-30vw", opacity: 0, ease: "power2.inOut" }, 0);
+      tlZoom.to(".nh-fly-right", { width: 0, x: "30vw",  opacity: 0, ease: "power2.inOut" }, 0);
+      
+      tlZoom.to(".nh-top-bar, .nh-divider, .nh-info-row, .nh-bottom-row", { opacity: 0, ease: "power2.inOut" }, 0);
+
+      /* =====================================================
+         3. Better-off Section
+            進入時 zoom-in（整區塊從 scale 0.88 放大至 1）
+         ===================================================== */
+      gsap.fromTo(".better-off-section", 
+        { scale: 0.88, opacity: 0, transformOrigin: "center center" },
+        {
+          scale: 1,
+          opacity: 1,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".better-off-section",
+            start: "top 85%",
+            end: "top 20%",
+            scrub: 1.2,
+          }
+        }
+      );
+
+      // Better-off 文字內容交錯浮現
+      const tlBo = gsap.timeline({
+        scrollTrigger: { trigger: ".better-off-section", start: "top 65%" }
+      });
+      tlBo.fromTo(".anim-bo-title",
+        { y: 60, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1.1, stagger: 0.18, ease: "power3.out" }
+      );
+      tlBo.fromTo(".anim-bo-elem",
+        { y: 35, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1, stagger: 0.12, ease: "power3.out" },
+        "-=0.6"
+      );
+
+      /* =====================================================
+         4. Wipe Reveal Section
+            圖片進場時 zoom-out（scale 1.3 → 1.0）視差感
+         ===================================================== */
+      let wipeTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".wipe-reveal-section",
+          start: "top top",
+          end: "+=200%",
+          pin: true,
+          scrub: 1,
+        }
+      });
+
+      // 圖片初始 scale ：放大，以便滑動時 zoom-out
+      gsap.set(".wipe-panel img", { scale: 1.3 });
+      gsap.set(".panel-2 img", { xPercent: 12 });
+      gsap.set(".panel-3 img", { xPercent: 12 });
+
+      // Panel 2 左刷入 + zoom-out
+      wipeTl
+        .to(".panel-2", { clipPath: "inset(0% 0% 0% 0%)", ease: "none" })
+        .to(".panel-2 img", { xPercent: 0, scale: 1.0, ease: "none" }, "<")
+        .to(".panel-1 img", { xPercent: -12, scale: 1.0, ease: "none" }, "<");
+
+      // Panel 3 左刷入 + zoom-out
+      wipeTl
+        .to(".panel-3", { clipPath: "inset(0% 0% 0% 0%)", ease: "none" })
+        .to(".panel-3 img", { xPercent: 0, scale: 1.0, ease: "none" }, "<")
+        .to(".panel-2 img", { xPercent: -12, ease: "none" }, "<");
+
+      /* =====================================================
+         5. Dual Wave Section — zoom-in 進場
+             整個 section 從 scale(0.92) 放大至 scale(1)
+         ===================================================== */
+      gsap.fromTo(".dual-wave-section",
+        { scale: 0.92, opacity: 0 },
+        {
+          scale: 1,
+          opacity: 1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: ".dual-wave-section",
+            start: "top 90%",
+            end: "top 30%",
+            scrub: 1,
+          }
+        }
+      );
+
+      /* =====================================================
+         6. 背景影片 — 隨滾動慢慢 scale-up
+             增加空間深度感
+         ===================================================== */
+      gsap.to(".bg-video", {
+        scrollTrigger: {
+          trigger: "body",
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 2,
+        },
+        scale: 1.15,
+        ease: "none",
+        transformOrigin: "center center",
+      });
+
+      window.addEventListener('resize', () => ScrollTrigger.refresh());
+    });
+  </script>
+
+  <!-- ================= Dual Wave Animation JS ================= -->
+  <script>
+    // ---- Dual Wave: Image Preloader ----
+    const dwImageCache = new Map();
+    const dwPreloadImages = (containerSelector) => {
+      return new Promise((resolve) => {
+        const container = document.querySelector(containerSelector);
+        if (!container) { resolve(); return; }
+        const imagesToLoad = new Set();
+        container.querySelectorAll('[data-image]').forEach((el) => {
+          if (el.dataset.image) imagesToLoad.add(el.dataset.image);
+        });
+        container.querySelectorAll('img').forEach((img) => {
+          const src = img.getAttribute('src');
+          if (src) imagesToLoad.add(src);
+        });
+        if (imagesToLoad.size === 0) { resolve(); return; }
+        let loaded = 0;
+        const total = imagesToLoad.size;
+        imagesToLoad.forEach((src) => {
+          if (dwImageCache.has(src)) { if (++loaded === total) resolve(); return; }
+          const img = new Image();
+          img.onload = () => { dwImageCache.set(src, img); if (++loaded === total) resolve(); };
+          img.onerror = () => { if (++loaded === total) resolve(); };
+          img.src = src;
+        });
+      });
+    };
+
+    // ---- Dual Wave: Animation Class ----
+    class DualWaveAnimation {
+      constructor(wrapper, options = {}) {
+        this.wrapper = wrapper instanceof Element ? wrapper : document.querySelector(wrapper);
+        const waveNumber = this.wrapper?.dataset.waveNumber ? parseFloat(this.wrapper.dataset.waveNumber) : 2;
+        const waveSpeed  = this.wrapper?.dataset.waveSpeed  ? parseFloat(this.wrapper.dataset.waveSpeed)  : 1;
+        this.config = { waveNumber, waveSpeed, ...options };
+        this.currentImage = null;
+      }
+      init() {
+        if (!this.wrapper) return;
+        this.leftColumn  = this.wrapper.querySelector('.wave-column-left');
+        this.rightColumn = this.wrapper.querySelector('.wave-column-right');
+        if (!this.leftColumn || !this.rightColumn) return;
+        this.setupAnimation();
+      }
+      setupAnimation() {
+        this.leftTexts  = gsap.utils.toArray(this.leftColumn.querySelectorAll('.animated-text'));
+        this.rightTexts = gsap.utils.toArray(this.rightColumn.querySelectorAll('.animated-text'));
+        this.thumbnail  = this.wrapper.querySelector('.image-thumbnail');
+        if (!this.leftTexts.length || !this.rightTexts.length) return;
+        this.leftQuickSetters  = this.leftTexts.map(t  => gsap.quickTo(t,  'x', { duration: 0.6, ease: 'power4.out' }));
+        this.rightQuickSetters = this.rightTexts.map(t => gsap.quickTo(t, 'x', { duration: 0.6, ease: 'power4.out' }));
+        this.calculateRanges();
+        this.setInitialPositions(this.leftTexts,  this.leftRange,   1);
+        this.setInitialPositions(this.rightTexts, this.rightRange, -1);
+        this.setupScrollTrigger();
+        this.resizeHandler = () => this.calculateRanges();
+        window.addEventListener('resize', this.resizeHandler);
+      }
+      calculateRanges() {
+        const maxL = Math.max(...this.leftTexts.map(t  => t.offsetWidth));
+        const maxR = Math.max(...this.rightTexts.map(t => t.offsetWidth));
+        this.leftRange  = { minX: 0, maxX: this.leftColumn.offsetWidth  - maxL };
+        this.rightRange = { minX: 0, maxX: this.rightColumn.offsetWidth - maxR };
+      }
+      setInitialPositions(texts, range, multiplier) {
+        const rangeSize = range.maxX - range.minX;
+        texts.forEach((text, index) => {
+          const phase    = this.config.waveNumber * index - Math.PI / 2;
+          const progress = (Math.sin(phase) + 1) / 2;
+          gsap.set(text, { x: (range.minX + progress * rangeSize) * multiplier });
+        });
+      }
+      setupScrollTrigger() {
+        this.scrollTrigger = ScrollTrigger.create({
+          trigger: this.wrapper,
+          start: 'top bottom',
+          end: 'bottom top',
+          onUpdate: (self) => this.handleScroll(self),
+        });
+      }
+      handleScroll(self) {
+        const p = self.progress;
+        const ci = this.findClosestToViewportCenter();
+        this.updateColumn(this.leftTexts,  this.leftQuickSetters,  this.leftRange,  p, ci,  1);
+        this.updateColumn(this.rightTexts, this.rightQuickSetters, this.rightRange, p, ci, -1);
+        this.updateThumbnail(this.thumbnail, this.leftTexts[ci]);
+      }
+      updateColumn(texts, setters, range, progress, focusedIndex, multiplier) {
+        const rangeSize = range.maxX - range.minX;
+        texts.forEach((text, index) => {
+          setters[index](this.calculateWavePosition(index, progress, range.minX, rangeSize) * multiplier);
+          text.classList.toggle('focused', index === focusedIndex);
+        });
+      }
+      updateThumbnail(thumbnail, focusedText) {
+        if (!thumbnail || !focusedText) return;
+        const newImage = focusedText.dataset.image;
+        if (newImage && this.currentImage !== newImage) {
+          this.currentImage = newImage;
+          thumbnail.src = newImage;
+        }
+        const wrapperRect    = this.wrapper.getBoundingClientRect();
+        const viewportCenter = window.innerHeight / 2;
+        const thumbH = thumbnail.offsetHeight;
+        const idealY = viewportCenter - wrapperRect.top - thumbH / 2;
+        const clampedY = Math.max(-thumbH / 2, Math.min(this.wrapper.offsetHeight - thumbH / 2, idealY));
+        gsap.set(thumbnail, { y: clampedY });
+      }
+      calculateWavePosition(index, progress, minX, range) {
+        const phase = this.config.waveNumber * index + this.config.waveSpeed * progress * Math.PI * 2 - Math.PI / 2;
+        return minX + ((Math.sin(phase) + 1) / 2) * range;
+      }
+      findClosestToViewportCenter() {
+        const vc = window.innerHeight / 2;
+        let closestIndex = 0, minDist = Infinity;
+        this.leftTexts.forEach((text, index) => {
+          const rect = text.getBoundingClientRect();
+          const dist = Math.abs(rect.top + rect.height / 2 - vc);
+          if (dist < minDist) { minDist = dist; closestIndex = index; }
+        });
+        return closestIndex;
+      }
+      destroy() {
+        if (this.scrollTrigger) this.scrollTrigger.kill();
+        if (this.resizeHandler) window.removeEventListener('resize', this.resizeHandler);
+      }
+    }
+
+    // ---- Dual Wave: Init ----
+    const dwWrapper = document.querySelector('.dual-wave-wrapper');
+    if (dwWrapper) {
+      const dwAnim = new DualWaveAnimation(dwWrapper);
+      dwPreloadImages('.dual-wave-section').then(() => {
+        dwAnim.init();
+        ScrollTrigger.refresh();
+      });
+    }
+  </script>
+
+  <!-- ================= Lenis Smooth Scroll Init ================= -->
+  <script>
+    // Initialize Lenis smooth scroll
+    const lenis = new Lenis({
+      duration: 1.4,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      smoothTouch: false,
+      syncTouch: false,
+    });
+
+    // Sync Lenis scroll position into GSAP ScrollTrigger
+    lenis.on('scroll', () => ScrollTrigger.update());
+
+    // Run Lenis via native rAF (most reliable approach)
+    function dwRafLoop(time) {
+      lenis.raf(time);
+      requestAnimationFrame(dwRafLoop);
+    }
+    requestAnimationFrame(dwRafLoop);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="lenis">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Award-Winning Portfolio - Seamless Intro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@1,500;1,600&family=Syncopate:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../demo1/src/dual-wave/style.css" />
+    
+    <!-- GSAP 核心與 ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Lenis (Smooth Scroll) -->
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+
+    <style>
+        /* 🎨 全域變數與頂級緩動曲線 */
+        :root {
+            --ui-bg: #ffffff;
+            --ui-text: #050505;
+            --cursor-color: #0022FF;
+            --ease-main: cubic-bezier(0.19, 1, 0.22, 1);
+            --progress: 0;
+            --cursor-x: -100px;
+            --cursor-y: -100px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        html { scrollbar-gutter: stable; }
+
+        html.lenis { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto; }
+        .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+        .lenis.lenis-stopped { overflow: hidden; }
+
+        /* --- 自訂延遲游標 --- */
+        .custom-cursor {
+            position: fixed;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 999999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform: translate(var(--cursor-x), var(--cursor-y));
+            will-change: transform;
+        }
+
+        .cursor__bullet {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: var(--cursor-color);
+            border-radius: 30px;
+            transition: width 0.4s var(--ease-main), height 0.4s var(--ease-main);
+        }
+
+        .cursor__text {
+            position: relative;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            white-space: nowrap;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: opacity 0.4s var(--ease-main), transform 0.4s var(--ease-main);
+        }
+
+        .custom-cursor.expanded .cursor__bullet {
+            width: 140px;
+            height: 32px;
+        }
+        .custom-cursor.expanded .cursor__text {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* --- 導覽列與 Logo --- */
+        .fixed-logo {
+            position: fixed;
+            top: 36px; left: 48px;
+            z-index: 100;
+            mix-blend-mode: difference;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.02em;
+        }
+
+        .logo__dot {
+            width: 6px; height: 6px;
+            background-color: var(--cursor-color);
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .logo__dash {
+            display: inline-block;
+            width: 12px; height: 2px;
+            background-color: #fff;
+            margin: 0 6px;
+            transition: width 0.5s var(--ease-main);
+            will-change: width;
+        }
+        .logo:hover .logo__dash { width: 32px; }
+
+        .fixed-nav {
+            position: fixed;
+            bottom: 48px; left: 48px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            mix-blend-mode: difference;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+        }
+
+        .line-mask {
+            display: inline-flex;
+            flex-direction: column;
+            height: 1.2em;
+            overflow: hidden;
+        }
+
+        .line {
+            line-height: 1.2em;
+            transition: transform 0.5s var(--ease-main);
+            will-change: transform;
+        }
+        .nav-link:hover .line { transform: translateY(-100%); }
+
+        /* --- 核心容器與進場黑幕 --- */
+        .scroll-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .intro-curtain {
+            position: fixed;
+            inset: 0;
+            background-color: #050505;
+            z-index: 40;
+            pointer-events: none;
+        }
+
+        /* --- 動態輪播前導文字 (Rolling Intro) --- */
+        .intro-text-wrapper {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            pointer-events: none;
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(32px, 4vw, 56px);
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: -0.02em;
+            will-change: transform, opacity, filter;
+            transform-origin: center center;
+        }
+
+        .intro-static {
+            display: inline-block;
+        }
+
+        .intro-rolling {
+            height: 1.2em;
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+        }
+
+        .intro-rolling-inner {
+            display: flex;
+            flex-direction: column;
+            will-change: transform;
+        }
+
+        .intro-rolling-inner span {
+            line-height: 1.2em;
+            padding: 0 4px;
+        }
+
+        /* --- 畫面正中央的固定白框與進度條 --- */
+        .center-bar-container {
+            position: fixed; 
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px;       
+            height: 2px;        
+            background-color: rgba(255,255,255,0.15);
+            z-index: 50;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+            will-change: width, height, background-color;
+            opacity: 0; 
+        }
+
+        .loading-counter {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Syncopate', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.15em;
+            white-space: nowrap;
+            opacity: 0;
+            will-change: opacity, transform;
+        }
+
+        .loading-counter span {
+            display: inline-block;
+            min-width: 2ch;
+            text-align: right;
+        }
+
+        .center-bar-loader {
+            position: absolute;
+            top: 0; left: 0;
+            height: 100%; width: 0%;
+            background-color: #ffffff;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+            z-index: 2;
+            will-change: width, opacity;
+        }
+
+        .center-bar-content {
+            opacity: 0;
+            width: 100%; height: 100%;
+            position: relative;
+        }
+
+        .cb-text {
+            position: absolute;
+            font-size: 9px;
+            font-weight: 800;
+            color: var(--ui-text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            height: 12px;
+            overflow: hidden;
+        }
+
+        .cb-top-left { top: 16px; left: 24px; }
+        .cb-bottom-left { bottom: 16px; left: 24px; }
+        .cb-top-right { top: 16px; right: 24px; }
+        .cb-bottom-right { bottom: 16px; right: 24px; }
+
+        .panel__scroller {
+            display: flex;
+            flex-direction: column;
+            transform: translateY(calc(var(--progress) * -80%));
+            will-change: transform;
+        }
+
+        .panel__scroller > div {
+            height: 12px;
+            line-height: 12px;
+        }
+
+        .cb-center {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 340px;  
+            height: 130px; 
+            overflow: hidden;
+            clip-path: url(#nd-mask);
+            -webkit-clip-path: url(#nd-mask);
+        }
+
+        .panel__thumbs__scroller {
+            display: flex;
+            flex-direction: column;
+            height: 500%; 
+            transform: translateY(calc(var(--progress) * -80%));
+            will-change: transform;
+        }
+
+        .thumb-img {
+            width: 100%;
+            height: 20%; 
+            object-fit: cover;
+            filter: blur(5px);
+            opacity: 0.6;
+            transition: filter 0.5s var(--ease-main), opacity 0.5s var(--ease-main);
+        }
+
+        .thumb-img.is-active {
+            filter: blur(0px);
+            opacity: 1;
+        }
+
+        .section {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .section-bg {
+            position: absolute;
+            top: -15vh; left: 0;
+            width: 100%;
+            height: 130vh; 
+            object-fit: cover;
+            z-index: 1;
+            will-change: transform;
+        }
+
+        .section-overlay {
+            position: absolute; inset: 0;
+            background-color: rgba(0, 0, 0, 0.35);
+            z-index: 2;
+        }
+
+</style>
+</head>
+<body>
+
+    <!-- SVG 文字遮罩定義 -->
+    <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+        <defs>
+            <clipPath id="nd-mask">
+                <text x="170" y="65" dy="0.35em" font-family="'Syncopate', sans-serif" font-size="110px" font-weight="700" text-anchor="middle" letter-spacing="-0.05em">N-D</text>
+            </clipPath>
+        </defs>
+    </svg>
+
+    <!-- 開場黑幕 -->
+    <div class="intro-curtain js-curtain"></div>
+
+    <!-- 預載英文前導文字 (Rolling Text Intro) -->
+    <div class="intro-text-wrapper js-intro-text-wrapper">
+        <div class="intro-static">Digital</div>
+        <div class="intro-rolling">
+            <div class="intro-rolling-inner js-rolling-text">
+                <span>Pixel</span>
+                <span>Visual</span>
+                <span>Dynamic</span>
+                <span>Experience</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自訂延遲光標 -->
+    <div class="custom-cursor js-cursor">
+        <div class="cursor__bullet"></div>
+        <span class="cursor__text js-cursor-text">KEEP SCROLLING</span>
+    </div>
+
+    <!-- 頂部 Logo -->
+    <div class="fixed-logo logo js-ui-elem" data-cursor="DISCOVER">
+        <span class="logo__dot"></span>
+        <span class="logo__char">P</span>
+        <span class="logo__dash"></span>
+        <span class="logo__char">V</span>
+    </div>
+
+    <!-- 側邊導航 -->
+    <div class="fixed-nav js-ui-elem">
+        <a href="#" class="nav-link" data-cursor="CLICK">
+            <span class="line-mask"><span class="line">WORKS</span><span class="line clone">WORKS</span></span>
+        </a>
+        <a href="#" class="nav-link" data-cursor="CLICK">
+            <span class="line-mask"><span class="line">ABOUT</span><span class="line clone">ABOUT</span></span>
+        </a>
+        <a href="#" class="nav-link" data-cursor="CLICK">
+            <span class="line-mask"><span class="line">CONTACT</span><span class="line clone">CONTACT</span></span>
+        </a>
+    </div>
+
+    <!-- 畫面正中央的固定白框 -->
+    <div class="center-bar-container js-center-bar" data-cursor="WAIT">
+        
+        <div class="loading-counter js-counter">[ <span class="js-counter-num">00</span> ]</div>
+        <div class="center-bar-loader js-bar-loader"></div>
+
+        <div class="center-bar-content js-bar-content">
+            <div class="cb-text cb-top-left">
+                <div class="panel__scroller">
+                    <div>01</div><div>02</div><div>03</div><div>04</div><div>05</div>
+                </div>
+            </div>
+            
+            <div class="cb-text cb-bottom-left">
+                <div class="panel__scroller">
+                    <div>N23 — BALANCE YOUR HEALTH</div>
+                    <div>LA VIARTE COLLECTION</div>
+                    <div>ZIJA — PREMIUM SERUM</div>
+                    <div>DESPERADOS — THE BEER WITH A VIBE</div>
+                    <div>MECHANICAL BODY</div>
+                </div>
+            </div>
+            
+            <div class="cb-center">
+                <div class="panel__thumbs__scroller">
+                    <img class="thumb-img js-thumb" src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=800" alt="">
+                    <img class="thumb-img js-thumb" src="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&q=80&w=800" alt="">
+                    <img class="thumb-img js-thumb" src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=800" alt="">
+                    <img class="thumb-img js-thumb" src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=800" alt="">
+                    <img class="thumb-img js-thumb" src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&q=80&w=800" alt="">
+                </div>
+            </div>
+
+            <div class="cb-text cb-top-right">
+                <div style="line-height: 12px;">05</div>
+            </div>
+            
+            <div class="cb-text cb-bottom-right">
+                <div class="panel__scroller">
+                    <div>STRATEGY, BRANDING, PACK</div>
+                    <div>BRANDING, PACK</div>
+                    <div>BRANDING, PACK</div>
+                    <div>BRANDING, ADV</div>
+                    <div>STRATEGY, BRANDING</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 核心捲動容器 -->
+    <div class="scroll-wrapper js-scroll-wrapper">
+        <section class="section">
+            <img class="section-bg js-first-bg" src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=1920" alt="bg">
+            <div class="section-overlay"></div>
+        </section>
+
+        <section class="section">
+            <img class="section-bg" src="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&q=80&w=1920" alt="bg">
+            <div class="section-overlay"></div>
+        </section>
+
+        <section class="section">
+            <img class="section-bg" src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=1920" alt="bg">
+            <div class="section-overlay"></div>
+        </section>
+
+        <section class="section">
+            <img class="section-bg" src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=1920" alt="bg">
+            <div class="section-overlay"></div>
+        </section>
+
+        <section class="section">
+            <img class="section-bg" src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&q=80&w=1920" alt="bg">
+            <div class="section-overlay"></div>
+        </section>
+    </div>
+
+    <!-- ================= Dual Wave Text Animation Section ================= -->
+    <section class="dual-wave-section" style="position: relative; width: 100vw; background-color: #050505; color: #fff; z-index: 10; padding: 20vh 0; overflow: hidden;">
+      <div id="dw-smooth-content" style="padding: 0 1.5rem;">
+        <div class="spacer"></div>
+        <div
+          class="dual-wave-wrapper"
+          data-animation="dual-wave"
+          data-wave-number="12"
+          data-wave-speed="1"
+        >
+          <div class="wave-column wave-column-left">
+            <div class="animated-text" data-image="../demo1/public/tesla.webp">Volt R2</div>
+            <!-- Tesla -->
+            <div class="animated-text" data-image="../demo1/public/chanel.webp">Éclat</div>
+            <!-- Chanel -->
+            <div class="animated-text" data-image="../demo1/public/apple.webp">Project Ion</div>
+            <!-- Apple -->
+            <div class="animated-text" data-image="../demo1/public/BMW.webp">AeroLine</div>
+            <!-- BMW -->
+            <div class="animated-text" data-image="../demo1/public/YSL.webp">Série Noir</div>
+            <!-- Saint Laurent -->
+            <div class="animated-text" data-image="../demo1/public/nike.webp">UltraRun</div>
+            <!-- Nike -->
+            <div class="animated-text" data-image="../demo1/public/hermes.webp">Atelier 03</div>
+            <!-- Hermès -->
+            <div class="animated-text" data-image="../demo1/public/adidas.webp">Pulse One</div>
+            <!-- Adidas -->
+            <div class="animated-text" data-image="../demo1/public/prada.webp">Linea 24</div>
+            <!-- Prada -->
+            <div class="animated-text" data-image="../demo1/public/google.webp">
+              Echo Series
+            </div>
+            <!-- Google -->
+            <div class="animated-text" data-image="../demo1/public/polestar.webp">Zero</div>
+            <!-- Polestar -->
+            <div class="animated-text" data-image="../demo1/public/balenciaga.webp">
+              Shift/Black
+            </div>
+            <!-- Balenciaga -->
+            <div class="animated-text" data-image="../demo1/public/audi.webp">Solar Drift</div>
+            <!-- Audi -->
+            <div class="animated-text" data-image="../demo1/public/valentino.webp">Nº 27</div>
+            <!-- Valentino -->
+            <div class="animated-text" data-image="../demo1/public/samsung.webp">Mode/3</div>
+            <!-- Samsung -->
+            <div class="animated-text" data-image="../demo1/public/bottega.webp">Pure Form</div>
+            <!-- Bottega Veneta -->
+            <div class="animated-text" data-image="../demo1/public/sony.webp">Edge</div>
+            <!-- Sony -->
+            <div class="animated-text" data-image="../demo1/public/aesop.webp">Stillwater</div>
+            <!-- Aesop -->
+            <div class="animated-text" data-image="../demo1/public/dior.webp">Parfum Nº8</div>
+            <!-- Dior -->
+            <div class="animated-text" data-image="../demo1/public/porsche.webp">Vantage</div>
+            <!-- Porsche -->
+            <div class="animated-text" data-image="../demo1/public/microsoft.webp">Core</div>
+            <!-- Microsoft -->
+            <div class="animated-text" data-image="../demo1/public/lexus.webp">
+              Archive Green
+            </div>
+            <!-- Lexus -->
+            <div class="animated-text" data-image="../demo1/public/mercedes.webp">
+              Rosso Linea
+            </div>
+            <!-- Mercedes-Benz -->
+            <div class="animated-text" data-image="../demo1/public/huawei.webp">A-17</div>
+            <!-- Huawei -->
+            <div class="animated-text" data-image="../demo1/public/tesla.webp">Volt R2</div>
+            <!-- Tesla -->
+            <div class="animated-text" data-image="../demo1/public/chanel.webp">Éclat</div>
+            <!-- Chanel -->
+            <div class="animated-text" data-image="../demo1/public/apple.webp">Project Ion</div>
+            <!-- Apple -->
+            <div class="animated-text" data-image="../demo1/public/BMW.webp">AeroLine</div>
+            <!-- BMW -->
+            <div class="animated-text" data-image="../demo1/public/YSL.webp">Série Noir</div>
+            <!-- Saint Laurent -->
+            <div class="animated-text" data-image="../demo1/public/nike.webp">UltraRun</div>
+            <!-- Nike -->
+            <div class="animated-text" data-image="../demo1/public/hermes.webp">Atelier 03</div>
+            <!-- Hermès -->
+            <div class="animated-text" data-image="../demo1/public/adidas.webp">Pulse One</div>
+            <!-- Adidas -->
+            <div class="animated-text" data-image="../demo1/public/prada.webp">Linea 24</div>
+            <!-- Prada -->
+            <div class="animated-text" data-image="../demo1/public/google.webp">
+              Echo Series
+            </div>
+            <!-- Google -->
+            <div class="animated-text" data-image="../demo1/public/polestar.webp">Zero</div>
+            <!-- Polestar -->
+            <div class="animated-text" data-image="../demo1/public/balenciaga.webp">
+              Shift/Black
+            </div>
+            <!-- Balenciaga -->
+            <div class="animated-text" data-image="../demo1/public/audi.webp">Solar Drift</div>
+            <!-- Audi -->
+            <div class="animated-text" data-image="../demo1/public/valentino.webp">Nº 27</div>
+            <!-- Valentino -->
+            <div class="animated-text" data-image="../demo1/public/samsung.webp">Mode/3</div>
+            <!-- Samsung -->
+            <div class="animated-text" data-image="../demo1/public/bottega.webp">Pure Form</div>
+            <!-- Bottega Veneta -->
+            <div class="animated-text" data-image="../demo1/public/sony.webp">Edge</div>
+            <!-- Sony -->
+            <div class="animated-text" data-image="../demo1/public/aesop.webp">Stillwater</div>
+            <!-- Aesop -->
+            <div class="animated-text" data-image="../demo1/public/dior.webp">Parfum Nº8</div>
+            <!-- Dior -->
+            <div class="animated-text" data-image="../demo1/public/porsche.webp">Vantage</div>
+            <!-- Porsche -->
+            <div class="animated-text" data-image="../demo1/public/microsoft.webp">Core</div>
+            <!-- Microsoft -->
+            <div class="animated-text" data-image="../demo1/public/lexus.webp">
+              Archive Green
+            </div>
+            <!-- Lexus -->
+            <div class="animated-text" data-image="../demo1/public/mercedes.webp">
+              Rosso Linea
+            </div>
+            <!-- Mercedes-Benz -->
+            <div class="animated-text" data-image="../demo1/public/huawei.webp">A-17</div>
+            <!-- Huawei -->
+          </div>
+          <div class="image-thumbnail-wrapper">
+            <img src="../demo1/public/tesla.webp" alt="Campaign Image" class="image-thumbnail" />
+          </div>
+          <div class="wave-column wave-column-right">
+            <div class="animated-text">Tesla</div>
+            <div class="animated-text">Chanel</div>
+            <div class="animated-text">Apple</div>
+            <div class="animated-text">BMW</div>
+            <div class="animated-text">Saint Laurent</div>
+            <div class="animated-text">Nike</div>
+            <div class="animated-text">Hermès</div>
+            <div class="animated-text">Adidas</div>
+            <div class="animated-text">Prada</div>
+            <div class="animated-text">Google</div>
+            <div class="animated-text">Polestar</div>
+            <div class="animated-text">Balenciaga</div>
+            <div class="animated-text">Audi</div>
+            <div class="animated-text">Valentino</div>
+            <div class="animated-text">Samsung</div>
+            <div class="animated-text">Bottega Veneta</div>
+            <div class="animated-text">Sony</div>
+            <div class="animated-text">Aesop</div>
+            <div class="animated-text">Dior</div>
+            <div class="animated-text">Porsche</div>
+            <div class="animated-text">Microsoft</div>
+            <div class="animated-text">Lexus</div>
+            <div class="animated-text">Mercedes-Benz</div>
+            <div class="animated-text">Huawei</div>
+            <div class="animated-text">Tesla</div>
+            <div class="animated-text">Chanel</div>
+            <div class="animated-text">Apple</div>
+            <div class="animated-text">BMW</div>
+            <div class="animated-text">Saint Laurent</div>
+            <div class="animated-text">Nike</div>
+            <div class="animated-text">Hermès</div>
+            <div class="animated-text">Adidas</div>
+            <div class="animated-text">Prada</div>
+            <div class="animated-text">Google</div>
+            <div class="animated-text">Polestar</div>
+            <div class="animated-text">Balenciaga</div>
+            <div class="animated-text">Audi</div>
+            <div class="animated-text">Valentino</div>
+            <div class="animated-text">Samsung</div>
+            <div class="animated-text">Bottega Veneta</div>
+            <div class="animated-text">Sony</div>
+            <div class="animated-text">Aesop</div>
+            <div class="animated-text">Dior</div>
+            <div class="animated-text">Porsche</div>
+            <div class="animated-text">Microsoft</div>
+            <div class="animated-text">Lexus</div>
+            <div class="animated-text">Mercedes-Benz</div>
+            <div class="animated-text">Huawei</div>
+          </div>
+        </div>
+        <div class="spacer-bottom"></div>
+      </div>
+    </section>
+
+
+    <script>
+      // Global image cache to prevent garbage collection and re-fetching
+      const imageCache = new Map();
+
+      const preloadImages = (containerSelector) => {
+        return new Promise((resolve) => {
+          const container = document.querySelector(containerSelector);
+
+          if (!container) {
+            resolve();
+            return;
+          }
+
+          const imagesToLoad = new Set();
+          container.querySelectorAll('[data-image]').forEach((el) => {
+            const imgSrc = el.dataset.image;
+            if (imgSrc) imagesToLoad.add(imgSrc);
+          });
+          container.querySelectorAll('img').forEach((img) => {
+            const imgSrc = img.getAttribute('src');
+            if (imgSrc) imagesToLoad.add(imgSrc);
+          });
+
+          if (imagesToLoad.size === 0) {
+            resolve();
+            return;
+          }
+
+          let loaded = 0;
+          const total = imagesToLoad.size;
+
+          imagesToLoad.forEach((src) => {
+            if (imageCache.has(src)) {
+              loaded++;
+              if (loaded === total) resolve();
+              return;
+            }
+
+            const img = new Image();
+
+            img.onload = () => {
+              imageCache.set(src, img);
+              loaded++;
+              if (loaded === total) resolve();
+            };
+
+            img.onerror = () => {
+              loaded++;
+              if (loaded === total) resolve();
+            };
+
+            img.src = src;
+          });
+        });
+      };
+
+      class DualWaveAnimation {
+        constructor(wrapper, options = {}) {
+          this.wrapper = wrapper instanceof Element ? wrapper : document.querySelector(wrapper);
+          const waveNumber = this.wrapper?.dataset.waveNumber ? parseFloat(this.wrapper.dataset.waveNumber) : 2;
+          const waveSpeed = this.wrapper?.dataset.waveSpeed ? parseFloat(this.wrapper.dataset.waveSpeed) : 1;
+
+          this.config = {
+            waveNumber,
+            waveSpeed,
+            ...options,
+          };
+
+          this.currentImage = null;
+        }
+
+        init() {
+          if (!this.wrapper) return;
+          this.leftColumn = this.wrapper.querySelector(".wave-column-left");
+          this.rightColumn = this.wrapper.querySelector(".wave-column-right");
+
+          if (!this.leftColumn || !this.rightColumn) return;
+          this.setupAnimation();
+        }
+
+        setupAnimation() {
+          this.leftTexts = gsap.utils.toArray(this.leftColumn.querySelectorAll(".animated-text"));
+          this.rightTexts = gsap.utils.toArray(this.rightColumn.querySelectorAll(".animated-text"));
+          this.thumbnail = this.wrapper.querySelector(".image-thumbnail");
+
+          if (this.leftTexts.length === 0 || this.rightTexts.length === 0) return;
+
+          this.leftQuickSetters = this.leftTexts.map((text) =>
+            gsap.quickTo(text, "x", { duration: 0.6, ease: "power4.out" })
+          );
+          this.rightQuickSetters = this.rightTexts.map((text) =>
+            gsap.quickTo(text, "x", { duration: 0.6, ease: "power4.out" })
+          );
+
+          this.calculateRanges();
+          this.setInitialPositions(this.leftTexts, this.leftRange, 1);
+          this.setInitialPositions(this.rightTexts, this.rightRange, -1);
+
+          this.setupScrollTrigger();
+
+          this.resizeHandler = () => {
+            this.calculateRanges();
+          };
+          window.addEventListener("resize", this.resizeHandler);
+        }
+
+        calculateRanges() {
+          const maxLeftTextWidth = Math.max(...this.leftTexts.map((t) => t.offsetWidth));
+          const maxRightTextWidth = Math.max(...this.rightTexts.map((t) => t.offsetWidth));
+
+          this.leftRange = { minX: 0, maxX: this.leftColumn.offsetWidth - maxLeftTextWidth };
+          this.rightRange = { minX: 0, maxX: this.rightColumn.offsetWidth - maxRightTextWidth };
+        }
+
+        setInitialPositions(texts, range, multiplier) {
+          const rangeSize = range.maxX - range.minX;
+          texts.forEach((text, index) => {
+            const initialPhase = this.config.waveNumber * index - Math.PI / 2;
+            const initialWave = Math.sin(initialPhase);
+            const initialProgress = (initialWave + 1) / 2;
+            const startX = (range.minX + initialProgress * rangeSize) * multiplier;
+            gsap.set(text, { x: startX });
+          });
+        }
+
+        setupScrollTrigger() {
+          this.scrollTrigger = ScrollTrigger.create({
+            trigger: this.wrapper,
+            start: "top bottom",
+            end: "bottom top",
+            onUpdate: (self) => this.handleScroll(self),
+          });
+        }
+
+        handleScroll(self) {
+          const globalProgress = self.progress;
+          const closestIndex = this.findClosestToViewportCenter();
+
+          this.updateColumn(this.leftTexts, this.leftQuickSetters, this.leftRange, globalProgress, closestIndex, 1);
+          this.updateColumn(this.rightTexts, this.rightQuickSetters, this.rightRange, globalProgress, closestIndex, -1);
+
+          const focusedText = this.leftTexts[closestIndex];
+          this.updateThumbnail(this.thumbnail, focusedText);
+        }
+
+        updateColumn(texts, setters, range, progress, focusedIndex, multiplier) {
+          const rangeSize = range.maxX - range.minX;
+          texts.forEach((text, index) => {
+            const finalX = this.calculateWavePosition(index, progress, range.minX, rangeSize) * multiplier;
+            setters[index](finalX);
+            if (index === focusedIndex) {
+              text.classList.add("focused");
+            } else {
+              text.classList.remove("focused");
+            }
+          });
+        }
+
+        updateThumbnail(thumbnail, focusedText) {
+          if (!thumbnail || !focusedText) return;
+
+          let newImage = focusedText.dataset.image;
+          if (!newImage) {
+            const focusedIndex = this.rightTexts.indexOf(focusedText);
+            if (focusedIndex !== -1 && this.leftTexts[focusedIndex]) {
+              newImage = this.leftTexts[focusedIndex].dataset.image;
+            }
+          }
+
+          if (newImage && this.currentImage !== newImage) {
+            this.currentImage = newImage;
+            thumbnail.src = newImage;
+          }
+
+          const wrapperRect = this.wrapper.getBoundingClientRect();
+          const viewportCenter = window.innerHeight / 2;
+          const thumbnailHeight = thumbnail.offsetHeight;
+          const wrapperHeight = this.wrapper.offsetHeight;
+
+          const idealY = viewportCenter - wrapperRect.top - thumbnailHeight / 2;
+          const minY = -thumbnailHeight / 2;
+          const maxY = wrapperHeight - thumbnailHeight / 2;
+          const clampedY = Math.max(minY, Math.min(maxY, idealY));
+
+          gsap.set(thumbnail, { y: clampedY });
+        }
+
+        calculateWavePosition(index, globalProgress, minX, range) {
+          const phase = this.config.waveNumber * index + this.config.waveSpeed * globalProgress * Math.PI * 2 - Math.PI / 2;
+          const wave = Math.sin(phase);
+          const cycleProgress = (wave + 1) / 2;
+          return minX + cycleProgress * range;
+        }
+
+        findClosestToViewportCenter() {
+          const viewportCenter = window.innerHeight / 2;
+          let closestIndex = 0;
+          let minDistance = Infinity;
+
+          this.leftTexts.forEach((text, index) => {
+            const rect = text.getBoundingClientRect();
+            const elementCenter = rect.top + rect.height / 2;
+            const distance = Math.abs(elementCenter - viewportCenter);
+            if (distance < minDistance) {
+              minDistance = distance;
+              closestIndex = index;
+            }
+          });
+          return closestIndex;
+        }
+
+        destroy() {
+          if (this.scrollTrigger) this.scrollTrigger.kill();
+          if (this.resizeHandler) window.removeEventListener("resize", this.resizeHandler);
+        }
+      }
+        gsap.registerPlugin(ScrollTrigger);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // 📦 Lenis 平滑捲動
+            const lenis = new Lenis({
+                duration: 1.2,
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
+                smooth: true,
+            });
+            lenis.on('scroll', ScrollTrigger.update);
+            gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+            gsap.ticker.lagSmoothing(0);
+
+            window.scrollTo(0, 0); 
+            lenis.stop(); 
+
+            // -----------------------------------------------------
+            // 🎬 核心設計：Morphing Intro
+            // -----------------------------------------------------
+            gsap.set('.js-ui-elem', { y: 20, opacity: 0 }); 
+            gsap.set('.js-first-bg', { scale: 1.15, filter: 'blur(15px)' }); 
+            gsap.set('.js-rolling-text', { yPercent: 0 });
+            const progressObj = { val: 0 }; 
+
+            initScrollEffects();
+
+            const tlIntro = gsap.timeline({
+                onComplete: () => lenis.start() 
+            });
+
+            tlIntro
+            .to('.js-rolling-text', { yPercent: -25, duration: 0.6, ease: 'expo.inOut', delay: 0.5 })
+            .to('.js-rolling-text', { yPercent: -50, duration: 0.6, ease: 'expo.inOut', delay: 0.2 })
+            .to('.js-rolling-text', { yPercent: -75, duration: 0.6, ease: 'expo.inOut', delay: 0.2 })
+            .to('.js-intro-text-wrapper', {
+                scaleY: 0, scaleX: 0.5, opacity: 0, filter: 'blur(10px)', duration: 0.5, ease: 'expo.in', delay: 0.4
+            })
+            .fromTo('.js-center-bar', 
+                { opacity: 1, width: '0px' }, 
+                { width: '200px', duration: 0.6, ease: 'expo.out' }, "-=0.1" 
+            )
+            .fromTo('.js-counter', 
+                { opacity: 0, y: 10 }, 
+                { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, "-=0.2"
+            )
+            .to(progressObj, {
+                val: 100,
+                duration: 1.5,
+                ease: 'power4.inOut',
+                onUpdate: () => {
+                    let p = Math.round(progressObj.val);
+                    document.querySelector('.js-counter-num').innerText = (p < 10 ? '0' : '') + p;
+                    document.querySelector('.js-bar-loader').style.width = p + '%';
+                }
+            })
+            .to('.js-counter', { opacity: 0, y: -10, duration: 0.3, ease: 'power2.in' }) 
+            .to('.js-center-bar', { width: '80px', duration: 0.4, ease: 'back.in(1.5)' }, "-=0.3") 
+            .to('.js-center-bar', {
+                width: '65vw', height: '130px', backgroundColor: '#ffffff', duration: 0.9, ease: 'expo.out'
+            })
+            .to('.js-bar-loader', { opacity: 0, duration: 0.1 }, "-=0.9") 
+            .to('.js-bar-content', { opacity: 1, duration: 0.6 }, "-=0.4")
+            .to('.js-curtain', { opacity: 0, duration: 1.2, ease: 'power2.inOut' }, "-=1.0") 
+            .to('.js-first-bg', { scale: 1, filter: 'blur(0px)', duration: 1.8, ease: 'power3.out' }, "-=1.0") 
+            .to('.js-ui-elem', { y: 0, opacity: 1, duration: 1, stagger: 0.1, ease: 'power3.out' }, "-=1.2");
+
+
+            // 📦 游標邏輯
+            const cursor = document.querySelector('.js-cursor');
+            const cursorText = document.querySelector('.js-cursor-text');
+            
+            gsap.set(cursor, { xPercent: -50, yPercent: -50 });
+            const xToCursor = gsap.quickTo(cursor, "x", { duration: 0.15, ease: "power3" });
+            const yToCursor = gsap.quickTo(cursor, "y", { duration: 0.15, ease: "power3" });
+            
+            window.addEventListener('mousemove', e => { 
+                xToCursor(e.clientX); yToCursor(e.clientY); 
+            });
+
+            let isScrolling;
+            lenis.on('scroll', () => {
+                cursor.classList.add('expanded');
+                cursorText.textContent = "KEEP SCROLLING";
+                clearTimeout(isScrolling);
+                isScrolling = setTimeout(() => { cursor.classList.remove('expanded'); }, 300);
+            });
+
+            document.querySelectorAll('[data-cursor]').forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    cursor.classList.add('expanded');
+                    cursorText.textContent = el.dataset.cursor;
+                });
+                el.addEventListener('mouseleave', () => { cursor.classList.remove('expanded'); });
+            });
+
+
+            // -----------------------------------------------------
+            // 🎬 捲動特效
+            // -----------------------------------------------------
+            function initScrollEffects() {
+                const sections = document.querySelectorAll('.section');
+                const thumbs = document.querySelectorAll('.js-thumb');
+
+                ScrollTrigger.create({
+                    trigger: ".js-scroll-wrapper",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 0, 
+                    snap: { snapTo: 1 / (sections.length - 1), duration: { min: 0.4, max: 0.8 }, ease: "power1.inOut" },
+                    onUpdate: (self) => document.documentElement.style.setProperty('--progress', self.progress)
+                });
+
+                sections.forEach((sec, index) => {
+                    const bg = sec.querySelector('.section-bg');
+                    gsap.fromTo(bg, { yPercent: -10 }, { yPercent: 10, ease: "none", scrollTrigger: { trigger: sec, start: "top bottom", end: "bottom top", scrub: true } });
+
+                    ScrollTrigger.create({
+                        trigger: sec, start: "top 50%", end: "bottom 50%",
+                        onToggle: (self) => {
+                            if (self.isActive) {
+                                thumbs.forEach(t => t.classList.remove('is-active'));
+                                thumbs[index].classList.add('is-active');
+                            }
+                        }
+                    });
+                });
+                thumbs[0].classList.add('is-active');
+
+                // Initialize dual wave animation
+                const dualWaveWrapper = document.querySelector(".dual-wave-wrapper");
+                if (dualWaveWrapper) {
+                    const animation = new DualWaveAnimation(dualWaveWrapper);
+                    preloadImages(".dual-wave-wrapper").then(() => {
+                        animation.init();
+                    });
+                }
+
+                // 白框退場動畫
+                ScrollTrigger.create({
+                    trigger: ".dual-wave-section",
+                    start: "top 75%",
+                    onEnter: () => {
+                        const tl = gsap.timeline();
+                        tl.to('.js-center-bar', { height: '2px', duration: 0.4, ease: 'expo.inOut' })
+                          .to('.js-bar-content', { opacity: 0, duration: 0.2 }, "-=0.4")
+                          .to('.js-center-bar', { width: '0px', duration: 0.4, ease: 'expo.inOut' });
+                    },
+                    onLeaveBack: () => {
+                        const tl = gsap.timeline();
+                        tl.to('.js-center-bar', { width: '65vw', duration: 0.4, ease: 'expo.inOut' })
+                          .to('.js-center-bar', { height: '130px', duration: 0.4, ease: 'expo.inOut' })
+                          .to('.js-bar-content', { opacity: 1, duration: 0.3 }, "-=0.2");
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Norte Image Studio - Elite Header & Video Zoom</title>
+
+  <!-- 寮曞叆 Google 瀛楅珨 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@700&display=swap"
+    rel="stylesheet">
+
+  <!-- 寮曞叆 GSAP 鑸?蹇呭倷濂椾欢 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/CustomEase.min.js"></script>
+
+  <!-- 已移除未使用的 Three.js -->
+
+  <!-- 寮曞叆 Lenis (骞虫粦婊惧嫊) 鑸?SplitType (鏂囧瓧鍒嗗壊) -->
+  <script src="https://unpkg.com/@studio-freight/lenis@1.0.29/dist/lenis.min.js"></script>
+  <script src="https://unpkg.com/split-type"></script>
+
+  <style>
+    /* ================= 鑷▊娓告 ================= */
+    .custom-cursor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 99999;
+      mix-blend-mode: difference;
+      transform: translate(-50%, -50%);
+      will-change: transform, width, height;
+      transition: width 0.3s, height 0.3s;
+    }
+
+    .custom-cursor.hovering {
+      width: 60px;
+      height: 60px;
+    }
+
+    /* ================= CSS :has Blur 鐗规晥 ================= */
+    .bo-grid:has(.bo-item:hover) .bo-item:not(:hover) {
+      filter: blur(8px);
+      opacity: 0.4;
+    }
+
+    .bo-item {
+      transition: filter 0.4s ease, opacity 0.4s ease;
+    }
+
+    /* ================= Marquee 璺戦Μ鐕?================= */
+    .marquee-container {
+      width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 4vw 0;
+      background: transparent;
+    }
+
+    .marquee-text {
+      display: inline-block;
+      font-family: 'Oswald', sans-serif;
+      font-size: 8vw;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(255, 255, 255, 0.4);
+      padding-right: 5vw;
+    }
+
+    /* ================= SplitType 鑸?閫ｇ祼鐗规晥 ================= */
+    .char {
+      display: inline-block;
+      will-change: transform, opacity;
+    }
+
+    .stagger-link {
+      display: inline-flex;
+      overflow: hidden;
+      position: relative;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .stagger-inner {
+      display: flex;
+    }
+
+    .stagger-clone {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      display: flex;
+      color: #777;
+    }
+
+    /* ================= 鍩虹閲嶇疆 ================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body,
+    html {
+      width: 100%;
+      background-color: #000000;
+      color: #ffffff;
+      font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ================= 鍏ㄦ柊 Elite Header 灏庤鍒?================= */
+    .elite-header {
+      position: sticky;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 80px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+    }
+
+    /* 宸﹀伌骞句綍閫犲瀷鐏板簳鍗€濉?*/
+    .header-left {
+      height: 100%;
+      width: 380px;
+      background-color: #E6E8E8;
+      color: #000000;
+      display: flex;
+      /* 浣跨敤 clip-path 绮炬簴閭勫師鍦栫墖涓殑鏂滃垏瑙掕垏搴曢儴妯欑堡閫犲瀷 */
+      clip-path: polygon(0 0,
+          100% 0,
+          100% 72px,
+          160px 72px,
+          150px 80px,
+          20px 80px,
+          0 50px);
+    }
+
+    .hl-logo-area {
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hl-text-area {
+      flex: 1;
+      border-right: 1px dashed #A0A0A0;
+      /* 鍨傜洿鍒嗛殧铏涚窔 */
+      padding: 12px 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hl-text-area div {
+      font-family: monospace;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      line-height: 1.2;
+    }
+
+    .hl-menu-area {
+      width: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .hamburger {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .hamburger .line {
+      width: 24px;
+      height: 1px;
+      background-color: #000;
+    }
+
+    /* 鍙冲伌鏂囧瓧鑸囨寜閳曞崁濉?*/
+    .header-right {
+      display: flex;
+      align-items: center;
+      padding-right: 2vw;
+    }
+
+    .hr-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.1vw;
+      font-weight: 500;
+      line-height: 1.1;
+      text-align: right;
+      color: #000000;
+      margin-right: 2vw;
+      letter-spacing: -0.02em;
+    }
+
+    .hr-btn {
+      background-color: #000000;
+      color: #ffffff;
+      padding: 16px 28px;
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: opacity 0.3s;
+    }
+
+    .hr-btn:hover {
+      opacity: 0.8;
+    }
+
+    /* ================= 闋侀潰涓昏鍏у鍗€濉?================= */
+    .container {
+      padding: 4vw;
+      width: 100%;
+      min-height: 68vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .hero-bottom-text {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+      margin-bottom: 2vw;
+    }
+
+    .hero-left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .hero-bottom-main {
+      font-size: 14px;
+      font-weight: 500;
+      color: #a3a3a3;
+      letter-spacing: 0.05em;
+    }
+
+    .hero-bottom-main b {
+      color: #FFF;
+      font-weight: 600;
+    }
+
+    .hero-bottom-sub {
+      font-size: 12px;
+      color: #a3a3a3;
+      letter-spacing: 0.05em;
+    }
+
+    .hero-bottom-right {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: #a3a3a3;
+      text-transform: uppercase;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 2fr 3fr 5fr 2fr;
+      gap: 2vw;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.6;
+      margin-bottom: 10vw;
+    }
+
+    .info-col a {
+      color: #ffffff;
+      text-decoration: none;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .info-col p {
+      margin-bottom: 24px;
+      color: #d1d1d1;
+    }
+
+    .info-col .zh-text {
+      margin-top: 30px;
+    }
+
+    .toggle-switch {
+      width: 32px;
+      height: 16px;
+      border-radius: 16px;
+      border: 1px solid #ffffff;
+      display: flex;
+      align-items: center;
+      padding: 2px;
+      cursor: pointer;
+    }
+
+    .toggle-knob {
+      width: 10px;
+      height: 10px;
+      background-color: #ffffff;
+      border-radius: 50%;
+      transform: translateX(16px);
+      transition: transform 0.3s ease;
+    }
+
+    /* 鍒楄〃鍗€濉?*/
+    .list-header,
+    .list-row {
+      display: grid;
+      grid-template-columns: 0.5fr 1.5fr 1fr 1fr 4fr 0.5fr;
+      gap: 2vw;
+      font-size: 11px;
+    }
+
+    .list-header {
+      font-weight: 700;
+      padding-bottom: 3vw;
+    }
+
+    .list-row {
+      font-weight: 600;
+      color: #666666;
+      padding-bottom: 0.5vw;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    /* ================= 婊惧嫊鏀惧ぇ婊跨増鐗规晥鍗€ ================= */
+    .video-zoom-section {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background-color: transparent;
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .bottom-creative {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      flex-wrap: nowrap;
+    }
+
+    .text-mask {
+      overflow: visible;
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .giant-text {
+      font-family: 'inter', sans-serif;
+      font-size: 11vw;
+      font-weight: 700;
+      line-height: 0.75;
+      letter-spacing: -0.01em;
+      display: inline-block;
+    }
+
+    .video-square {
+      width: 14vw;
+      height: 10vw;
+      background-color: #222;
+      margin: 0 2.5vw;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      will-change: width, height, margin;
+    }
+
+    .video-square video {
+      /* 基礎定位由 JS Object.assign 控制，CSS 僅設不衝突屬性 */
+      filter: brightness(0.7);
+    }
+
+    .center-play-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 3vw;
+      height: 3vw;
+      fill: #ffffff;
+      opacity: 0.8;
+      z-index: 2;
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    .fullscreen-ui {
+      position: absolute;
+      bottom: 10vh;
+      left: 0;
+      width: 100%;
+      padding: 0 8vw;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #ffffff;
+      opacity: 0;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .fullscreen-ui div {
+      text-transform: uppercase;
+      line-height: 1.6;
+      opacity: 0.8;
+    }
+
+    .fullscreen-ui span {
+      display: block;
+      color: #a3a3a3;
+    }
+
+    /* ================= 绗笁鍗€濉婏細Strategy 鐏拌壊鏂囧瓧鐗堝 ================= */
+    .better-off-section {
+      width: 100%;
+      background-color: #E8E9E3;
+      /* 杩戜技鍦栫墖鐨勮唱鎰熺伆搴曡壊 */
+      color: #1A1A1A;
+      padding: 10vw 4vw;
+      position: relative;
+      z-index: 10;
+    }
+
+    .bo-header {
+      max-width: 80%;
+      margin-bottom: 10vw;
+    }
+
+    .bo-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 3.5vw;
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #1A1A1A;
+      margin-bottom: 2vw;
+    }
+
+    /* 搴曢儴澶氭瑒鎺掔増鍗€濉?*/
+    .bo-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .bo-col-left {
+      width: 25%;
+      font-size: 1vw;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #1A1A1A;
+    }
+
+    .bo-col-center {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      gap: 4vw;
+    }
+
+    .bo-item h3 {
+      font-size: 1.1vw;
+      font-weight: 600;
+      color: #1A1A1A;
+      margin-bottom: 1.2vw;
+    }
+
+    .bo-item p {
+      font-size: 1.2vw;
+      font-weight: 500;
+      line-height: 1.4;
+      color: #8A8A8A;
+      /* 娣虹伆鑹插収鏂?*/
+    }
+
+    .bo-col-right {
+      width: 25%;
+      text-align: right;
+      font-size: 1vw;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #1A1A1A;
+    }
+
+    /* ================= RWD 闊挎噳寮忚鏁?================= */
+    @media (max-width: 1024px) {
+      .hr-text {
+        font-size: 14px;
+      }
+
+      .header-left {
+        width: 320px;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 5vw;
+      }
+
+      .giant-text {
+        font-size: 22vw;
+      }
+
+      .video-square {
+        width: 18vw;
+        height: 18vw;
+      }
+
+      .list-header,
+      .list-row {
+        grid-template-columns: 0.5fr 2fr 1fr 3fr 0.5fr;
+      }
+
+      .hide-tablet {
+        display: none;
+      }
+
+      /* Better Off Section RWD */
+      .bo-header {
+        max-width: 90%;
+        margin-bottom: 12vw;
+      }
+
+      .bo-title {
+        font-size: 5vw;
+      }
+
+      .bo-col-left {
+        width: 30%;
+        font-size: 1.5vw;
+      }
+
+      .bo-col-center {
+        width: 50%;
+      }
+
+      .bo-item h3 {
+        font-size: 2vw;
+        margin-bottom: 1.5vw;
+      }
+
+      .bo-item p {
+        font-size: 1.8vw;
+      }
+
+      .bo-col-right {
+        font-size: 1.5vw;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .elite-header {
+        height: 70px;
+      }
+
+      .header-left {
+        width: 60%;
+        clip-path: polygon(0 0, 100% 0, 100% 64px, 120px 64px, 110px 70px, 20px 70px, 0 40px);
+      }
+
+      .hl-logo-area svg {
+        width: 32px;
+        height: auto;
+      }
+
+      .hr-text {
+        display: none;
+      }
+
+      .hr-btn {
+        padding: 12px 16px;
+        font-size: 10px;
+      }
+
+      .container {
+        padding: 6vw 4vw;
+      }
+
+      .hero-title {
+        font-size: 16vw;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 2vw;
+        margin-top: 4vw;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 8vw;
+        margin-bottom: 20vw;
+        font-size: 12px;
+      }
+
+      .info-col .copyright {
+        margin-top: 5vw;
+      }
+
+      .toggle-switch {
+        margin-top: 3vw;
+      }
+
+      .list-header,
+      .list-row {
+        grid-template-columns: 15% 70% 15%;
+        font-size: 12px;
+      }
+
+      .hide-mobile {
+        display: none;
+      }
+
+      .giant-text {
+        font-size: 28vw;
+      }
+
+      .video-square {
+        width: 35vw;
+        height: 35vw;
+        margin: 0 4vw;
+      }
+
+      .center-play-icon {
+        width: 10vw;
+        height: 10vw;
+      }
+
+      .fullscreen-ui {
+        flex-direction: column;
+        align-items: center;
+        gap: 3vh;
+        bottom: 8vh;
+        font-size: 10px;
+      }
+
+      .fullscreen-ui div {
+        text-align: center !important;
+      }
+
+      /* Better Off Section Mobile */
+      .better-off-section {
+        padding: 15vw 6vw;
+      }
+
+      .bo-header {
+        max-width: 100%;
+        margin-bottom: 15vw;
+      }
+
+      .bo-title {
+        font-size: 7.5vw;
+      }
+
+      .bo-grid {
+        flex-direction: column;
+        gap: 8vw;
+      }
+
+      .bo-col-left,
+      .bo-col-right {
+        width: 100%;
+        font-size: 3.5vw;
+        text-align: left;
+      }
+
+      .bo-col-right {
+        order: -1;
+        margin-bottom: 5vw;
+      }
+
+      /* 灏?(BO - 01) 寰€涓婄Щ */
+      .bo-col-center {
+        width: 100%;
+        gap: 8vw;
+      }
+
+      .bo-item h3 {
+        font-size: 4.5vw;
+        margin-bottom: 2vw;
+      }
+
+      .bo-item p {
+        font-size: 3.8vw;
+      }
+    }
+
+    /* ================= 绗洓鍗€濉婏細婊跨増鍦栫墖宸﹀埛 ================= */
+    .wipe-reveal-section {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      background: #000;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    .wipe-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .wipe-global-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 50;
+      pointer-events: none;
+      width: 100%;
+    }
+
+    .wipe-global-text h2 {
+      font-family: 'Inter', sans-serif;
+      font-size: 8vw;
+      font-weight: 700;
+      line-height: 0.9;
+      letter-spacing: -0.04em;
+      color: #FFF;
+      text-transform: uppercase;
+      margin: 0;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      /* Ensure readability */
+    }
+
+    .wipe-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .wipe-panel img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      /* Improve crispness during parallax scale/pan */
+      will-change: transform;
+    }
+
+    .panel-2,
+    .panel-3 {
+      /* Initially hidden pushing from right */
+      clip-path: inset(0% 0% 0% 100%);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ================= 鑷▊娓告 ================= -->
+  <div class="custom-cursor"></div>
+
+  <!-- ================= 鑳屾櫙褰辩墖 ================= -->
+  <video class="bg-video" src="images/bg.mp4" autoplay loop muted playsinline
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 0; opacity: 0.6;"></video>
+
+  <!-- ================= 鍏ㄦ柊 Elite Header 灏庤鍒?================= -->
+  <header class="elite-header">
+    <!-- 宸﹀伌鐏拌壊閫犲瀷鍗€濉?-->
+    <div class="header-left">
+      <div class="hl-logo-area">
+        <svg width="48" height="24" viewBox="0 0 60 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 0 L10 24 H22 L12 0 Z" fill="#000" />
+          <path d="M16 0 L26 24 H38 L28 0 Z" fill="#000" />
+          <path d="M38 0 H54 V12 H43 Z" fill="#000" />
+          <circle cx="56" cy="24" r="3" fill="#000" />
+        </svg>
+      </div>
+      <div class="hl-text-area">
+        <div>WBSFT&reg;</div>
+        <div>DEVELOPMENT<br>LABS</div>
+      </div>
+      <div class="hl-menu-area">
+        <div class="hamburger">
+          <div class="line"></div>
+          <div class="line"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 鍙冲伌鎺掔増鑸囨寜閳?-->
+    <div class="header-right">
+      <div class="hr-text">
+        AN ELITE TEAM OF<br>SOFTWARE ENGINEERS
+      </div>
+      <a href="#" class="hr-btn">LET'S TALK &rarr;</a>
+    </div>
+  </header>
+
+  <!-- ================= 绗竴鍗€濉?================= -->
+  <div class="container">
+    <!-- 缍叉牸璩囪▕鍗€濉?-->
+    <div class="info-grid">
+      <div class="info-col anim-info">
+        <a href="#">Archive</a>
+        <a href="#">About</a>
+      </div>
+      <div class="info-col anim-info">
+        <p>hola@norte.studio<br>Carrer de Joan d'Austria, 95<br>08018 Barcelona<br>+34 937 608 247</p>
+        <p>.<br>Instagram<br>Behance</p>
+        <div class="toggle-switch">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+      <div class="info-col anim-info">
+        <p>Based in Taiwan. Crafting digital experiences<br>worldwide. Focused on high-end interaction and<br>creative
+          strategy.</p>
+        <p class="zh-text">鎵撻€犲叏鐞冨寲鐨勬暩浣嶉珨椹椼€?br>灏堟敞鏂奸珮闅庝簰鍕曟妧琛撹垏鍓垫剰绛栫暐銆?/p>
+      </div>
+      <div class="info-col anim-info"></div>
+    </div>
+
+    <!-- 搴曢儴鏂囧瓧 -->
+    <div class="hero-bottom-text anim-info">
+      <div class="hero-left-col">
+        <div class="hero-bottom-main"><b>灏堟敞鏂奸珮闅庝簰鍕曟妧琛撹垏鍓垫剰绛栫暐</b> &nbsp;&nbsp;|&nbsp;&nbsp; DIGITAL CRAFTSMANSHIP</div>
+        <div class="hero-bottom-sub">璺ㄨ秺缍查爜妗嗘灦锛岄憚閫犳暩浣嶆绔?/div>
+      </div>
+      <div class="hero-bottom-right">
+        CREATIVE CONTROL
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 绗簩鍗€濉婏細婊惧嫊鏀惧ぇ鐗规晥鍗€ ================= -->
+  <div class="video-zoom-section">
+    <div class="bottom-creative">
+
+      <div class="text-mask left-text-group">
+        <span class="giant-text">NUDOT</span>
+      </div>
+
+      <div class="video-square" id="zoom-video">
+        <video src="images/ok_5050.mp4" autoplay loop muted playsinline crossorigin="anonymous"></video>
+        <svg class="center-play-icon" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z" />
+        </svg>
+
+        <div class="fullscreen-ui">
+          <div>PURE CLEANSING OIL MEGA<br><span>绱旀法鍗稿娌?/span></div>
+          <div style="text-align: center;">RADIANCE ESSENTIAL SERUM<br><span>閫忎寒绮捐彲娑?/span></div>
+          <div style="text-align: right;">COTTON PADS<br><span>绱旀鍖栧妫?/span></div>
+        </div>
+      </div>
+
+      <div class="text-mask right-text-group">
+        <!-- <span class="giant-text">CREATIVE</span> -->
+        <span class="giant-text">DESIGN</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= 绗笁鍗€濉婏細Strategy 鐏拌壊鏂囧瓧鐗堝 ================= -->
+  <section class="better-off-section">
+    <div class="bo-header">
+      <h2 class="bo-title anim-bo-title">Strategy, Design, and Development. Lightning-fast, lean, and sensibly priced.
+      </h2>
+      <br>
+      <h2 class="bo-title anim-bo-title">Get max value and velocity in a turnkey platform that promises your brand will
+        be Better Off&reg;.</h2>
+    </div>
+    <div class="bo-grid">
+      <div class="bo-col-left anim-bo-elem">
+        <span>&#9679; CREATIVE AS IT SHOULD BE</span>
+      </div>
+      <div class="bo-col-center">
+        <div class="bo-item anim-bo-elem">
+          <h3>Fully Loaded</h3>
+          <p>From complex strategies to intricate identities to bleeding-edge digital development, every project is now
+            possible with a click.</p>
+        </div>
+        <div class="bo-item anim-bo-elem">
+          <h3>Flat Fee Flex</h3>
+          <p>We don't haggle over hours. Our plans are nimble and allow plenty of wiggle room to account for shifting
+            priorities and rethinking.</p>
+        </div>
+        <div class="bo-item anim-bo-elem">
+          <h3>Creative Control</h3>
+          <p>We don't want our clients to ever feel trapped or locked into anything. If you want to pump the brakes or
+            step on the gas, feel free to pause, cancel, or upgrade anytime.</p>
+        </div>
+      </div>
+      <div class="bo-col-right anim-bo-elem">
+        <span>(BO&reg; &mdash; 01)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 绗洓鍗€濉婏細婊跨増鍦栫墖宸﹀埛鎻ず鐗规晥 ================= -->
+  <section class="wipe-reveal-section">
+    <!-- 鍥哄畾鏂囧瓧灞?-->
+    <div class="wipe-global-text">
+      <h2>ECOMMERCE<br>INNOVATION<br>AGENCY</h2>
+    </div>
+    <div class="wipe-wrapper">
+      <!-- Panel 1: 搴曞堡 -->
+      <div class="wipe-panel panel-1">
+        <img src="images/slider1.jpg" alt="Image 1">
+      </div>
+      <!-- Panel 2: 涓堡 -->
+      <div class="wipe-panel panel-2">
+        <img src="images/slider2.jpg" alt="Image 2">
+      </div>
+      <!-- Panel 3: 闋傚堡 -->
+      <div class="wipe-panel panel-3">
+        <img src="images/slider3.jpg" alt="Image 3">
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Marquee 璺戦Μ鐕?================= -->
+  <div class="marquee-wrapper" style="overflow: hidden; width: 100%; border-top: 1px solid #333; padding: 4vw 0;">
+    <div class="marquee-track" style="display: flex; width: max-content;">
+      <div class="marquee-text">NUDOT CREATIVE STUDIO MMXVI &mdash; &nbsp;</div>
+      <div class="marquee-text">NUDOT CREATIVE STUDIO MMXVI &mdash; &nbsp;</div>
+      <div class="marquee-text">NUDOT CREATIVE STUDIO MMXVI &mdash; &nbsp;</div>
+    </div>
+  </div>
+
+  <!-- ================= GSAP 鍕曠暙閭忚集 ================= -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      gsap.registerPlugin(ScrollTrigger);
+
+      /* --- 1. 绗竴鍗€濉婇枊鍫村嫊鐣绉昏嚦 Preloader 瀹屾垚寰岃Ц鐧?--- */
+
+      /* --- 2. 鏍稿績锛氱暙闈㈠浐瀹?(Pin) 鑸囨痪鍕曟豢鐗堟斁澶х壒鏁?--- */
+      let tlZoom = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".video-zoom-section",
+          start: "top top",
+          end: "+=150%",
+          pin: true,
+          scrub: 1,
+        }
+      });
+
+      // A. 涓枔褰辩墖鏀惧ぇ鑷虫豢鐗?      tlZoom.to("#zoom-video", {
+        width: "100vw",
+        height: "100vh",
+        margin: 0,
+        ease: "power2.inOut"
+      }, 0);
+
+      // B. 鍏╁伌宸ㄥ瀷鏂囧瓧鍚戝鎺ㄩ枊涓︽贰鍑猴紝瀵害姝搁浂璁撳嚭婊跨増绌洪枔
+      tlZoom.to(".left-text-group", { x: "-50vw", width: 0, opacity: 0, ease: "power2.inOut" }, 0);
+      tlZoom.to(".right-text-group", { x: "50vw", width: 0, opacity: 0, ease: "power2.inOut" }, 0);
+
+      // C. 鎾斁閸靛井鏀惧ぇ & UI 娴従
+      tlZoom.to(".center-play-icon", { scale: 1.5, opacity: 1, ease: "power2.out" }, 0);
+      tlZoom.to(".fullscreen-ui", { opacity: 1, ease: "power1.inOut" }, 0.4);
+
+      /* --- 3. 绗笁鍗€濉婏細Strategy 鐏拌壊鏂囧瓧鐗堝鍕曠暙 --- */
+      const tlBo = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".better-off-section",
+          start: "top 75%",
+        }
+      });
+      // (SplitType 鍙栦唬鍘熸湰鐨?anim-bo-title 鍕曠暙)
+
+      // 涓嬫柟璩囪▕娆勪綅浜ら尟娴従
+      tlBo.fromTo(".anim-bo-elem",
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1, stagger: 0.1, ease: "power3.out" }
+      );
+
+      /* --- 4. 绗洓鍗€濉婏細鍏╁伌鍦栭潰鍒峰叆 parallax (绲叉粦瑕栧樊) --- */
+      let wipeTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".wipe-reveal-section",
+          start: "top top",
+          end: "+=200%", // 婊惧嫊鍗€闁擄紝绺藉叡鎻ず鍏╁嫉鍦栫墖
+          pin: true,     // 鏁村鍥哄畾
+          scrub: 1,      // 绲叉粦鍚屾
+        }
+      });
+
+      // 瑷畾鍦栫墖鍒濆 scale锛屾敮鎻磋宸?pan
+      gsap.set(".wipe-panel img", { scale: 1.2 });
+      gsap.set(".panel-2 img", { xPercent: 15 });
+      gsap.set(".panel-3 img", { xPercent: 15 });
+
+      // Action 1: Panel 2 (涓堡) 鍒峰叆锛屽悓鏅?Panel 1 寰€宸︽帹
+      wipeTl.to(".panel-2", { clipPath: "inset(0% 0% 0% 0%)", ease: "none" })
+        .to(".panel-2 img", { xPercent: 0, ease: "none" }, "<")
+        .to(".panel-1 img", { xPercent: -15, ease: "none" }, "<");
+
+      // Action 2: Panel 3 (闋傚堡) 鍒峰叆锛屽悓鏅?Panel 2 寰€宸︽帹
+      wipeTl.to(".panel-3", { clipPath: "inset(0% 0% 0% 0%)", ease: "none" })
+        .to(".panel-3 img", { xPercent: 0, ease: "none" }, "<")
+        .to(".panel-2 img", { xPercent: -15, ease: "none" }, "<");
+
+      // 鍦ㄨ绐楃府鏀炬檪閲嶆柊瑷堢畻 ScrollTrigger 纰轰繚瀹氫綅姝ｇ⒑
+      window.addEventListener('resize', () => {
+        ScrollTrigger.refresh();
+      });
+    });
+  </script>
+
+  <!-- ================= 褰辩墖瀹瑰櫒鍒濆鍖?+ 鍏夋潫杌岃贰閭忚集 ================= -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const videoContainer = document.getElementById("zoom-video");
+      const videoElement = videoContainer.querySelector("video");
+
+      // --- 璁撳奖鐗囩洿鎺ラ’绀猴紙CSS 鏂瑰紡锛屼笉渚濊炒 WebGL锛?--
+      Object.assign(videoElement.style, {
+        position: 'absolute',
+        top: '0', left: '0',
+        width: '100%', height: '100%',
+        objectFit: 'cover',
+        opacity: '1',
+        zIndex: '1',
+        pointerEvents: 'none'
+      });
+      videoElement.play().catch(() => {});
+
+      // --- 婊戦紶鍏夋潫杌岃贰 ---
+      const targetMouse = { x: -1000, y: -1000 };
+      let lastTrailTime = 0;
+      let lastHoverX = 0;
+      let lastHoverY = 0;
+
+      videoContainer.addEventListener('mousemove', (e) => {
+        const rect = videoContainer.getBoundingClientRect();
+        targetMouse.x = e.clientX - rect.left;
+        targetMouse.y = e.clientY - rect.top;
+
+        const distance = Math.hypot(targetMouse.x - lastHoverX, targetMouse.y - lastHoverY);
+        const now = Date.now();
+
+        if (distance > 3 || (now - lastTrailTime) > 30) {
+          lastTrailTime = now;
+          lastHoverX = targetMouse.x;
+          lastHoverY = targetMouse.y;
+
+          const trail = document.createElement("div");
+          Object.assign(trail.style, {
+            position: "absolute",
+            left: targetMouse.x + "px",
+            top: targetMouse.y + "px",
+            width: "12px",
+            height: "12px",
+            backgroundColor: "#FFFFFF",
+            boxShadow: "0 0 15px 5px rgba(255,255,255,0.8), 0 0 30px 10px rgba(255,255,255,0.4)",
+            borderRadius: "50%",
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none",
+            zIndex: "10",
+            mixBlendMode: "screen"
+          });
+
+          videoContainer.appendChild(trail);
+
+          gsap.fromTo(trail,
+            { scale: 1, opacity: 1 },
+            {
+              scale: 0,
+              opacity: 0,
+              duration: 0.6,
+              ease: "power2.out",
+              onComplete: () => { if (trail.parentNode) trail.parentNode.removeChild(trail); }
+            }
+          );
+        }
+      });
+
+      videoContainer.addEventListener('mouseleave', () => {
+        targetMouse.x = -1000;
+        targetMouse.y = -1000;
+      });
+    });
+  </script>
+
+  <!-- ================= 缍滃悎閫查殠 UI 鑸囦簰鍕曠壒鏁堥倧杓?================= -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. Lenis 骞虫粦婊惧嫊
+      const lenis = new Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true
+      });
+      // GSAP ticker 驅動 Lenis（單一驅動避免雙重計時）
+      gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+      gsap.ticker.lagSmoothing(0);
+      lenis.on('scroll', ScrollTrigger.update);
+
+
+      // 2. 鑷▊娓告
+      const cursor = document.querySelector(".custom-cursor");
+      const xTo = gsap.quickTo(cursor, "x", { duration: 0.3, ease: "power3" });
+      const yTo = gsap.quickTo(cursor, "y", { duration: 0.3, ease: "power3" });
+
+      window.addEventListener("mousemove", e => {
+        xTo(e.clientX);
+        yTo(e.clientY);
+      });
+      // 缍佸畾 Hover 鏀惧ぇ
+      document.querySelectorAll("a, video, .toggle-switch, .bo-item, .marquee-text").forEach(el => {
+        el.addEventListener("mouseenter", () => cursor.classList.add("hovering"));
+        el.addEventListener("mouseleave", () => cursor.classList.remove("hovering"));
+      });
+
+      // 3. 绗竴鍗€濉婇枊鍫村嫊鐣?(鐩存帴瑙哥櫦)
+      gsap.fromTo(".anim-info", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 1.5, stagger: 0.1, ease: "power4.out" });
+
+      // 4. SplitType 婊惧嫊鏂囧瓧鎻ず鐗规晥 (ScrollReveal)
+      const boTitles = document.querySelectorAll(".anim-bo-title");
+      boTitles.forEach(title => {
+        const text = new SplitType(title, { types: 'lines, words' });
+        gsap.from(text.words, {
+          scrollTrigger: { trigger: title, start: "top 80%" },
+          y: 40, opacity: 0, stagger: 0.03, duration: 0.8, ease: "power3.out"
+        });
+      });
+
+      // 5. 閫ｇ祼 Hover Stagger 缈昏綁鐗规晥
+      const infoLinks = document.querySelectorAll(".info-col a:not(.toggle-switch)");
+      infoLinks.forEach(link => {
+        link.classList.add("stagger-link");
+        const originalText = link.innerText;
+        link.innerHTML = `<div class="stagger-inner"></div><div class="stagger-clone" style="transform: translateY(100%);"></div>`;
+        const inner = link.querySelector(".stagger-inner");
+        const clone = link.querySelector(".stagger-clone");
+
+        originalText.split('').forEach(char => {
+          const charContent = char === ' ' ? '&nbsp;' : char;
+          const s1 = document.createElement("span"); s1.className = "char"; s1.innerHTML = charContent;
+          const s2 = document.createElement("span"); s2.className = "char"; s2.innerHTML = charContent;
+          inner.appendChild(s1); clone.appendChild(s2);
+        });
+
+        link.addEventListener("mouseenter", () => {
+          gsap.to(inner.querySelectorAll(".char"), { yPercent: -100, stagger: 0.02, duration: 0.3, ease: "power2.inOut", overwrite: true });
+          gsap.to(clone.querySelectorAll(".char"), { yPercent: -100, stagger: 0.02, duration: 0.3, ease: "power2.inOut", overwrite: true });
+        });
+        link.addEventListener("mouseleave", () => {
+          gsap.to(inner.querySelectorAll(".char"), { yPercent: 0, stagger: 0.02, duration: 0.3, ease: "power2.inOut", overwrite: true });
+          gsap.to(clone.querySelectorAll(".char"), { yPercent: 0, stagger: 0.02, duration: 0.3, ease: "power2.inOut", overwrite: true });
+        });
+      });
+
+      // 6. Marquee 鐒￠檺杓挱鍔熻兘
+      gsap.to(".marquee-track", {
+        x: "-33.333%", // 鍥犵偤瑜囪＝浜嗕笁浠斤紝绉婚亷涓€浠藉嵆鍙畬缇庡惊鐠?        ease: "none",
+        duration: 10,
+        repeat: -1
+      });
+
+      // 7. Header 婊戝嫊椤忚壊鍙嶈綁 (鍒╃敤 mix-blend-mode 鑷嫊閬旀垚锛屽鏋滈渶瑕佹墜鍕曚篃鍙 ScrollTrigger)
+      // (CSS 鐨?mix-blend-mode: difference 宸茬稉鍙互璁?Header 鑷嫊鏀彺鍙嶈壊)
+    });
+  </script>
+</body>
+
+</html>
+

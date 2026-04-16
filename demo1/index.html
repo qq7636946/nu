@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nudot Design Immersive Experience</title>
+  <style>
+    /* --- 基礎重置 --- */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0a0a0a;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    /* --- 滾動控制與黏性容器 --- */
+    .scroll-track {
+      height: 500vh;
+      position: relative;
+    }
+
+    .sticky-container {
+      position: sticky;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ==========================================
+           第一區塊：N-'D 3D 場景 (Intro Section) 
+           ========================================== */
+    .intro-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #0a0a0a;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    #bg-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    .video-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 10, 10, 0.4);
+      /* 暗化遮罩讓文字更清楚 */
+      z-index: 2;
+    }
+
+    /* 首屏 UI 介面層 */
+    .intro-ui-container {
+      position: relative;
+      z-index: 10;
+      /* 在 WebGL 上方 */
+      width: 100%;
+      height: 100vh;
+      padding: 40px;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 1fr auto;
+      pointer-events: none;
+      /* 讓滑鼠事件穿透到 WebGL */
+      color: #fff;
+    }
+
+    .intro-ui-container a,
+    .intro-ui-container span {
+      pointer-events: auto;
+    }
+
+    .intro-ui-container a {
+      color: #fff;
+      text-decoration: none;
+      transition: opacity 0.3s;
+    }
+
+    .intro-ui-container a:hover {
+      opacity: 0.7;
+    }
+
+    .text-sm {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .text-xs {
+      font-size: 11px;
+      line-height: 1.6;
+      color: #888888;
+    }
+
+    .top-left {
+      grid-column: 1 / 2;
+      grid-row: 1 / 2;
+      align-self: start;
+      justify-self: start;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .top-right {
+      grid-column: 2 / 3;
+      grid-row: 1 / 2;
+      align-self: start;
+      justify-self: end;
+    }
+
+    .bottom-left {
+      grid-column: 1 / 2;
+      grid-row: 3 / 4;
+      align-self: end;
+      justify-self: start;
+      max-width: 300px;
+    }
+
+    .bottom-right {
+      grid-column: 2 / 3;
+      grid-row: 3 / 4;
+      align-self: end;
+      justify-self: end;
+      text-align: right;
+    }
+
+    .social-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 30px;
+    }
+
+    .center-guide {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      transform: translateY(-50%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 40px;
+      box-sizing: border-box;
+      opacity: 0.3;
+    }
+
+    .guide-line {
+      height: 1px;
+      flex-grow: 1;
+      background-color: #888;
+      margin: 0 20px;
+    }
+
+    .hero-title {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 18vw;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      color: #fff;
+      z-index: 5;
+      white-space: nowrap;
+      text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      visibility: hidden;
+      /* 由 GSAP 控制進場 */
+    }
+
+    .intro-ui-element {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    /* ==========================================
+           第二區塊：暗黑主題遮罩層 (The Dark Curtain) 
+           ========================================== */
+    .dark-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #030303;
+      color: #ffffff;
+      z-index: 20;
+      /* 必須高於第一區塊 */
+      /* 預設將頂部邊界推到底部 100%，完全隱藏 */
+      clip-path: inset(100% 0 0 0);
+      will-change: clip-path;
+    }
+
+    /* --- 保留背景光暈，維持暗黑質感 --- */
+    .glow-bottom-left {
+      position: absolute;
+      bottom: -20vh;
+      left: -10vw;
+      width: 70vw;
+      height: 70vh;
+      background: radial-gradient(circle, rgba(200, 210, 215, 0.15) 0%, transparent 60%);
+      filter: blur(60px);
+      z-index: 0;
+    }
+
+    .glow-center-left {
+      position: absolute;
+      top: 20vh;
+      left: 20vw;
+      width: 50vw;
+      height: 50vh;
+      background: radial-gradient(circle, rgba(120, 160, 160, 0.1) 0%, transparent 60%);
+      filter: blur(60px);
+      z-index: 0;
+    }
+
+    nav.dark-nav {
+      position: absolute;
+      top: 40px;
+      right: 5vw;
+      z-index: 30;
+      display: flex;
+      gap: 40px;
+    }
+
+    nav.dark-nav a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: opacity 0.3s;
+    }
+
+    nav.dark-nav a:hover {
+      opacity: 0.6;
+    }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: #888;
+      animation: float 2s infinite ease-in-out;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translate(-50%, 0);
+      }
+
+      50% {
+        transform: translate(-50%, 8px);
+      }
+    }
+
+    /* --- 3D 場景與方塊設定 --- */
+    .scene-wrapper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      z-index: 40;
+      will-change: transform;
+    }
+
+    .scene {
+      width: 160px;
+      height: 160px;
+      perspective: 800px;
+    }
+
+    .cube {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(-15deg) rotateY(-45deg);
+    }
+
+    .face {
+      position: absolute;
+      width: 160px;
+      height: 160px;
+      background-color: #080808;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      user-select: none;
+      backface-visibility: hidden;
+    }
+
+    .face.front {
+      transform: rotateY(0deg) translateZ(80px);
+    }
+
+    .face.back {
+      transform: rotateY(180deg) translateZ(80px);
+    }
+
+    .face.right {
+      transform: rotateY(90deg) translateZ(80px);
+    }
+
+    .face.left {
+      transform: rotateY(-90deg) translateZ(80px);
+    }
+
+    .face.top {
+      transform: rotateX(90deg) translateZ(80px);
+    }
+
+    .face.bottom {
+      transform: rotateX(-90deg) translateZ(80px);
+    }
+
+    .face-subtitle {
+      font-size: 0.65rem;
+      color: #888;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+
+    .face-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      line-height: 1.1;
+      text-align: center;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .link-btn {
+      display: inline-block;
+      padding: 4px 12px;
+      background: transparent;
+      color: #fff;
+      border: 1px solid #fff;
+      text-decoration: none;
+      font-size: 0.55rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+      pointer-events: auto;
+    }
+
+    .link-btn:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    .top-text {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #aaa;
+      transform: scaleY(-1);
+    }
+
+    /* --- 巨型文字區塊 --- */
+    .section-2-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 35;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .section-2-content .subtitle {
+      font-size: 12px;
+      color: #aaa;
+      letter-spacing: 3px;
+      margin-bottom: 15px;
+    }
+
+    .section-2-content .title-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .section-2-content .huge-title {
+      font-size: 18vw;
+      font-weight: 900;
+      line-height: 0.85;
+      text-align: center;
+      letter-spacing: -0.5vw;
+      margin: 0;
+      color: #ffffff;
+      white-space: nowrap;
+    }
+
+    .section-2-content .title-outline {
+      color: transparent;
+      -webkit-text-stroke: 2px rgba(255, 255, 255, 0.8);
+    }
+
+    .section-2-content .desc {
+      font-size: 14px;
+      color: #ccc;
+      max-width: 400px;
+      text-align: center;
+      line-height: 1.8;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      margin-top: 30px;
+    }
+
+    /* ============================================================
+       Dual Wave Text Section
+       ============================================================ */
+    .dual-wave-section {
+      background-color: #030303;
+      padding: 25vh 5vw 30vh;
+      overflow: hidden;
+      position: relative;
+    }
+    /* Top fade — seamlessly continues from the cube's dark fullscreen state */
+    .dual-wave-section::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 20vh;
+      background: linear-gradient(to bottom, #0a0a0a, transparent);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Dual Wave Styles (from src/dual-wave/style.css) */
+    .dual-wave-wrapper {
+      display: flex;
+      width: 100%;
+      position: relative;
+      gap: 25vw;
+    }
+    .wave-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      font-size: clamp(2rem, 10vw, 3rem);
+      font-weight: 400;
+      line-height: 0.7;
+      position: relative;
+      z-index: 100;
+    }
+    .wave-column-left  { align-items: flex-start; }
+    .wave-column-right { align-items: flex-end; }
+    .animated-text {
+      width: max-content;
+      color: #3a3a3a;
+      text-transform: uppercase;
+      transition: color 300ms ease-out;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      letter-spacing: -0.02em;
+    }
+    .animated-text.focused { color: #ffffff; z-index: 2; }
+    .image-thumbnail-wrapper {
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translate(-50%, 0);
+      width: 15vw; height: auto;
+      z-index: 1;
+      pointer-events: none;
+      display: grid;
+      place-items: center;
+    }
+    .image-thumbnail {
+      width: auto; height: auto;
+      max-width: 100%; max-height: 30vh;
+      border-radius: 2px;
+    }
+    @media (max-width: 1023px) {
+      .dual-wave-wrapper { gap: 10vw; }
+      .wave-column { gap: 2.5rem; font-size: 5vw; }
+      .image-thumbnail-wrapper { width: 50vw; }
+    }
+
+    /* --- RWD --- */
+    @media (max-width: 768px) {
+      .intro-ui-container {
+        padding: 20px;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto auto;
+        gap: 20px;
+      }
+
+      .top-left,
+      .top-right,
+      .bottom-left,
+      .bottom-right {
+        grid-column: 1 / 2;
+        justify-self: start;
+        text-align: left;
+      }
+
+      .top-right {
+        grid-row: 2;
+      }
+
+      .bottom-left {
+        grid-row: 4;
+      }
+
+      .bottom-right {
+        grid-row: 5;
+      }
+
+      .hero-title {
+        font-size: 25vw;
+      }
+
+      .center-guide {
+        display: none;
+      }
+
+      nav.dark-nav {
+        width: 90vw;
+        left: 5vw;
+        right: auto;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .scene,
+      .face {
+        width: 120px;
+        height: 120px;
+      }
+
+      .face.front {
+        transform: rotateY(0deg) translateZ(60px);
+      }
+
+      .face.back {
+        transform: rotateY(180deg) translateZ(60px);
+      }
+
+      .face.right {
+        transform: rotateY(90deg) translateZ(60px);
+      }
+
+      .face.left {
+        transform: rotateY(-90deg) translateZ(60px);
+      }
+
+      .face.top {
+        transform: rotateX(90deg) translateZ(60px);
+      }
+
+      .face.bottom {
+        transform: rotateX(-90deg) translateZ(60px);
+      }
+
+      .section-2-content .huge-title {
+        font-size: 25vw;
+        letter-spacing: -1vw;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="scroll-track">
+    <div class="sticky-container">
+
+      <!-- 第一區塊：影片背景與 N-'D UI -->
+      <div class="intro-wrapper" id="intro-wrapper">
+
+        <!-- 質感影片背景 -->
+        <video id="bg-video" autoplay loop muted playsinline>
+          <source src="logo.mp4" type="video/mp4">
+        </video>
+        <div class="video-overlay"></div>
+
+        <!-- 巨大的中央標題 -->
+        <h1 class="hero-title" id="hero-title">N—'D</h1>
+
+        <!-- UI 介面層 -->
+        <div class="intro-ui-container">
+          <div class="top-left intro-ui-element">
+            <div class="text-sm">+</div>
+            <div class="text-sm" style="margin-top: 100px;">+</div>
+            <div class="text-xs" style="margin-top: 20px;">( Brand Direction )</div>
+          </div>
+          <div class="top-right intro-ui-element">
+            <div class="text-sm">+</div>
+            <div class="text-sm" style="margin-top: 100px;">+</div>
+            <div class="text-xs" style="margin-top: 20px;">( Advanced Tech )</div>
+          </div>
+          <div class="center-guide intro-ui-element">
+            <span class="text-xs">[ Performance Marketing ]</span>
+            <div class="guide-line"></div>
+          </div>
+          <div class="bottom-left intro-ui-element">
+            <div class="text-xs">
+              Strategy, Design, and<br>
+              Development. Lightning-fast, lean,<br>
+              and sensibly priced.
+            </div>
+            <div class="text-xs" style="margin-top: 30px;">
+              nuclear.klab@gmail.com<br>
+              0983-750 522<br>
+              Nudot Creative Studio, 2026©
+            </div>
+          </div>
+          <div class="bottom-right intro-ui-element">
+            <div class="social-links text-xs">
+              <a href="#">Instagram</a>
+              <a href="#">Threads</a>
+              <a href="#">Facebook</a>
+            </div>
+            <div class="text-xs">[ Nudot Creative ] 2026</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第二區塊：暗黑主題遮罩層 (The Curtain) 與原有的 3D 方塊 -->
+      <div class="dark-wrapper" id="dark-wrapper">
+
+        <div class="glow-bottom-left" id="ui-glow1"></div>
+        <div class="glow-center-left" id="ui-glow2"></div>
+
+        <nav class="dark-nav" id="ui-nav">
+          <a href="#">About</a><a href="#">Projects</a><a href="#">Labs</a><a href="#">Contact</a>
+        </nav>
+        <div class="scroll-indicator" id="ui-scroll"><span>SCROLL</span>
+          <div>↓</div>
+        </div>
+
+        <div id="section-2-content" class="section-2-content">
+          <div class="subtitle">( CHAPTER 02 )</div>
+          <div class="title-wrapper">
+            <h2 class="huge-title title-outline" id="title-line1">IMMERSIVE</h2>
+            <h2 class="huge-title" id="title-line2">EXPERIENCE</h2>
+          </div>
+          <p class="desc">The boundaries between 2D interface and 3D space are blurring.<br>Explore the new dimension of
+            web design.</p>
+        </div>
+
+        <div class="scene-wrapper" id="sceneWrapper">
+          <div class="scene">
+            <div class="cube" id="cube">
+              <div class="face front" style="padding: 0;">
+                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop"
+                  style="width: 100%; height: 100%; object-fit: cover;">
+                <div id="img-overlay"
+                  style="position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity 0.1s;"></div>
+              </div>
+              <div class="face right">
+                <div class="face-subtitle">VISIT</div>
+                <div class="face-title">OUR<br>PORTFOLIO</div><a href="#" class="link-btn">CLICK HERE</a>
+              </div>
+              <div class="face back">
+                <div class="face-subtitle">VIEW</div>
+                <div class="face-title">LATEST<br>PROJECTS</div>
+              </div>
+              <div class="face left">
+                <div class="face-subtitle">CONTACT</div>
+                <div class="face-title">GET IN<br>TOUCH</div><a href="#" class="link-btn">EMAIL US</a>
+              </div>
+              <div class="face top">
+                <div class="top-text">WEB 3D</div>
+              </div>
+              <div class="face bottom">
+                <div class="face-subtitle" style="color:#333;">BOTTOM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+<!-- ============================================================
+     Dual Wave Text Section
+     ============================================================ -->
+<section class="dual-wave-section">
+  <div class="dual-wave-wrapper"
+       data-animation="dual-wave"
+       data-wave-number="12"
+       data-wave-speed="1">
+
+    <!-- Left column: product names + thumbnail images -->
+    <div class="wave-column wave-column-left">
+      <div class="animated-text" data-image="https://picsum.photos/seed/volt/400/600">Volt R2</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/eclat/400/600">Éclat</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/ion/400/600">Project Ion</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/aeroline/400/600">AeroLine</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/serienoir/400/600">Série Noir</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/ultrarun/400/600">UltraRun</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/atelier/400/600">Atelier 03</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/pulseone/400/600">Pulse One</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/linea24/400/600">Linea 24</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/echoseries/400/600">Echo Series</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/zero/400/600">Zero</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/shiftblack/400/600">Shift/Black</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/solardrift/400/600">Solar Drift</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/no27/400/600">Nº 27</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/mode3/400/600">Mode/3</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/pureform/400/600">Pure Form</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/edgepro/400/600">Edge</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/stillwater/400/600">Stillwater</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/parfum8/400/600">Parfum Nº8</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/vantage/400/600">Vantage</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/corepro/400/600">Core</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/archivegreen/400/600">Archive Green</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/rossolinea/400/600">Rosso Linea</div>
+      <div class="animated-text" data-image="https://picsum.photos/seed/a17/400/600">A-17</div>
+    </div>
+
+    <!-- Center thumbnail -->
+    <div class="image-thumbnail-wrapper">
+      <img src="https://picsum.photos/seed/volt/400/600" alt="" class="image-thumbnail" />
+    </div>
+
+    <!-- Right column: brand names -->
+    <div class="wave-column wave-column-right">
+      <div class="animated-text">Tesla</div>
+      <div class="animated-text">Chanel</div>
+      <div class="animated-text">Apple</div>
+      <div class="animated-text">BMW</div>
+      <div class="animated-text">Saint Laurent</div>
+      <div class="animated-text">Nike</div>
+      <div class="animated-text">Hermès</div>
+      <div class="animated-text">Adidas</div>
+      <div class="animated-text">Prada</div>
+      <div class="animated-text">Google</div>
+      <div class="animated-text">Polestar</div>
+      <div class="animated-text">Balenciaga</div>
+      <div class="animated-text">Audi</div>
+      <div class="animated-text">Valentino</div>
+      <div class="animated-text">Samsung</div>
+      <div class="animated-text">Bottega Veneta</div>
+      <div class="animated-text">Sony</div>
+      <div class="animated-text">Aesop</div>
+      <div class="animated-text">Dior</div>
+      <div class="animated-text">Porsche</div>
+      <div class="animated-text">Microsoft</div>
+      <div class="animated-text">Lexus</div>
+      <div class="animated-text">Mercedes-Benz</div>
+      <div class="animated-text">Huawei</div>
+    </div>
+
+  </div>
+</section>
+
+  <!-- 引入必要的庫 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+  <script>
+    // =================================================================
+    // 第一區塊：影片背景與 GSAP 進場動畫
+    // =================================================================
+
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    gsap.set('#hero-title', { autoAlpha: 0, scale: 0.9, y: 30 });
+    gsap.set('.intro-ui-element', { autoAlpha: 0, y: 30 });
+    gsap.set('#bg-video', { scale: 1.1, autoAlpha: 0 }); // 影片初始略大且透明
+
+    // 絲滑的進場動畫：影片淡入並稍微縮小 + 標題/UI 交錯滑入
+    tl.to('#bg-video', { autoAlpha: 1, scale: 1, duration: 3.5, ease: "power2.inOut" }, 0)
+      .to('#hero-title', { autoAlpha: 1, scale: 1, y: 0, duration: 1.8, ease: "expo.out" }, 1.2)
+      .to('.intro-ui-element', { autoAlpha: 1, y: 0, duration: 1, stagger: { amount: 0.6, from: "edges" } }, 1.8);
+
+    // =================================================================
+    // 第二區塊：向下捲動互動與 CSS 3D 方塊
+    // =================================================================
+    const cube = document.getElementById('cube');
+    const sceneWrapper = document.getElementById('sceneWrapper');
+    const section2 = document.getElementById('section-2-content');
+    const imgOverlay = document.getElementById('img-overlay');
+    const darkWrapper = document.getElementById('dark-wrapper');
+    const titleLine1 = document.getElementById('title-line1');
+    const titleLine2 = document.getElementById('title-line2');
+    const faceFront = document.querySelector('.face.front');
+
+    let baseRotY = -45;
+    let targetScrollProgress = 0;
+    let currentScrollProgress = 0;
+
+    window.addEventListener('scroll', () => {
+      let maxScroll = document.querySelector('.scroll-track').offsetHeight - window.innerHeight;
+      targetScrollProgress = Math.max(0, Math.min(window.scrollY / maxScroll, 1));
+    });
+
+    function easeInOutCubic(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+
+    function renderLoop() {
+      requestAnimationFrame(renderLoop);
+
+      // 更新滾動動畫
+      currentScrollProgress += (targetScrollProgress - currentScrollProgress) * 0.08;
+      if (currentScrollProgress < 0.0001) currentScrollProgress = 0;
+      let progress = currentScrollProgress;
+
+      const p_Reveal = 0.15; // 0~15%: 黑色布幕升起覆蓋第一區塊
+      const p_Tumble = 0.45; // 15~45%: 方塊翻滾進場
+      const p_Spin = 0.70; // 45~70%: 平轉一圈
+      const p_Zoom = 1.00; // 70~100%: 放大滿版
+
+      let pr_Reveal = Math.max(0, Math.min(progress / p_Reveal, 1));
+      let easeReveal = easeInOutCubic(pr_Reveal);
+
+      if (progress <= p_Reveal) { baseRotY += 0.4; }
+      let targetY_Phase1 = Math.ceil(baseRotY / 360) * 360 + 360;
+
+      let isMobile = window.innerWidth <= 768;
+      let currentTop = isMobile ? 40 : 50;
+
+      // 核心過渡：拉起暗黑布幕遮住第一區塊
+      darkWrapper.style.clipPath = `inset(${(1 - easeReveal) * 100}% 0 0 0)`;
+
+      let currentScale = 0, currentX = -15, currentY = baseRotY;
+
+      if (progress > p_Reveal) {
+        if (progress <= p_Tumble) {
+          let pr = (progress - p_Reveal) / (p_Tumble - p_Reveal);
+          let ease = easeInOutCubic(pr);
+          currentScale = 1.5 * ease;
+          currentX = -15 * (1 - ease) + 360 * ease;
+          currentY = baseRotY * (1 - ease) + targetY_Phase1 * ease;
+
+          section2.style.opacity = pr;
+          section2.style.pointerEvents = pr > 0.5 ? 'auto' : 'none';
+          imgOverlay.style.opacity = 0;
+          faceFront.style.boxShadow = `inset 0 0 40px rgba(0,0,0,1)`;
+          faceFront.style.border = `1px solid rgba(255,255,255,0.05)`;
+
+        } else if (progress <= p_Spin) {
+          let pr = (progress - p_Tumble) / (p_Spin - p_Tumble);
+          let ease = easeInOutCubic(pr);
+          currentScale = 1.5;
+          currentX = 360;
+          currentY = targetY_Phase1 + 360 * ease;
+
+          section2.style.opacity = 1; section2.style.pointerEvents = 'auto';
+          imgOverlay.style.opacity = 0;
+          faceFront.style.boxShadow = `inset 0 0 40px rgba(0,0,0,1)`;
+          faceFront.style.border = `1px solid rgba(255,255,255,0.05)`;
+
+        } else {
+          let pr = (progress - p_Spin) / (p_Zoom - p_Spin);
+          let ease = easeInOutCubic(pr);
+          let maxScale = Math.max(window.innerWidth, window.innerHeight) / (isMobile ? 120 : 160) * 1.8;
+          currentScale = 1.5 + (maxScale - 1.5) * ease;
+          currentX = 360; currentY = targetY_Phase1 + 360;
+
+          section2.style.opacity = 1; section2.style.pointerEvents = 'auto';
+          titleLine1.style.transform = `translateX(${-(1 - ease) * 15}vw)`;
+          titleLine2.style.transform = `translateX(${(1 - ease) * 15}vw)`;
+
+          imgOverlay.style.opacity = ease * 0.65;
+          faceFront.style.boxShadow = `inset 0 0 ${40 * (1 - ease)}px rgba(0,0,0,1)`;
+          faceFront.style.border = `1px solid rgba(255,255,255,${0.05 * (1 - ease)})`;
+        }
+      } else {
+        currentScale = 0; section2.style.opacity = 0; section2.style.pointerEvents = 'none';
+        imgOverlay.style.opacity = 0;
+        titleLine1.style.transform = `translateX(-15vw)`; titleLine2.style.transform = `translateX(15vw)`;
+      }
+
+      cube.style.transform = `rotateX(${currentX}deg) rotateY(${currentY}deg)`;
+      sceneWrapper.style.transform = `translate(-50%, -50%) scale(${currentScale})`;
+      sceneWrapper.style.top = `${currentTop}%`;
+    }
+
+    // 啟動統一的動畫迴圈
+    renderLoop();
+  </script>
+
+  <!-- Dual Wave Animation -->
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Image preloader
+    const imageCache = new Map();
+    function preloadDualWaveImages(selector) {
+      return new Promise((resolve) => {
+        const container = document.querySelector(selector);
+        if (!container) { resolve(); return; }
+        const srcs = new Set();
+        container.querySelectorAll('[data-image]').forEach(el => { if (el.dataset.image) srcs.add(el.dataset.image); });
+        container.querySelectorAll('img').forEach(img => { if (img.src) srcs.add(img.src); });
+        if (!srcs.size) { resolve(); return; }
+        let loaded = 0;
+        srcs.forEach(src => {
+          if (imageCache.has(src)) { if (++loaded === srcs.size) resolve(); return; }
+          const img = new Image();
+          img.onload = img.onerror = () => { imageCache.set(src, img); if (++loaded === srcs.size) resolve(); };
+          img.src = src;
+        });
+      });
+    }
+
+    class DualWaveAnimation {
+      constructor(wrapper, options = {}) {
+        this.wrapper = wrapper instanceof Element ? wrapper : document.querySelector(wrapper);
+        const waveNumber = this.wrapper?.dataset.waveNumber ? parseFloat(this.wrapper.dataset.waveNumber) : 2;
+        const waveSpeed  = this.wrapper?.dataset.waveSpeed  ? parseFloat(this.wrapper.dataset.waveSpeed)  : 1;
+        this.config = { waveNumber, waveSpeed, ...options };
+        this.currentImage = null;
+      }
+
+      init() {
+        if (!this.wrapper) return;
+        this.leftColumn  = this.wrapper.querySelector('.wave-column-left');
+        this.rightColumn = this.wrapper.querySelector('.wave-column-right');
+        if (!this.leftColumn || !this.rightColumn) return;
+        this.setupAnimation();
+      }
+
+      setupAnimation() {
+        this.leftTexts  = gsap.utils.toArray(this.leftColumn.querySelectorAll('.animated-text'));
+        this.rightTexts = gsap.utils.toArray(this.rightColumn.querySelectorAll('.animated-text'));
+        this.thumbnail  = this.wrapper.querySelector('.image-thumbnail');
+        if (!this.leftTexts.length || !this.rightTexts.length) return;
+
+        this.leftSetters  = this.leftTexts.map(t  => gsap.quickTo(t,  'x', { duration: 0.6, ease: 'power4.out' }));
+        this.rightSetters = this.rightTexts.map(t => gsap.quickTo(t, 'x', { duration: 0.6, ease: 'power4.out' }));
+
+        this.calculateRanges();
+        this.setInitialPositions(this.leftTexts,  this.leftRange,   1);
+        this.setInitialPositions(this.rightTexts, this.rightRange, -1);
+        this.setupScrollTrigger();
+
+        window.addEventListener('resize', () => this.calculateRanges());
+      }
+
+      calculateRanges() {
+        const maxL = Math.max(...this.leftTexts.map(t  => t.offsetWidth));
+        const maxR = Math.max(...this.rightTexts.map(t => t.offsetWidth));
+        this.leftRange  = { minX: 0, maxX: this.leftColumn.offsetWidth  - maxL };
+        this.rightRange = { minX: 0, maxX: this.rightColumn.offsetWidth - maxR };
+      }
+
+      setInitialPositions(texts, range, mult) {
+        const size = range.maxX - range.minX;
+        texts.forEach((t, i) => {
+          const phase = this.config.waveNumber * i - Math.PI / 2;
+          const startX = (range.minX + ((Math.sin(phase) + 1) / 2) * size) * mult;
+          gsap.set(t, { x: startX });
+        });
+      }
+
+      setupScrollTrigger() {
+        ScrollTrigger.create({
+          trigger: this.wrapper,
+          start: 'top bottom',
+          end: 'bottom top',
+          onUpdate: (self) => this.handleScroll(self),
+        });
+      }
+
+      handleScroll(self) {
+        const p = self.progress;
+        const closest = this.findClosestToViewportCenter();
+        this.updateColumn(this.leftTexts,  this.leftSetters,   this.leftRange,   p, closest,  1);
+        this.updateColumn(this.rightTexts, this.rightSetters, this.rightRange, p, closest, -1);
+        this.updateThumbnail(this.thumbnail, this.leftTexts[closest]);
+      }
+
+      updateColumn(texts, setters, range, progress, focusedIdx, mult) {
+        const size = range.maxX - range.minX;
+        texts.forEach((t, i) => {
+          setters[i](this.calcWaveX(i, progress, range.minX, size) * mult);
+          t.classList.toggle('focused', i === focusedIdx);
+        });
+      }
+
+      updateThumbnail(thumb, focusedText) {
+        if (!thumb || !focusedText) return;
+        const newSrc = focusedText.dataset.image;
+        if (newSrc && this.currentImage !== newSrc) { this.currentImage = newSrc; thumb.src = newSrc; }
+        const rect     = this.wrapper.getBoundingClientRect();
+        const vcenter  = window.innerHeight / 2;
+        const idealY   = vcenter - rect.top - thumb.offsetHeight / 2;
+        const clampedY = Math.max(-thumb.offsetHeight / 2, Math.min(this.wrapper.offsetHeight - thumb.offsetHeight / 2, idealY));
+        gsap.set(thumb, { y: clampedY });
+      }
+
+      calcWaveX(index, progress, minX, range) {
+        const phase = this.config.waveNumber * index + this.config.waveSpeed * progress * Math.PI * 2 - Math.PI / 2;
+        return minX + ((Math.sin(phase) + 1) / 2) * range;
+      }
+
+      findClosestToViewportCenter() {
+        const vc = window.innerHeight / 2;
+        let closest = 0, minDist = Infinity;
+        this.leftTexts.forEach((t, i) => {
+          const rect = t.getBoundingClientRect();
+          const dist = Math.abs(rect.top + rect.height / 2 - vc);
+          if (dist < minDist) { minDist = dist; closest = i; }
+        });
+        return closest;
+      }
+    }
+
+    // Initialize
+    const dualWaveWrapper = document.querySelector('.dual-wave-wrapper');
+    if (dualWaveWrapper) {
+      const dualAnim = new DualWaveAnimation(dualWaveWrapper);
+      preloadDualWaveImages('.dual-wave-wrapper').then(() => dualAnim.init());
+    }
+  </script>
+</body>
+
+</html>
