@@ -3635,19 +3635,7 @@
 
         gsap.ticker.add((time) => lenis.raf(time * 1000));
         gsap.ticker.lagSmoothing(0);
-        // 🎯 限制 30fps：視覺動畫不需要 60fps，省下一半主執行緒時間
-        gsap.ticker.fps(30);
         window._lenis = lenis;
-
-        // 🎯 Page Visibility API：tab 切走時完全暫停 gsap.ticker
-        document.addEventListener('visibilitychange', () => {
-          if (document.hidden) {
-            gsap.ticker.sleep();
-          } else {
-            gsap.ticker.wake();
-            syncScrollState(true);
-          }
-        });
 
         let currentVelocity = 0;
         // 🎯 skew 同時作用於 img 和 video
@@ -3766,8 +3754,9 @@
           my = e.clientY;
         }, { passive: true });
 
-        // 🎯 cursor 改為掛在 gsap.ticker，消除獨立 RAF，統一成一條 RAF 管線
-        gsap.ticker.add(() => {
+        (function loop() {
+          requestAnimationFrame(loop);
+
           const targetX = (magnetTarget && magRect)
             ? mx + ((magRect.left + magRect.width / 2) - mx) * magnetStrength
             : mx;
@@ -3778,6 +3767,7 @@
           rx += (targetX - rx) * 0.08;
           ry += (targetY - ry) * 0.08;
 
+          // 🎯 只在有變化時才寫 style,避免冗餘 DOM 寫入
           if (targetX !== _lastDotX || targetY !== _lastDotY) {
             dot.style.transform = `translate(${targetX}px,${targetY}px)`;
             _lastDotX = targetX;
@@ -3788,7 +3778,7 @@
             _lastRingX = rx;
             _lastRingY = ry;
           }
-        });
+        })();
 
         const linkSelectors = 'a, button, .slide-thumb, .pg-item, [data-cursor]';
         document.querySelectorAll(linkSelectors).forEach(el => {
