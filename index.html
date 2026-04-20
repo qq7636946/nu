@@ -3436,7 +3436,10 @@
         ignoreMobileResize: true,
       });
 
-      (function initSTM() {
+      // 🎯 延遲非關鍵動畫初始化，讓主執行緒優先完成 paint
+      var _ric = typeof requestIdleCallback === 'function' ? requestIdleCallback : function(cb){ setTimeout(cb, 200); };
+
+      _ric(function() { (function initSTM() {
         const stmSection = document.getElementById('stm-section');
         const stmLogo = document.getElementById('stmLogo');
         const stmEls = stmSection.querySelectorAll('.stm-el');
@@ -3486,9 +3489,9 @@
             scrollTrigger: { trigger: el, start: 'clamp(center center)', end: 'clamp(top top)', scrub: true }
           });
         });
-      })();
+      })(); }); // end _ric initSTM
 
-      (function initMaskedReveal() {
+      _ric(function() { (function initMaskedReveal() {
         document.querySelectorAll('[data-reveal]').forEach(function (el) {
           var type = el.dataset.reveal || 'line';
           var delay = parseFloat(el.dataset.revealDelay || 0);
@@ -3529,9 +3532,9 @@
             scrollTrigger: { trigger: el, start: 'top 85%' }
           });
         });
-      })();
+      })(); }); // end _ric initMaskedReveal
 
-      (function initGalleryHeader() {
+      _ric(function() { (function initGalleryHeader() {
         const header = document.querySelector('.gallery-header');
         const gallery = document.querySelector('.pg-gallery');
         if (!header || !gallery) return;
@@ -3547,15 +3550,18 @@
             scrub: 1.5,
           }
         });
-      })();
+      })(); }); // end _ric initGalleryHeader
 
       document.querySelectorAll('.pg-item').forEach((item, i) => {
         const wrap = item.querySelector('.pg-img-wrap');
-        const img = item.querySelector('.pg-img-wrap img');
+        // 支援 img 與 video 兩種媒體
+        const media = item.querySelector('.pg-img-wrap img') || item.querySelector('.pg-img-wrap video');
+        const isVideo = media && media.tagName === 'VIDEO';
         const hdr = item.querySelector('.pg-item-header');
 
         if (wrap) gsap.set(wrap, { clipPath: 'inset(100% 0% 0% 0%)' });
-        if (img) gsap.set(img, { scale: 1.35 });
+        // video 不需要 scale in（避免拉伸），img 才做
+        if (media && !isVideo) gsap.set(media, { scale: 1.35 });
 
         const enterTl = gsap.timeline({
           scrollTrigger: {
@@ -3568,9 +3574,8 @@
         if (wrap) {
           enterTl.to(wrap, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'expo.out' }, 0);
         }
-
-        if (img) {
-          enterTl.to(img, { scale: 1.0, duration: 1.0, ease: 'power3.out' }, 0);
+        if (media && !isVideo) {
+          enterTl.to(media, { scale: 1.0, duration: 1.0, ease: 'power3.out' }, 0);
         }
 
         if (hdr) {
@@ -3579,28 +3584,41 @@
           enterTl.to(spans, { y: '0%', duration: 0.6, ease: 'power3.out', stagger: 0.05 }, 0.1);
         }
 
-        if (img) {
-          const speed = [12, 18, 10, 20, 15, 22][i % 6];
-          gsap.fromTo(img,
-            { yPercent: -speed },
-            {
-              yPercent: speed,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: item,
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 1.2
+        if (media) {
+          // video 不做 parallax（避免 GPU 負擔＋視覺跑版），只對 img 做
+          if (!isVideo) {
+            const speed = [12, 18, 10, 20, 15, 22][i % 6];
+            gsap.fromTo(media,
+              { yPercent: -speed },
+              {
+                yPercent: speed,
+                ease: 'none',
+                scrollTrigger: {
+                  trigger: item,
+                  start: 'top bottom',
+                  end: 'bottom top',
+                  scrub: 1.2
+                }
               }
-            }
-          );
+            );
+          }
 
-          item.addEventListener('mouseenter', () =>
-            gsap.to(img, { scale: 1.05, duration: 0.8, ease: 'power2.out', overwrite: 'auto' })
-          );
-          item.addEventListener('mouseleave', () =>
-            gsap.to(img, { scale: 1.0, duration: 1.2, ease: 'expo.out', overwrite: 'auto' })
-          );
+          // hover scale：img 縮放，video 只做亮度效果
+          if (!isVideo) {
+            item.addEventListener('mouseenter', () =>
+              gsap.to(media, { scale: 1.05, duration: 0.8, ease: 'power2.out', overwrite: 'auto' })
+            );
+            item.addEventListener('mouseleave', () =>
+              gsap.to(media, { scale: 1.0, duration: 1.2, ease: 'expo.out', overwrite: 'auto' })
+            );
+          } else {
+            item.addEventListener('mouseenter', () =>
+              gsap.to(wrap, { filter: 'brightness(1.15)', duration: 0.5, ease: 'power2.out', overwrite: 'auto' })
+            );
+            item.addEventListener('mouseleave', () =>
+              gsap.to(wrap, { filter: 'brightness(1)', duration: 0.8, ease: 'expo.out', overwrite: 'auto' })
+            );
+          }
         }
       });
 
@@ -3620,7 +3638,8 @@
         window._lenis = lenis;
 
         let currentVelocity = 0;
-        const skewTargets = document.querySelectorAll('.pg-img-wrap img');
+        // 🎯 skew 同時作用於 img 和 video
+        const skewTargets = document.querySelectorAll('.pg-img-wrap img, .pg-img-wrap video');
 
         // 🎯 效能優化:用 quickTo 取代每次 gsap.to,避免每個 scroll 事件都建立新 tween
         const skewQT = gsap.quickTo(skewTargets, 'skewY', { duration: 0.6, ease: 'power3.out' });
@@ -3669,7 +3688,7 @@
         setInterval(tick, 1000);
       })();
 
-      (function initFooterReveal() {
+      _ric(function() { (function initFooterReveal() {
         const footer = document.getElementById('site-footer');
         if (!footer) return;
 
@@ -3701,9 +3720,9 @@
         tl.to(divider, { scaleX: 1, opacity: 1, duration: 0.6, ease: 'expo.inOut' }, 0.45);
         tl.to(cols, { y: 0, opacity: 1, duration: 0.8, stagger: 0.06, ease: 'power4.out' }, 0.55);
         tl.to(bottom, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, 0.75);
-      })();
+      })(); }); // end _ric initFooterReveal
 
-      (function initGalleryExit() {
+      _ric(function() { (function initGalleryExit() {
         const pgGallery = document.querySelector('.pg-gallery');
         if (!pgGallery) return;
         gsap.to(pgGallery, {
@@ -3717,7 +3736,7 @@
             scrub: 1.5,
           }
         });
-      })();
+      })(); }); // end _ric initGalleryExit
 
       const dot = document.getElementById('cursor-dot');
       const ring = document.getElementById('cursor-ring');
