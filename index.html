@@ -6,28 +6,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NUDOT 核點創意｜品牌策略設計 × 數位創意，重新定義品牌高度</title>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
-  <script src="ScrollTextMotion-main/js/Flip.min.js"></script>
-  <script src="ScrollTextMotion-main/js/ScrambleTextPlugin.min.js"></script>
-   <link rel="icon" href="fav.png" type="image/png">
-  <link rel="stylesheet" href="https://use.typekit.net/upd0woi.css" />
+  <!-- Preconnects (deduplicated) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single:wght@100..900&display=swap">
+  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://use.typekit.net">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
-    rel="stylesheet">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Zalando+Sans+SemiExpanded:ital,wght@0,200..900;1,200..900&display=swap"
-    rel="stylesheet">
+  <!-- Non-blocking: Adobe Fonts -->
+  <link rel="preload" as="style" href="https://use.typekit.net/upd0woi.css">
+  <link rel="stylesheet" href="https://use.typekit.net/upd0woi.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://use.typekit.net/upd0woi.css"></noscript>
+
+  <!-- Non-blocking: Google Fonts (combined into one request) -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single:wght@100..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Zalando+Sans+SemiExpanded:ital,wght@0,200..900;1,200..900&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single:wght@100..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Zalando+Sans+SemiExpanded:ital,wght@0,200..900;1,200..900&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single:wght@100..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Zalando+Sans+SemiExpanded:ital,wght@0,200..900;1,200..900&display=swap"></noscript>
+
+  <link rel="icon" href="fav.png" type="image/png">
+
+  <!-- Deferred JS (non-render-blocking) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js" defer></script>
+  <script src="ScrollTextMotion-main/js/Flip.min.js" defer></script>
+  <script src="ScrollTextMotion-main/js/ScrambleTextPlugin.min.js" defer></script>
   <style>
     *,
     *::after,
@@ -82,6 +86,9 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
+      /* 🎯 提示 GPU 建立獨立合成層,避免重繪整個頁面 */
+      transform: translateZ(0);
+      will-change: transform;
     }
 
     /* =========================================================
@@ -426,6 +433,9 @@
       z-index: 10;
       clip-path: inset(100% 0 0 0);
       will-change: clip-path;
+      /* 🎯 獨立合成層,避免 clip-path 變化時重繪背景 */
+      transform: translateZ(0);
+      contain: layout paint;
     }
 
     .glow-bottom-left {
@@ -451,24 +461,8 @@
     }
 
     nav.dark-nav {
-      position: absolute;
-      top: 40px;
-      right: 5vw;
-      z-index: 10;
-      display: flex;
-      gap: 40px;
+      display: none;
     }
-
-    nav.dark-nav a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 11px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      transition: opacity 0.3s;
-    }
-
-    nav.dark-nav a:hover { opacity: 0.6; }
 
     .scroll-indicator {
       position: absolute;
@@ -513,6 +507,7 @@
       position: relative;
       transform-style: preserve-3d;
       transform: rotateX(-15deg) rotateY(-45deg);
+      will-change: transform;
     }
 
     .face {
@@ -827,12 +822,13 @@
       overflow: visible;
       pointer-events: none;
       z-index: 25;
+      padding-bottom: 15vh;
     }
     .stm-section .stm-el { pointer-events: auto; }
     .stm-content {
       position: relative;
       z-index: 25;
-      padding: 10vh 1.5rem 25vh;
+      padding: 10vh 1.5rem 15vh;
     }
     .stm-group {
       display: flex;
@@ -905,8 +901,8 @@
     .gallery-bridge {
       position: relative;
       z-index: 1;
-      height: 30vh;
-      background: linear-gradient(to bottom, transparent 0%, #000 100%);
+      height: 50vh;
+      background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 40%, #000 100%);
       pointer-events: none;
     }
 
@@ -1064,6 +1060,17 @@
     .intro-panel .animated-text.focused .at-zh {
       transform: translateY(0);
     }
+
+    /* 🎯 尊重使用者偏好:降低動態 → 關閉血量高的濾鏡 */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .glow-bottom-left, .glow-center-left { filter: none; }
+    }
   </style>
 
   <style>
@@ -1082,22 +1089,76 @@
     }
     #fixed-logo {
       position: fixed;
-      top: 3vw;
-      left: 50%;
-      transform: translateX(-50%) translateY(-40px);
+      top: clamp(18px, 2.2vw, 30px);
+      left: clamp(18px, 2.5vw, 40px);
       z-index: 9999;
       pointer-events: none;
       mix-blend-mode: difference;
       opacity: 0;
-      animation: fixedLogoIn 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) 2.8s forwards;
-    }
-    @keyframes fixedLogoIn {
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      /* 🎯 logo scroll-driven 動畫高頻:提示 GPU 合成層 */
+      will-change: transform, opacity;
     }
     #fixed-logo img {
-      height: clamp(20px, 2.5vw, 36px);
+      height: clamp(16px, 1.8vw, 18px);
       width: auto;
       display: block;
+    }
+    #text-logo {
+      position: fixed;
+      top: clamp(18px, 2.2vw, 30px);
+      left: clamp(18px, 2.5vw, 40px);
+      z-index: 9999;
+      pointer-events: none;
+      mix-blend-mode: difference;
+      opacity: 0;
+      /* 🎯 文字 logo 跟隨 scroll 做 x 變形,提示 GPU 合成層 */
+      will-change: transform, opacity;
+    }
+    #text-logo img {
+      height: clamp(10px, 1.1vw, 16px);
+      width: auto;
+      display: block;
+    }
+
+    /* ── Menu button (top-right) ── */
+    #menu-btn {
+      position: fixed;
+      top: clamp(14px, 2vw, 30px);
+      right: clamp(18px, 2.5vw, 40px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: #fff;
+      color: #000;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      opacity: 0;
+      transform: translateY(-12px);
+      animation: menuBtnIn 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) 3s forwards;
+      transition: background 0.2s, color 0.2s;
+    }
+    #menu-btn:hover { background: #e0e0e0; }
+    #menu-btn .menu-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    #menu-btn .menu-lines span {
+      display: block;
+      width: 16px;
+      height: 1.5px;
+      background: currentColor;
+    }
+    @keyframes menuBtnIn {
+      to { opacity: 1; transform: translateY(0); }
     }
     #cursor-dot, #cursor-ring {
       position: fixed;
@@ -1143,10 +1204,10 @@
       transition: none;
     }
     #cursor-ring.is-link::after {
-      content: 'VIEW MORE';
+      content: 'EXPLORE ↗';
       display: block;
       padding: 3px 3px;
-      font-size: 12px;
+      font-size: 13px;
       margin-left: 100px;
       font-weight: 600;
       color: #000;
@@ -1171,6 +1232,8 @@
     .s3-gallery-section {
       position: relative;
       z-index: 2;
+      background: #000;
+      contain: layout;
     }
     .footer-video-bg {
       position: absolute;
@@ -1375,6 +1438,16 @@
   <div id="fixed-logo">
     <img src="pc_logo.svg" alt="Nudot">
   </div>
+  <div id="text-logo">
+    <img src="textlogo.svg" alt="Nu'dot">
+  </div>
+  <button id="menu-btn" aria-label="Open menu">
+    <div class="menu-lines">
+      <span></span>
+      <span></span>
+    </div>
+    Menu
+  </button>
   <div id="cursor-dot"></div>
   <div id="cursor-ring"></div>
 
@@ -1487,8 +1560,9 @@
         </div>
 
         <div class="slides">
+           <div class="slide"> <div class="slide__img" data-video="a2.mp4" data-thumb="images/home/banner01.jpg"></div></div> 
           <div class="slide"><div class="slide__img" style="background-image: url(images/home/banner01.jpg)"></div></div>
-          <div class="slide"><div class="slide__img" style="background-image: url(images/home/banner02.jpg)"></div></div>
+          
           <div class="slide"><div class="slide__img" style="background-image: url(images/home/banner03.jpg)"></div></div>
           <div class="slide"><div class="slide__img" style="background-image: url(images/home/banner04.jpg)"></div></div>
           <div class="slide"><div class="slide__img" data-video="logo.mp4" data-thumb="images/home/banner01.jpg"></div></div>
@@ -1497,7 +1571,7 @@
       
       <div class="dark-wrapper" id="dark-wrapper">
         <div id="dw-black-overlay" style="position:absolute;inset:0;background:#000;z-index:9;pointer-events:none;opacity:0;transition:opacity 0.05s;"></div>
-        <video autoplay muted loop playsinline style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.45;">
+        <video autoplay muted loop playsinline preload="none" disableRemotePlayback style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.45;">
           <source src="images/bg.mp4" type="video/mp4">
         </video>
 
@@ -1581,11 +1655,11 @@
                 <img src="images/t1.gif" alt="Cube front" class="face-media">
                 <div id="img-overlay" style="position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity 0.1s;"></div>
               </div>
-              <div class="face right"><img src="images/t2.jpg" alt="Cube right" class="face-media"></div>
-              <div class="face back"><img src="images/t3%201.jpg" alt="Cube back" class="face-media"></div>
-              <div class="face left"><img src="images/t4.jpeg" alt="Cube left" class="face-media"></div>
-              <div class="face top"><img src="images/t5.jpg" alt="Cube top" class="face-media"></div>
-              <div class="face bottom"><img src="images/t6.jpg" alt="Cube bottom" class="face-media"></div>
+              <div class="face right"><img src="images/t2.jpg" alt="Cube right" class="face-media" loading="lazy" decoding="async"></div>
+              <div class="face back"><img src="images/t3%201.jpg" alt="Cube back" class="face-media" loading="lazy" decoding="async"></div>
+              <div class="face left"><img src="images/t4.jpeg" alt="Cube left" class="face-media" loading="lazy" decoding="async"></div>
+              <div class="face top"><img src="images/t5.jpg" alt="Cube top" class="face-media" loading="lazy" decoding="async"></div>
+              <div class="face bottom"><img src="images/t6.jpg" alt="Cube bottom" class="face-media" loading="lazy" decoding="async"></div>
             </div>
           </div>
         </div>
@@ -1746,33 +1820,33 @@
     <div class="pg-gallery">
       <div class="pg-item pg-item-1">
         <div class="pg-item-header"><span>00-1</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
-        <div class="pg-img-wrap"><img src="images/t1.gif" alt="Cube front" class="face-media"></div>
+        <div class="pg-img-wrap"><img src="images/t1.gif" alt="Cube front" class="face-media" loading="lazy" decoding="async"></div>
       </div>
       <div class="pg-item pg-item-2">
         <div class="pg-item-header"><span>00-2</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
-        <div class="pg-img-wrap"><img src="images/work/2.jpg" alt="Project 02"></div>
+        <div class="pg-img-wrap"><img src="images/work/2.jpg" alt="Project 02" loading="lazy" decoding="async"></div>
       </div>
       <div class="pg-item pg-item-3">
         <div class="pg-item-header"><span>00-3</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
-        <div class="pg-img-wrap"><img src="images/work/3.jpg" alt="Project 03"></div>
+        <div class="pg-img-wrap"><img src="images/work/3.jpg" alt="Project 03" loading="lazy" decoding="async"></div>
       </div>
       <div class="pg-item pg-item-4">
         <div class="pg-item-header"><span>00-4</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
-        <div class="pg-img-wrap"><img src="images/work/4.jpg" alt="Project 04"></div>
+        <div class="pg-img-wrap"><img src="images/work/4.jpg" alt="Project 04" loading="lazy" decoding="async"></div>
       </div>
       <div class="pg-item pg-item-5">
         <div class="pg-item-header"><span>00-5</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
-        <div class="pg-img-wrap"><img src="images/work/5.jpg" alt="Project 05"></div>
+        <div class="pg-img-wrap"><img src="images/work/5.jpg" alt="Project 05" loading="lazy" decoding="async"></div>
       </div>
       <div class="pg-item pg-item-6">
         <div class="pg-item-header"><span>00-6</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
-        <div class="pg-img-wrap"><img src="images/work/6.jpg" alt="Project 06"></div>
+        <div class="pg-img-wrap"><img src="images/work/6.jpg" alt="Project 06" loading="lazy" decoding="async"></div>
       </div>
     </div>
   </section>
 
   <footer class="site-footer" id="site-footer">
-    <video class="footer-video-bg" autoplay muted loop playsinline>
+    <video class="footer-video-bg" autoplay muted loop playsinline preload="none">
       <source src="images/bg.mp4" type="video/mp4">
     </video>
 
@@ -1816,7 +1890,7 @@
     </div>
   </footer>
 
-  <script>
+<script>
     // =========================================================
     // SLIDESHOW LOGIC (Variables)
     // =========================================================
@@ -1872,6 +1946,13 @@
       setTimeout(() => current.remove(), 500);
     }
 
+    // 🎯 效能快取:line-base-height CSS var 只需讀取一次,避免重複 getComputedStyle
+    let _lineBaseHeight = 15;
+    try {
+      const _rootStyle = getComputedStyle(document.documentElement);
+      _lineBaseHeight = parseInt(_rootStyle.getPropertyValue("--line-base-height")) || 15;
+    } catch (e) {}
+
     function updateDragLines(activeIndex, forceUpdate = false) {
       const lines = document.querySelectorAll(".drag-line");
       if (!lines.length) return;
@@ -1887,6 +1968,8 @@
       const centerPosition = (activeIndex + 0.5) * thumbWidth;
       const lineWidth = 720 / lines.length;
 
+      // 🎯 效能優化:因 CSS 上已有 transition-delay 效果,這裡直接同步寫入,
+      //    移除 60 個 setTimeout 造成的 timer overhead 與閉包記憶體壓力
       lines.forEach((line, i) => {
         const linePosition = (i + 0.5) * lineWidth;
         const distFromCenter = Math.abs(linePosition - centerPosition);
@@ -1895,21 +1978,15 @@
         if (distFromCenter <= maxDistance) {
           const normalizedDist = distFromCenter / maxDistance;
           const waveHeight = Math.cos((normalizedDist * Math.PI) / 2);
-          const height = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--line-base-height")) + waveHeight * 35;
+          const height = _lineBaseHeight + waveHeight * 35;
           const opacity = 0.3 + waveHeight * 0.4;
-          const delay = normalizedDist * 100;
 
-          if (forceUpdate) {
-            line.style.height = `${height}px`;
-            line.style.backgroundColor = `rgba(255, 255, 255, ${opacity})`;
-          } else {
-            setTimeout(() => {
-              if (currentHoveredThumb === activeIndex || (mouseOverThumbnails && lastHoveredThumbIndex === activeIndex)) {
-                line.style.height = `${height}px`;
-                line.style.backgroundColor = `rgba(255, 255, 255, ${opacity})`;
-              }
-            }, delay);
-          }
+          // CSS 的 cubic-bezier transition 本身就會產生波浪進場效果,不需 setTimeout
+          line.style.transitionDelay = `${normalizedDist * 0.08}s`;
+          line.style.height = `${height}px`;
+          line.style.backgroundColor = `rgba(255, 255, 255, ${opacity})`;
+        } else {
+          line.style.transitionDelay = '0s';
         }
       });
     }
@@ -1937,7 +2014,7 @@
         this.loadTextures();
 
         window.addEventListener('resize', this.onResize.bind(this));
-        window.addEventListener('mousemove', this.onMouseMove.bind(this));
+        window.addEventListener('mousemove', this.onMouseMove.bind(this), { passive: true });
       }
 
       onMouseMove(e) {
@@ -2093,10 +2170,25 @@
       }
 
       render() {
+        // 🎯 效能優化:hero 已捲出視口 (scrollY > 兩倍 viewport) 且無轉場時跳過 render
+        const progress = this.material.uniforms.uProgress.value;
+        const inTransition = progress > 0 && progress < 1;
+        if (!inTransition && window.scrollY > window.innerHeight * 2) {
+          return;
+        }
+
         this.mouse.lerp(this.targetMouse, 0.05);
         this.material.uniforms.uMouse.value.copy(this.mouse);
+
+        const t1 = this.material.uniforms.uTex1.value;
+        const t2 = this.material.uniforms.uTex2.value;
+
         for (const idx in this.videoEls) {
-          if (this.textures[idx]) this.textures[idx].needsUpdate = true;
+          const vid = this.videoEls[idx];
+          const tex = this.textures[idx];
+          if (tex && (tex === t1 || tex === t2) && vid.readyState >= 2) {
+            tex.needsUpdate = true;
+          }
         }
         this.renderer.render(this.scene, this.camera);
       }
@@ -2204,6 +2296,13 @@
     // INITIALIZATION & SCROLL ANIMATION TIE-IN
     // =========================================================
     document.addEventListener("DOMContentLoaded", () => {
+
+      let winW = window.innerWidth;
+      let winH = window.innerHeight;
+      window.addEventListener('resize', () => {
+        winW = window.innerWidth;
+        winH = window.innerHeight;
+      });
 
       // 1. Initialize WebGL Slideshow
       const imageUrls = Array.from(document.querySelectorAll(".slide__img"))
@@ -2333,7 +2432,7 @@
           dragStartX = e.clientX;
           heroEl.style.cursor = 'grabbing';
           stopAutoLoop();
-        });
+        }, { passive: true });
         document.addEventListener('mouseup', (e) => {
           if (!isDragging) return;
           isDragging = false;
@@ -2344,8 +2443,8 @@
             else slideshow.prev();
           }
           startAutoLoop();
-        });
-        heroEl.addEventListener('mouseleave', () => { isDragging = false; heroEl.style.cursor = 'grab'; });
+        }, { passive: true });
+        heroEl.addEventListener('mouseleave', () => { isDragging = false; heroEl.style.cursor = 'grab'; }, { passive: true });
       }
 
       let autoLoopTimer = null;
@@ -2365,19 +2464,16 @@
       let touchStartY = 0;
       document.addEventListener("touchstart", (e) => { touchStartY = e.touches[0].clientY; window._touchStartX = e.touches[0].clientX; }, { passive: true });
 
-      document.addEventListener("touchmove", (e) => {
-      }, { passive: true });
+      // 🎯 移除空的 touchmove 處理器(原本什麼也沒做卻佔事件排程)
 
       document.addEventListener("touchend", (e) => {
-        const diff = touchStartY - e.changedTouches[0].clientY;
-        const diffX = e.changedTouches[0].clientX - (e.changedTouches[0].clientX);
         const touchEndX = e.changedTouches[0].clientX;
         const touchDiffX = (window._touchStartX || touchEndX) - touchEndX;
         if (Math.abs(touchDiffX) > 50 && window.scrollY < window.innerHeight && !isAnimating) {
           if (touchDiffX > 0) slideshow.next();
           else slideshow.prev();
         }
-      });
+      }, { passive: true });
 
       document.addEventListener("keydown", (e) => {
         if (window.scrollY <= window.innerHeight * 0.5 && !isAnimating) {
@@ -2406,23 +2502,49 @@
       const uiScroll = document.getElementById('ui-scroll');
       const uiGlow1 = document.getElementById('ui-glow1');
       const uiGlow2 = document.getElementById('ui-glow2');
+      const fixedLogoEl = document.getElementById('fixed-logo');
+      const textLogoEl  = document.getElementById('text-logo');
 
-      if (uiNav) { uiNav.style.opacity = '0'; uiNav.style.transform = 'translateY(-25px)'; }
-      if (uiScroll) { uiScroll.style.opacity = '0'; }
-      if (uiGlow1) { uiGlow1.style.opacity = '0'; uiGlow1.style.transform = 'scale(0.4)'; }
-      if (uiGlow2) { uiGlow2.style.opacity = '0'; uiGlow2.style.transform = 'scale(0.4)'; }
+      if (uiNav) { gsap.set(uiNav, { opacity: 0, y: -25 }); }
+      if (uiScroll) { gsap.set(uiScroll, { opacity: 0 }); }
+      if (uiGlow1) { gsap.set(uiGlow1, { opacity: 0, scale: 0.4 }); }
+      if (uiGlow2) { gsap.set(uiGlow2, { opacity: 0, scale: 0.4 }); }
+
+      // Logo: entrance + scroll-driven split animation
+      let logoTargetX = 0;   // pc_logo moves to center
+      let textLogoInitX = 0; // textlogo starts offset right (next to pc_logo)
+
+      function calcLogoPositions() {
+        if (!fixedLogoEl || !textLogoEl) return;
+        const leftBase  = parseFloat(getComputedStyle(fixedLogoEl).left);
+        logoTargetX    = winW / 2 - fixedLogoEl.offsetWidth / 2 - leftBase;
+        textLogoInitX  = fixedLogoEl.offsetWidth + 10; // gap = 10px
+        gsap.set(textLogoEl, { x: textLogoInitX });
+      }
+
+      if (fixedLogoEl) {
+        gsap.set(fixedLogoEl, { y: -16 });
+        gsap.to(fixedLogoEl, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', delay: 2.8,
+          onComplete: calcLogoPositions });
+      }
+      if (textLogoEl) {
+        gsap.set(textLogoEl, { y: -16 });
+        gsap.to(textLogoEl, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', delay: 2.9 });
+      }
+      window.addEventListener('resize', calcLogoPositions);
 
       function resetReveal() {
-        titleSubtitle.style.transform = 'translateY(130%)';
-        titleLine1.style.transform = 'translateY(130%)';
-        titleLine2.style.transform = 'translateY(130%)';
-        titleDesc.style.transform = 'translateY(130%)';
-        newSubtitle.style.transform = 'translateY(130%)';
-        newLine1.style.transform = 'translateY(130%)';
-        newLine2.style.transform = 'translateY(130%)';
-        newDesc.style.transform = 'translateY(130%)';
+        gsap.set(titleSubtitle, { yPercent: 130 });
+        gsap.set(titleLine1, { yPercent: 130 });
+        gsap.set(titleLine2, { yPercent: 130 });
+        gsap.set(titleDesc, { yPercent: 130 });
+        gsap.set(newSubtitle, { yPercent: 130 });
+        gsap.set(newLine1, { yPercent: 130 });
+        gsap.set(newLine2, { yPercent: 130 });
+        gsap.set(newDesc, { yPercent: 130 });
       }
       resetReveal();
+      
       const faceFront = document.querySelector('.face.front');
       const scene = document.querySelector('.scene');
       const introPanel = document.getElementById('intro-panel');
@@ -2442,6 +2564,8 @@
         const WAVE_SPD = 1;
         let currentSrc = '';
         let _ranges = null;  
+        let _lastFocused = -1; // 加入快取，避免重複操作 DOM
+        let _wrapperH = 0; // 🎯 效能優化:快取 offsetHeight,避免每幀 layout 讀取
 
         const lqx = leftTexts.map(t => gsap.quickTo(t, 'x', { duration: 0.6, ease: 'power4.out' }));
         const rqx = rightTexts.map(t => gsap.quickTo(t, 'x', { duration: 0.6, ease: 'power4.out' }));
@@ -2460,44 +2584,49 @@
           return range.min + ((Math.sin(phase) + 1) / 2) * (range.max - range.min);
         }
 
-        function closestToCenter() {
-          const cy = window.innerHeight / 2;
-          let best = 0, minD = Infinity;
-          leftTexts.forEach((t, i) => {
-            const r = t.getBoundingClientRect();
-            const d = Math.abs(r.top + r.height / 2 - cy);
-            if (d < minD) { minD = d; best = i; }
-          });
-          return best;
+        function closestToCenter(progress) {
+          const total = leftTexts.length;
+          if (total === 0) return 0;
+          let index = Math.round(progress * (total - 1));
+          return Math.max(0, Math.min(total - 1, index));
         }
 
         (function init() {
           _ranges = calcRanges();
+          _wrapperH = wrapper.offsetHeight; // 🎯 初始化時讀取一次
           leftTexts.forEach((t, i) => gsap.set(t, { x: waveX(i, 0, _ranges.l) }));
           rightTexts.forEach((t, i) => gsap.set(t, { x: -waveX(i, 0, _ranges.r) }));
         })();
         window.addEventListener('resize', () => {
           _ranges = calcRanges();  
+          _wrapperH = wrapper.offsetHeight; // 🎯 resize 時更新快取
         });
 
         return {
           update(progress) {
             if (!_ranges) _ranges = calcRanges();
+            if (!_wrapperH) _wrapperH = wrapper.offsetHeight;
 
-            const wh = wrapper.offsetHeight;
-            gsap.set(wrapper, { y: wh * (0.5 - progress) });
+            // 🎯 使用快取值,消除每幀的 layout thrashing
+            gsap.set(wrapper, { y: _wrapperH * (0.5 - progress) });
 
-            const focused = closestToCenter();
+            const focused = closestToCenter(progress); 
+            const focusChanged = focused !== _lastFocused;
+
             leftTexts.forEach((t, i) => {
               lqx[i](waveX(i, progress, _ranges.l));
-              t.classList.toggle('focused', i === focused);
+              if (focusChanged) t.classList.toggle('focused', i === focused);
             });
             rightTexts.forEach((t, i) => {
               rqx[i](-waveX(i, progress, _ranges.r));
-              t.classList.toggle('focused', i === focused);
+              if (focusChanged) t.classList.toggle('focused', i === focused);
             });
-            const src = leftTexts[focused] && leftTexts[focused].dataset.image;
-            if (src && src !== currentSrc) { currentSrc = src; thumb.src = src; }
+
+            if (focusChanged) {
+              const src = leftTexts[focused] && leftTexts[focused].dataset.image;
+              if (src && src !== currentSrc) { currentSrc = src; thumb.src = src; }
+              _lastFocused = focused;
+            }
           }
         };
       })();
@@ -2536,18 +2665,28 @@
       let currentScrollProgress = 0;
 
       function syncScrollState(jumpToCurrent = false) {
-        const maxScroll = document.querySelector('.scroll-track').offsetHeight - window.innerHeight;
+        const maxScroll = document.querySelector('.scroll-track').offsetHeight - winH;
+        const currentScrollY = window._lenis ? window._lenis.scroll : window.scrollY;
         const nextProgress = maxScroll > 0
-          ? Math.max(0, Math.min(window.scrollY / maxScroll, 1))
+          ? Math.max(0, Math.min(currentScrollY / maxScroll, 1))
           : 0;
 
         targetScrollProgress = nextProgress;
         if (jumpToCurrent) currentScrollProgress = nextProgress;
       }
 
-      window.addEventListener('scroll', () => {
-        syncScrollState();
-      });
+      // 🎯 效能優化:加上節流旗標,避免 window 'scroll' 與 lenis 'scroll' 重複觸發
+      let _scrollSyncScheduled = false;
+      function scheduleSyncScrollState() {
+        if (_scrollSyncScheduled) return;
+        _scrollSyncScheduled = true;
+        requestAnimationFrame(() => {
+          _scrollSyncScheduled = false;
+          syncScrollState();
+        });
+      }
+
+      window.addEventListener('scroll', scheduleSyncScrollState, { passive: true });
 
       window.addEventListener('pageshow', () => {
         syncScrollState(true);
@@ -2624,6 +2763,9 @@
           gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
           this.uReveal = gl.getUniformLocation(this.prog, 'uReveal');
           this.uTime = gl.getUniformLocation(this.prog, 'uTime');
+
+          gl.useProgram(this.prog);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
         _resize() {
           const dpr = Math.min(devicePixelRatio, 2);
@@ -2646,11 +2788,25 @@
 
       const revealGL = new RevealGL(document.getElementById('ip-reveal-canvas'));
 
+      // 🎯 效能優化:快取上一幀的 progress,當變化極小時跳過整個動畫管線,
+      //    大幅降低 gsap.set 的呼叫頻率,修復 scroll 卡頓
+      let _lastAppliedProgress = -2;
+
       gsap.ticker.add(() => {
         webglManager.render();
 
         currentScrollProgress += (targetScrollProgress - currentScrollProgress) * 0.06;
         if (currentScrollProgress < 0.0001) currentScrollProgress = 0;
+
+        // 🎯 當 progress 跟上一幀幾乎相同且已經趨近目標時,完全跳過動畫管線
+        //    這是最關鍵的效能修復:避免穩定狀態下仍持續刷新 20+ 個 gsap.set
+        const progressDelta = Math.abs(currentScrollProgress - _lastAppliedProgress);
+        const targetDelta   = Math.abs(targetScrollProgress - currentScrollProgress);
+        if (progressDelta < 0.00008 && targetDelta < 0.00008) {
+          return;
+        }
+        _lastAppliedProgress = currentScrollProgress;
+
         let progress = currentScrollProgress;
 
         const p_Reveal = 0.12;
@@ -2669,30 +2825,31 @@
         }
         let targetY_Phase1 = Math.ceil(baseRotY / 360) * 360 + 360;
 
-        let isMobile = window.innerWidth <= 768;
+        let isMobile = winW <= 768;
         let currentTop = isMobile ? 40 : 50;
         let baseSceneSize = isMobile ? 120 : 160;
         let currentSceneSize = baseSceneSize;
 
-        darkWrapper.style.clipPath = `inset(${(1 - easeReveal) * 100}% 0 0 0)`;
+        // 全面改用 gsap.set，觸發 GPU 快取，消除 Layout Thrashing
+        gsap.set(darkWrapper, { clipPath: `inset(${(1 - easeReveal) * 100}% 0 0 0)` });
 
         const uiEntrance = Math.max(0, Math.min((pr_Reveal - 0.60) / 0.40, 1));
         const uiEase = easeInOutCubic(uiEntrance);
-        if (uiNav) {
-          uiNav.style.opacity = String(uiEase);
-          uiNav.style.transform = `translateY(${(1 - uiEase) * -25}px)`;
-        }
-        if (uiScroll) {
-          uiScroll.style.opacity = String(uiEase * 0.7);
-        }
-        if (uiGlow1) {
-          uiGlow1.style.opacity = String(uiEase);
-          uiGlow1.style.transform = `scale(${0.4 + uiEase * 0.6})`;
-        }
-        if (uiGlow2) {
-          uiGlow2.style.opacity = String(uiEase * 0.8);
-          uiGlow2.style.transform = `scale(${0.4 + uiEase * 0.6})`;
-        }
+        
+        if (uiNav) gsap.set(uiNav, { opacity: uiEase, y: (1 - uiEase) * -25 });
+        if (uiScroll) gsap.set(uiScroll, { opacity: uiEase * 0.7 });
+        if (fixedLogoEl) gsap.set(fixedLogoEl, {
+          x: uiEase * logoTargetX,
+          scale: 1 + uiEase * (30 / 18 - 1),
+          transformOrigin: 'left center'
+        });
+        if (textLogoEl) gsap.set(textLogoEl, {
+          x: textLogoInitX * (1 - uiEase)
+        });
+        
+        // 🎯 封印光暈：當透明度為 0 時直接拔除可視性，釋放 GPU
+        if (uiGlow1) gsap.set(uiGlow1, { opacity: uiEase, scale: 0.4 + uiEase * 0.6, visibility: uiEase > 0 ? 'visible' : 'hidden' });
+        if (uiGlow2) gsap.set(uiGlow2, { opacity: uiEase * 0.8, scale: 0.4 + uiEase * 0.6, visibility: uiEase > 0 ? 'visible' : 'hidden' });
 
         {
           const waveRp = progress <= p_Reveal
@@ -2700,57 +2857,39 @@
             : 1.0;
 
           if (progress <= p_TextOut) {
-            introPanel.style.opacity = waveRp > 0 ? '1' : '0';
-            introPanel.style.clipPath = 'none';
-            introPanel.style.filter = 'none';
-            introPanel.style.transform = 'none';
-            revealGL.render(waveRp);
+            // 🎯 封印面板：不顯示時徹底隱藏
+            gsap.set(introPanel, { opacity: waveRp > 0 ? 1 : 0, visibility: waveRp > 0 ? 'visible' : 'hidden' });
+            
             if (waveRp > 0) {
+              revealGL.render(waveRp);
               const panelT = progress <= p_Reveal
                 ? 0
                 : (progress - p_Reveal) / (p_TextOut - p_Reveal);
               const ndIn = easeInOutCubic(Math.max(0, Math.min((waveRp - 0.30) / 0.65, 1)));
               const ndOut = easeInOutCubic(Math.max(0, (panelT - 0.84) / 0.16));
               const ndOpacity = Math.max(0, ndIn * (1 - ndOut));
-              if (introTopHeader && introTopTitle) {
-                introTopHeader.style.opacity = String(ndOpacity);
-                introTopTitle.style.transform = `translateY(${(1 - ndIn) * 110}%)`;
-              }
-              if (introBottomLetter && introBottomTitle) {
-                introBottomLetter.style.opacity = String(ndOpacity);
-                introBottomTitle.style.transform = `translateY(${(1 - ndIn) * -110}%)`;
-              }
+              
+              if (introTopHeader) gsap.set(introTopHeader, { opacity: ndOpacity });
+              if (introTopTitle) gsap.set(introTopTitle, { yPercent: (1 - ndIn) * 110 });
+              if (introBottomLetter) gsap.set(introBottomLetter, { opacity: ndOpacity });
+              if (introBottomTitle) gsap.set(introBottomTitle, { yPercent: (1 - ndIn) * -110 });
+              
               const outT = easeInOutCubic(Math.max(0, (panelT - 0.83) / 0.17));
-              if (outT > 0) introPanel.style.opacity = String(Math.max(0, 1 - outT));
+              if (outT > 0) gsap.set(introPanel, { opacity: Math.max(0, 1 - outT) });
+              
               _ipWave.update(panelT);
-            } else {
-              if (introTopHeader && introTopTitle) {
-                introTopHeader.style.opacity = '0';
-                introTopTitle.style.transform = 'translateY(110%)';
-              }
-              if (introBottomLetter && introBottomTitle) {
-                introBottomLetter.style.opacity = '0';
-                introBottomTitle.style.transform = 'translateY(-110%)';
-              }
             }
           } else {
-            introPanel.style.opacity = '0';
-            introPanel.style.clipPath = '';
-            introPanel.style.filter = '';
-            introPanel.style.transform = '';
-            if (introTopHeader && introTopTitle) {
-              introTopHeader.style.opacity = '0';
-              introTopTitle.style.transform = 'translateY(110%)';
-            }
-            if (introBottomLetter && introBottomTitle) {
-              introBottomLetter.style.opacity = '0';
-              introBottomTitle.style.transform = 'translateY(-110%)';
-            }
-            revealGL.render(0); 
+            // 完全重置並隱藏
+            gsap.set(introPanel, { opacity: 0, visibility: 'hidden' });
+            if (introTopHeader) gsap.set(introTopHeader, { opacity: 0 });
+            if (introTopTitle) gsap.set(introTopTitle, { yPercent: 110 });
+            if (introBottomLetter) gsap.set(introBottomLetter, { opacity: 0 });
+            if (introBottomTitle) gsap.set(introBottomTitle, { yPercent: -110 });
           }
         }
 
-        let currentScale = 0;
+        let currentScale = 0.0001;
         let currentX = -15;
         let currentY = baseRotY;
 
@@ -2758,53 +2897,49 @@
 
           const revealTotal = p_PreExit - p_TextOut;
           const revealPr = Math.max(0, Math.min((progress - p_TextOut) / revealTotal, 1));
-          titleSubtitle.style.transform = `translateY(${(1 - easeInOutCubic(Math.max(0, Math.min(revealPr / 0.40, 1)))) * 130}%)`;
-          titleLine1.style.transform = `translateY(${(1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.08) / 0.42, 1)))) * 130}%)`;
-          titleLine2.style.transform = `translateY(${(1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.18) / 0.42, 1)))) * 130}%)`;
-          titleDesc.style.transform = `translateY(${(1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.32) / 0.42, 1)))) * 130}%)`;
+          
+          // 🎯 取代字串串接，啟動 GSAP 高速變形
+          gsap.set(titleSubtitle, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min(revealPr / 0.40, 1)))) * 130 });
+          gsap.set(titleLine1, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.08) / 0.42, 1)))) * 130 });
+          gsap.set(titleLine2, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.18) / 0.42, 1)))) * 130 });
+          gsap.set(titleDesc, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.32) / 0.42, 1)))) * 130 });
 
-          newTextGroup.style.opacity = '0';
-          newSubtitle.style.transform = 'translateY(130%)';
-          newLine1.style.transform = 'translateY(130%)';
-          newLine2.style.transform = 'translateY(130%)';
-          newDesc.style.transform = 'translateY(130%)';
+          gsap.set(newTextGroup, { opacity: 0 });
+          gsap.set(newSubtitle, { yPercent: 130 });
+          gsap.set(newLine1, { yPercent: 130 });
+          gsap.set(newLine2, { yPercent: 130 });
+          gsap.set(newDesc, { yPercent: 130 });
 
           if (progress <= p_Tumble) {
             let pr = (progress - p_TextOut) / (p_Tumble - p_TextOut);
             let ease = easeInOutCubic(pr);
 
             currentScale = 1.5 * ease;
-            currentX = -15 * (1 - ease) + 360 * ease;
+            currentX = -15 * (1 - ease);
             currentY = baseRotY * (1 - ease) + targetY_Phase1 * ease;
 
-            section2.style.opacity = '1';
-            section2.style.pointerEvents = 'none';
-            section2.style.zIndex = '18';
-            imgOverlay.style.opacity = '0';
-            faceFront.style.boxShadow = 'inset 0 0 40px rgba(0,0,0,1)';
-            faceFront.style.border = '1px solid rgba(255,255,255,0.05)';
+            gsap.set(section2, { opacity: 1, pointerEvents: 'none', zIndex: 18 });
+            gsap.set(imgOverlay, { opacity: 0 });
+            gsap.set(faceFront, { boxShadow: 'inset 0 0 40px rgba(0,0,0,1)', border: '1px solid rgba(255,255,255,0.05)' });
 
           } else if (progress <= p_Spin) {
             let pr = (progress - p_Tumble) / (p_Spin - p_Tumble);
             let ease = easeInOutCubic(pr);
 
             currentScale = 1.5;
-            currentX = 360;
+            currentX = 0;
             currentY = targetY_Phase1 + 360 * ease;
 
-            section2.style.opacity = '1';
-            section2.style.pointerEvents = 'none';
-            section2.style.zIndex = '18';
-            imgOverlay.style.opacity = '0';
-            faceFront.style.boxShadow = 'inset 0 0 40px rgba(0,0,0,1)';
-            faceFront.style.border = '1px solid rgba(255,255,255,0.05)';
+            gsap.set(section2, { opacity: 1, pointerEvents: 'none', zIndex: 18 });
+            gsap.set(imgOverlay, { opacity: 0 });
+            gsap.set(faceFront, { boxShadow: 'inset 0 0 40px rgba(0,0,0,1)', border: '1px solid rgba(255,255,255,0.05)' });
 
             if (progress >= p_PreExit) {
               const exitPr = (progress - p_PreExit) / (p_Spin - p_PreExit);
-              titleDesc.style.transform = `translateY(${-easeInOutCubic(Math.min(exitPr, 1)) * 130}%)`;
-              titleLine2.style.transform = `translateY(${-easeInOutCubic(Math.max(0, Math.min((exitPr - 0.10) / 0.90, 1))) * 130}%)`;
-              titleLine1.style.transform = `translateY(${-easeInOutCubic(Math.max(0, Math.min((exitPr - 0.20) / 0.80, 1))) * 130}%)`;
-              titleSubtitle.style.transform = `translateY(${-easeInOutCubic(Math.max(0, Math.min((exitPr - 0.30) / 0.70, 1))) * 130}%)`;
+              gsap.set(titleDesc, { yPercent: -easeInOutCubic(Math.min(exitPr, 1)) * 130 });
+              gsap.set(titleLine2, { yPercent: -easeInOutCubic(Math.max(0, Math.min((exitPr - 0.10) / 0.90, 1))) * 130 });
+              gsap.set(titleLine1, { yPercent: -easeInOutCubic(Math.max(0, Math.min((exitPr - 0.20) / 0.80, 1))) * 130 });
+              gsap.set(titleSubtitle, { yPercent: -easeInOutCubic(Math.max(0, Math.min((exitPr - 0.30) / 0.70, 1))) * 130 });
             }
 
           } else {
@@ -2812,82 +2947,92 @@
             let ease = easeInOutCubic(pr);
 
             const spinDisplaySize = baseSceneSize * 1.5;
-            const targetSceneSize = Math.max(window.innerWidth, window.innerHeight) * 0.35;
+            const targetSceneSize = Math.max(winW, winH) * 0.35;
             currentSceneSize = spinDisplaySize + (targetSceneSize - spinDisplaySize) * ease;
             currentScale = 1;
-
-            currentX = 360;
+            currentX = 0;
             currentY = targetY_Phase1 + 360;
 
-            section2.style.opacity = String(Math.max(0, 1 - ease * 5));
-            section2.style.pointerEvents = 'none';
-            section2.style.zIndex = '30';
-            newTextGroup.classList.add('text-blend');
-
-            imgOverlay.style.opacity = String(ease * 0);
-            faceFront.style.boxShadow = `inset 0 0 ${40 * (1 - ease)}px rgba(0,0,0,1)`;
-            faceFront.style.border = `1px solid rgba(255,255,255,${0.05 * (1 - ease)})`;
-            if (dwBlackOverlay) dwBlackOverlay.style.opacity = String(ease);
+            gsap.set(section2, { opacity: Math.max(0, 1 - ease * 5), pointerEvents: 'none', zIndex: 30 });
+            gsap.set(imgOverlay, { opacity: ease * 0 });
+            gsap.set(faceFront, { 
+              boxShadow: `inset 0 0 ${40 * (1 - ease)}px rgba(0,0,0,1)`, 
+              border: `1px solid rgba(255,255,255,${0.05 * (1 - ease)})` 
+            });
+            
+            if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: ease });
             if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
 
-            titleDesc.style.transform = 'translateY(-130%)';
-            titleLine2.style.transform = 'translateY(-130%)';
-            titleLine1.style.transform = 'translateY(-130%)';
-            titleSubtitle.style.transform = 'translateY(-130%)';
+            gsap.set([titleDesc, titleLine2, titleLine1, titleSubtitle], { yPercent: -130 });
 
-            newTextGroup.style.opacity = '1';
+            gsap.set(newTextGroup, { opacity: 1 });
             const enterPr = Math.max(0, Math.min(pr / 0.70, 1));
-            newSubtitle.style.transform = `translateY(${(1 - easeInOutCubic(Math.min(enterPr / 0.60, 1))) * 130}%)`;
-            newLine1.style.transform = `translateY(${(1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.10) / 0.60, 1)))) * 130}%)`;
-            newLine2.style.transform = `translateY(${(1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.20) / 0.60, 1)))) * 130}%)`;
-            newDesc.style.transform = `translateY(${(1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.35) / 0.55, 1)))) * 130}%)`;
+            gsap.set(newSubtitle, { yPercent: (1 - easeInOutCubic(Math.min(enterPr / 0.60, 1))) * 130 });
+            gsap.set(newLine1, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.10) / 0.60, 1)))) * 130 });
+            gsap.set(newLine2, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.20) / 0.60, 1)))) * 130 });
+            gsap.set(newDesc, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.35) / 0.55, 1)))) * 130 });
           }
 
         } else if (progress > p_Zoom) {
-          const targetSceneSize = Math.max(window.innerWidth, window.innerHeight) * 0.35;
+          const targetSceneSize = Math.max(winW, winH) * 0.35;
           currentSceneSize = targetSceneSize;
           currentScale = 1;
-          currentX = 360;
+          currentX = 0;
           currentY = targetY_Phase1 + 360;
-          section2.style.opacity = '0';
-          section2.style.pointerEvents = 'none';
-          section2.style.zIndex = '30';
-          newTextGroup.classList.add('text-blend');
-          imgOverlay.style.opacity = '0';
-          if (dwBlackOverlay) dwBlackOverlay.style.opacity = '1';
+          
+          gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 30 });
+          gsap.set(imgOverlay, { opacity: 0 });
+          
+          if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 1 });
           if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
-          newTextGroup.style.opacity = '1';
-          titleDesc.style.transform = 'translateY(-130%)';
-          titleLine2.style.transform = 'translateY(-130%)';
-          titleLine1.style.transform = 'translateY(-130%)';
-          titleSubtitle.style.transform = 'translateY(-130%)';
+          
+          gsap.set(newTextGroup, { opacity: 1 });
+          gsap.set([titleDesc, titleLine2, titleLine1, titleSubtitle], { yPercent: -130 });
         } else {
-          currentScale = 0;
-          section2.style.opacity = '0';
-          section2.style.pointerEvents = 'none';
-          section2.style.zIndex = '22';
-          newTextGroup.classList.remove('text-blend');
-          section2.classList.remove('text-blend');
-          imgOverlay.style.opacity = '0';
-          if (dwBlackOverlay) dwBlackOverlay.style.opacity = '0';
+          currentScale = 0.0001;
+          
+          gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 22 });
+          gsap.set(imgOverlay, { opacity: 0 });
+          
+          if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 0 });
           if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
-          newTextGroup.style.opacity = '0';
+          gsap.set(newTextGroup, { opacity: 0 });
+          
           resetReveal();
         }
 
-        scene.style.setProperty('--scene-size', `${currentSceneSize}px`);
-        scene.style.setProperty('--scene-depth', `${currentSceneSize / 2}px`);
+        gsap.set(scene, {
+          '--scene-size': `${currentSceneSize}px`,
+          '--scene-depth': `${currentSceneSize / 2}px`
+        });
 
-        cube.style.transform = `rotateX(${currentX}deg) rotateY(${currentY}deg)`;
-        sceneWrapper.style.transform = `translate(-50%, -50%) scale(${currentScale})`;
-        sceneWrapper.style.top = `${currentTop}%`;
+        gsap.set(cube, {
+          rotationX: currentX,
+          rotationY: currentY,
+          rotationZ: 0 
+        });
 
-        if (stmLogoEl) {
+        gsap.set(sceneWrapper, {
+          xPercent: -50,
+          yPercent: -50,
+          scale: currentScale,
+          top: `${currentTop}%`
+        });
+
+        if (stmLogoEl && progress <= p_TextOut) {
           stmLogoEl.classList.remove('is-visible');
         }
       });
 
       gsap.registerPlugin(ScrollTrigger, Flip, ScrambleTextPlugin);
+
+      // 🎯 ScrollTrigger 全域效能設定:
+      //   - limitCallbacks: 限制 callback 頻率,避免快速滑動時 CPU 爆炸
+      //   - ignoreMobileResize: 行動裝置 URL bar 收合不觸發重算
+      ScrollTrigger.config({
+        limitCallbacks: true,
+        ignoreMobileResize: true,
+      });
 
       (function initSTM() {
         const stmSection = document.getElementById('stm-section');
@@ -2990,68 +3135,49 @@
         if (!header || !gallery) return;
         gsap.to(header, {
           opacity: 0,
-          scale: 0.92,
-          filter: 'blur(8px)',
-          ease: 'none',
+          scale: 0.94,
+          filter: 'blur(12px)',
+          y: -40,
+          ease: 'power2.in',
           scrollTrigger: {
             trigger: gallery,
-            start: 'bottom 80%',
-            end: 'bottom 20%',
-            scrub: true,
+            start: 'top 70%',
+            end: 'center 20%',
+            scrub: 1.5,
           }
         });
       })();
 
-      // ── 畫廊圖片進場、滾輪連動與獨立 Hover 優化 ─────────────
       document.querySelectorAll('.pg-item').forEach((item, i) => {
         const wrap = item.querySelector('.pg-img-wrap');
         const img  = item.querySelector('.pg-img-wrap img');
         const hdr  = item.querySelector('.pg-item-header');
 
-        // 確保初始狀態安全
         if (wrap) gsap.set(wrap, { clipPath: 'inset(100% 0% 0% 0%)' });
-        if (img)  gsap.set(img,  { scale: 1.35 }); // 進場前故意放大增加張力
+        if (img)  gsap.set(img,  { scale: 1.35 }); 
 
-      // 1. 進場動畫 (Timeline) - 極速俐落版
         const enterTl = gsap.timeline({
           scrollTrigger: {
             trigger: item,
-            start: 'top 90%', // 稍微提早觸發 (進入畫面底部 10% 就開始)
+            start: 'top 90%',
             toggleActions: 'play none none reverse'
           }
         });
 
-        // 容器裁切展開 (加速 + 俐落的 out 曲線)
         if (wrap) {
-          enterTl.to(wrap, { 
-            clipPath: 'inset(0% 0% 0% 0%)', 
-            duration: 0.7,   // 從 1.4 縮短為 0.7 秒
-            ease: 'expo.out' // 改用 expo.out：起步極快，收尾極柔
-          }, 0);
+          enterTl.to(wrap, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'expo.out' }, 0);
         }
         
-        // 圖片隨裁切展開順便縮回 1.0 (加速)
         if (img) {
-          enterTl.to(img, { 
-            scale: 1.0, 
-            duration: 1.0,   // 從 1.8 縮短為 1.0 秒
-            ease: 'power3.out' 
-          }, 0);
+          enterTl.to(img, { scale: 1.0, duration: 1.0, ease: 'power3.out' }, 0);
         }
         
-        // 標題浮現 (提早並加快)
         if (hdr) {
           const spans = hdr.querySelectorAll('span');
           gsap.set(spans, { y: '110%' });
-          enterTl.to(spans, { 
-            y: '0%', 
-            duration: 0.6,   // 從 0.8 縮短為 0.6 秒
-            ease: 'power3.out', 
-            stagger: 0.05    // 讓文字接連出來的間隔更緊湊
-          }, 0.1); // 從 0.2 提早到 0.1，讓標題更早跟著圖片出來
+          enterTl.to(spans, { y: '0%', duration: 0.6, ease: 'power3.out', stagger: 0.05 }, 0.1); 
         }
 
-        // 2. 視差平移動畫 (單純處理 Y 軸，不碰 scale)
         if (img) {
           const speed = [12, 18, 10, 20, 15, 22][i % 6]; 
           gsap.fromTo(img,
@@ -3068,7 +3194,6 @@
             }
           );
 
-          // 3. 獨立的滑鼠 Hover 效果 (不干涉視差滾動)
           item.addEventListener('mouseenter', () =>
             gsap.to(img, { scale: 1.05, duration: 0.8, ease: 'power2.out', overwrite: 'auto' })
           );
@@ -3079,15 +3204,16 @@
       });
 
       if (typeof Lenis !== 'undefined') {
-        // Lenis 參數優化，滾動體驗更綿密
         const lenis = new Lenis({
-          duration: 1.5,
+          duration: 1.2,
           easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
           smoothWheel: true,
-          wheelMultiplier: 1.1, // 略微加快滾輪靈敏度
+          wheelMultiplier: 1.0,
           syncTouch: false,
         });
         lenis.on('scroll', ScrollTrigger.update);
+        lenis.on('scroll', scheduleSyncScrollState);
+
         gsap.ticker.add((time) => lenis.raf(time * 1000));
         gsap.ticker.lagSmoothing(0);
         window._lenis = lenis;
@@ -3095,15 +3221,22 @@
         let currentVelocity = 0;
         const skewTargets = document.querySelectorAll('.pg-img-wrap img');
 
+        // 🎯 效能優化:用 quickTo 取代每次 gsap.to,避免每個 scroll 事件都建立新 tween
+        const skewQT = gsap.quickTo(skewTargets, 'skewY', { duration: 0.6, ease: 'power3.out' });
+        let _skewRested = true;
+
         lenis.on('scroll', ({ velocity }) => {
           currentVelocity = velocity;
-          const skewVal = Math.max(-2.0, Math.min(2.0, velocity * 0.20)); // 降低傾斜強度，更顯高級
-          gsap.to(skewTargets, { skewY: skewVal, duration: 0.6, ease: 'power3.out', overwrite: 'auto' });
+          const skewVal = Math.max(-2.0, Math.min(2.0, velocity * 0.20));
+          skewQT(skewVal);
+          _skewRested = false;
         });
 
+        // 🎯 只在從「非靜止」轉為「靜止」的那一刻 quickTo 回零,避免每幀都 gsap.to
         gsap.ticker.add(() => {
-          if (Math.abs(currentVelocity) < 0.05) {
-            gsap.to(skewTargets, { skewY: 0, duration: 0.8, ease: 'power3.out', overwrite: 'auto' });
+          if (Math.abs(currentVelocity) < 0.05 && !_skewRested) {
+            skewQT(0);
+            _skewRested = true;
           }
         });
       }
@@ -3111,11 +3244,16 @@
       const progressBar = document.getElementById('scroll-progress');
       if (progressBar) {
         let currentWidth = 0;
+        let _lastWrittenWidth = -1; // 🎯 避免每幀都寫入 style
         gsap.ticker.add(() => {
           const max = document.documentElement.scrollHeight - window.innerHeight;
           const target = max > 0 ? (window.scrollY / max) * 100 : 0;
           currentWidth += (target - currentWidth) * 0.08;
-          progressBar.style.width = currentWidth + '%';
+          // 只在像素級變化時才寫入 DOM
+          if (Math.abs(currentWidth - _lastWrittenWidth) > 0.05) {
+            progressBar.style.width = currentWidth + '%';
+            _lastWrittenWidth = currentWidth;
+          }
         });
       }
 
@@ -3168,13 +3306,14 @@
         const pgGallery = document.querySelector('.pg-gallery');
         if (!pgGallery) return;
         gsap.to(pgGallery, {
-          opacity: 0.3,
-          ease: 'none',
+          opacity: 0,
+          y: -30,
+          ease: 'power2.in',
           scrollTrigger: {
             trigger: pgGallery,
-            start: 'bottom 60%',
+            start: 'bottom 55%',
             end: 'bottom top',
-            scrub: true,
+            scrub: 1.5,
           }
         });
       })();
@@ -3184,35 +3323,41 @@
       if (dot && ring) {
         let mx = 0, my = 0, rx = 0, ry = 0;
         let magnetTarget = null;
+        let magRect = null;
         let magnetStrength = 0.35; 
+
+        // 🎯 效能優化:追蹤上次寫入值,靜止時跳過 style.transform 寫入
+        let _lastDotX = -1, _lastDotY = -1, _lastRingX = -1, _lastRingY = -1;
 
         document.addEventListener('mousemove', e => {
           mx = e.clientX;
           my = e.clientY;
-
-          if (magnetTarget) {
-            const rect = magnetTarget.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            const magX = mx + (cx - mx) * magnetStrength;
-            const magY = my + (cy - my) * magnetStrength;
-            dot.style.transform = `translate(${magX}px,${magY}px)`;
-          } else {
-            dot.style.transform = `translate(${mx}px,${my}px)`;
-          }
-        });
+        }, { passive: true });
 
         (function loop() {
           requestAnimationFrame(loop);
-          const targetX = magnetTarget
-            ? mx + ((magnetTarget.getBoundingClientRect().left + magnetTarget.getBoundingClientRect().width / 2) - mx) * magnetStrength
+          
+          const targetX = (magnetTarget && magRect)
+            ? mx + ((magRect.left + magRect.width / 2) - mx) * magnetStrength
             : mx;
-          const targetY = magnetTarget
-            ? my + ((magnetTarget.getBoundingClientRect().top + magnetTarget.getBoundingClientRect().height / 2) - my) * magnetStrength
+          const targetY = (magnetTarget && magRect)
+            ? my + ((magRect.top + magRect.height / 2) - my) * magnetStrength
             : my;
+            
           rx += (targetX - rx) * 0.08;
           ry += (targetY - ry) * 0.08;
-          ring.style.transform = `translate(${rx}px,${ry}px)`;
+
+          // 🎯 只在有變化時才寫 style,避免冗餘 DOM 寫入
+          if (targetX !== _lastDotX || targetY !== _lastDotY) {
+            dot.style.transform = `translate(${targetX}px,${targetY}px)`;
+            _lastDotX = targetX;
+            _lastDotY = targetY;
+          }
+          if (Math.abs(rx - _lastRingX) > 0.05 || Math.abs(ry - _lastRingY) > 0.05) {
+            ring.style.transform = `translate(${rx}px,${ry}px)`;
+            _lastRingX = rx;
+            _lastRingY = ry;
+          }
         })();
 
         const linkSelectors = 'a, button, .slide-thumb, .pg-item, [data-cursor]';
@@ -3220,12 +3365,16 @@
           el.addEventListener('mouseenter', () => {
             dot.classList.add('is-link');
             ring.classList.add('is-link');
-            if (el.offsetWidth < 300) magnetTarget = el;
+            if (el.offsetWidth < 300) {
+                magnetTarget = el;
+                magRect = el.getBoundingClientRect(); 
+            }
           });
           el.addEventListener('mouseleave', () => {
             dot.classList.remove('is-link');
             ring.classList.remove('is-link');
             magnetTarget = null;
+            magRect = null;
           });
         });
 
