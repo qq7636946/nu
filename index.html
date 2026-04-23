@@ -1120,36 +1120,6 @@
       flex-direction: column;
     }
 
-    .pg-item-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.3);
-      margin-bottom: 14px;
-      padding-top: 10px;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      font-family: 'DM Sans', sans-serif;
-      overflow: clip;
-    }
-
-    .pg-item-header>span {
-      display: inline-block;
-      transform: translateY(110%);
-    }
-
-    .pg-preview-icon {
-      display: inline-block;
-      width: 22px;
-      height: 11px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 6px;
-      margin-left: 8px;
-      vertical-align: middle;
-    }
-
     /* ★ 確保容器有 overflow: hidden，且一開始處於完全裁切 (不可見) 狀態 */
     .pg-img-wrap {
       position: relative;
@@ -1322,38 +1292,25 @@
       will-change: width;
     }
 
+    /* ── NAV wrapper ── */
+    #nav {
+      transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1), transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     #fixed-logo {
       position: fixed;
-      top: clamp(18px, 2.2vw, 30px);
-      left: clamp(18px, 2.5vw, 40px);
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      transform-origin: center center;
       z-index: 9999;
       pointer-events: none;
       mix-blend-mode: difference;
       opacity: 0;
-      /* 🎯 logo scroll-driven 動畫高頻:提示 GPU 合成層 */
-      will-change: transform, opacity;
     }
 
     #fixed-logo img {
-      height: clamp(16px, 1.8vw, 18px);
-      width: auto;
-      display: block;
-    }
-
-    #text-logo {
-      position: fixed;
-      top: clamp(18px, 2.2vw, 30px);
-      left: clamp(18px, 2.5vw, 40px);
-      z-index: 9999;
-      pointer-events: none;
-      mix-blend-mode: difference;
-      opacity: 0;
-      /* 🎯 文字 logo 跟隨 scroll 做 x 變形,提示 GPU 合成層 */
-      will-change: transform, opacity;
-    }
-
-    #text-logo img {
-      height: clamp(10px, 1.1vw, 16px);
+      height: clamp(20px, 2.2vw, 25px);
       width: auto;
       display: block;
     }
@@ -1381,7 +1338,115 @@
       opacity: 0;
       transform: translateY(-12px);
       animation: menuBtnIn 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) 3s forwards;
-      transition: background 0.2s, color 0.2s;
+      transition: background 0.2s, color 0.2s, transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* nav 三元素隱藏狀態（向上滑出畫面）*/
+    .show-nav-scroll #fixed-logo {
+      transform: translateX(-50%) scaleY(0) !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    .show-nav-scroll #menu-btn {
+      transform: translateY(-60px) !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /* ── NAV_SCROLL bar ── */
+    #nav_scroll_container {
+      position: fixed;
+      mix-blend-mode: exclusion;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      pointer-events: none;
+    }
+    #nav_scroll {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #2a2a2a;
+      width: 500px;
+      max-width: 90vw;
+      height: 64px;
+      border-radius: 5px;
+      padding: 0 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      /* 預設：縮成一點，完全不可見 */
+      transform: scaleX(0) scaleY(0.04);
+      transform-origin: center center;
+      opacity: 0;
+    }
+    /* 進場：橫線往左右拉出 → 縱向展開成 bar */
+    @keyframes nsBarIn {
+      0%   { transform: scaleX(0)   scaleY(0.04); opacity: 1; border-radius: 100px; }
+      50%  { transform: scaleX(1)   scaleY(0.04); opacity: 1; border-radius: 100px; }
+      100% { transform: scaleX(1)   scaleY(1);    opacity: 1; border-radius: 5px; }
+    }
+    /* 退場：縮回橫線 → 往中間收點 */
+    @keyframes nsBarOut {
+      0%   { transform: scaleX(1) scaleY(1);    opacity: 1; border-radius: 5px; }
+      50%  { transform: scaleX(1) scaleY(0.04); opacity: 1; border-radius: 100px; }
+      100% { transform: scaleX(0) scaleY(0.04); opacity: 0; border-radius: 100px; }
+    }
+    #nav_scroll.ns-enter {
+      animation: nsBarIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      pointer-events: auto;
+    }
+    #nav_scroll.ns-exit {
+      animation: nsBarOut 0.5s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+      pointer-events: none;
+    }
+    /* 內容在 bar 展開後淡入 */
+    #nav_scroll .ns-icon,
+    #nav_scroll .ns-logo {
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    #nav_scroll.ns-enter .ns-icon,
+    #nav_scroll.ns-enter .ns-logo {
+      opacity: 1;
+      transition-delay: 0.45s;
+    }
+    #nav_scroll.ns-exit .ns-icon,
+    #nav_scroll.ns-exit .ns-logo {
+      opacity: 0;
+      transition-delay: 0s;
+    }
+    #nav_scroll .ns-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+    #nav_scroll .ns-icon:hover { opacity: 0.7 !important; }
+    #nav_scroll .ns-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: #ffffff;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    #nav_scroll .ns-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    #nav_scroll .ns-logo img {
+      height: 22px;
+      width: auto;
+      display: block;
+      filter: brightness(0) invert(1);
     }
 
     #menu-btn:hover {
@@ -1495,161 +1560,150 @@
     .site-footer {
       position: relative;
       overflow: hidden;
-      background: #000;
-      color: #fff;
+      background: #fff;
+      color: #000;
       padding: 0;
+      font-family: 'DM Sans', sans-serif;
     }
 
-    .s3-gallery-section {
-      position: relative;
-      z-index: 2;
-      background: #000;
-      contain: layout;
+    .footer-contact {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+      padding: 8vh 5vw 6vh;
+      border-bottom: 1px solid rgba(0,0,0,0.12);
     }
 
-    .footer-video-bg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0;
-      z-index: 0;
-      transition: opacity 1.2s ease;
+    .footer-cta {
+      grid-column: 1 / 2;
+      padding-right: 4vw;
     }
 
-    .footer-video-bg.is-visible {
-      opacity: 0.35;
+    .footer-cta h2 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(1.6rem, 3.5vw, 3rem);
+      font-weight: 400;
+      line-height: 1.2;
+      color: #000;
+      margin: 0;
     }
 
-    .footer-inner {
-      position: relative;
-      z-index: 2;
+    .footer-info {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      min-height: 100vh;
-      padding: 10vh 5vw 6vh;
+      gap: 2.5rem;
+      padding-top: 0.25rem;
     }
 
-    .footer-logo {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      will-change: transform, opacity, filter;
-    }
-
-    .footer-logo img {
-      width: clamp(180px, 28vw, 480px);
-      display: block;
-    }
-
-    .footer-tagline {
-      font-family: 'DM Sans', sans-serif;
-      font-size: clamp(12px, 1.2vw, 16px);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.5);
-      position: absolute;
-      top: calc(50% + clamp(60px, 8vw, 120px));
-      left: 50%;
-      transform: translateX(-50%);
-      white-space: nowrap;
-    }
-
-    .footer-divider {
-      width: 100%;
-      max-width: 1400px;
-      height: 1px;
-      background: rgba(255, 255, 255, 0.15);
-      margin-bottom: 4vh;
-      transform-origin: center;
-    }
-
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr;
-      gap: 2rem;
-      width: 100%;
-      max-width: 1400px;
-      font-size: 0.75rem;
-      line-height: 1.7;
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .footer-grid a {
-      color: rgba(255, 255, 255, 0.85);
-      text-decoration: none;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      padding-bottom: 2px;
-      transition: color 0.3s, border-color 0.3s;
-    }
-
-    .footer-grid a:hover {
-      color: #fff;
-      border-color: #fff;
-    }
-
-    .ft-col-label {
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.35);
-      margin-bottom: 1rem;
-    }
-
-    .ft-col-links a {
-      display: block;
+    .footer-info-group .fi-label {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: #000;
       margin-bottom: 6px;
-      width: fit-content;
+      font-weight: 500;
     }
 
-    .ft-col:last-child {
+    .footer-info-group a {
+      font-size: 13px;
+      color: #888;
+      text-decoration: none;
+      display: block;
+      transition: color 0.25s;
+    }
+
+    .footer-info-group a:hover { color: #000; }
+
+    .footer-follow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      align-items: flex-end;
+      padding-top: 0.25rem;
+    }
+
+    .footer-follow .fi-label {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: #000;
+      margin-bottom: 10px;
+      font-weight: 500;
+      align-self: flex-end;
+    }
+
+    .footer-follow a {
+      font-size: 13px;
+      color: #888;
+      text-decoration: none;
+      display: block;
+      margin-bottom: 4px;
+      transition: color 0.25s;
       text-align: right;
     }
 
-    .ft-col:last-child a {
-      margin-left: auto;
-    }
+    .footer-follow a:hover { color: #000; }
 
     .footer-bottom {
-      width: 100%;
-      max-width: 1400px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 6vh;
-      padding-top: 2vh;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: 0.65rem;
-      color: rgba(255, 255, 255, 0.3);
-      letter-spacing: 0.08em;
+      padding: 2.2vh 5vw;
+      font-size: 11px;
+      color: #888;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid rgba(0,0,0,0.12);
     }
 
-    .footer-time {
-      font-variant-numeric: tabular-nums;
+    .footer-bottom-left {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .footer-lang {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #f0f0f0;
+      border-radius: 50px;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #000;
+      cursor: default;
+    }
+
+    .footer-video-area {
+      position: relative;
+      width: 100%;
+      height: 56vw;
+      max-height: 90vh;
+      min-height: 320px;
+      overflow: hidden;
+      background: #111;
+    }
+
+    .footer-video-area video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     @media (max-width: 768px) {
-      .footer-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 3rem 2rem;
+      .footer-contact {
+        grid-template-columns: 1fr;
+        gap: 3rem;
       }
-
-      .ft-col:last-child {
+      .footer-follow {
+        align-items: flex-start;
+      }
+      .footer-follow .fi-label,
+      .footer-follow a {
         text-align: left;
       }
-
-      .ft-col:last-child a {
-        margin-left: 0;
-      }
-
-      .footer-bottom {
-        flex-direction: column;
-        gap: 0.5rem;
-        text-align: center;
+      .footer-video-area {
+        height: 70vw;
       }
     }
   </style>
@@ -1674,7 +1728,7 @@
       transform: translate(-50%, -50%);
       background: transparent;
       box-shadow: 0 0 0 150vmax #080808;
-      animation: ndBoxOpen 0.8s cubic-bezier(0.76, 0, 0.24, 1) 2.2s forwards;
+      animation: ndBoxOpen 1.2s cubic-bezier(0.76, 0, 0.24, 1) 2.6s forwards;
     }
 
     @keyframes ndBoxOpen {
@@ -1719,8 +1773,8 @@
       transform: translateY(6px) scale(1.15);
       animation:
         ndLetterIn 0.55s cubic-bezier(0.2, 0.9, 0.3, 1) 0.3s forwards,
-        ndSpreadL 1.1s cubic-bezier(0.76, 0, 0.24, 1) 1.7s forwards,
-        ndFadeOut 0.45s ease 2.4s forwards;
+        ndSpreadL 1.1s cubic-bezier(0.76, 0, 0.24, 1) 2.0s forwards,
+        ndFadeOut 0.45s ease 2.9s forwards;
     }
 
     #nudot-loader .nd-d {
@@ -1729,8 +1783,8 @@
       transform: translateY(6px) scale(1.15);
       animation:
         ndLetterIn 0.55s cubic-bezier(0.2, 0.9, 0.3, 1) 0.6s forwards,
-        ndSpreadR 1.1s cubic-bezier(0.76, 0, 0.24, 1) 1.7s forwards,
-        ndFadeOut 0.45s ease 2.4s forwards;
+        ndSpreadR 1.1s cubic-bezier(0.76, 0, 0.24, 1) 2.0s forwards,
+        ndFadeOut 0.45s ease 2.9s forwards;
     }
 
     #nudot-loader .nd-icon {
@@ -1785,19 +1839,44 @@
 <body>
 
   <div id="scroll-progress"></div>
-  <div id="fixed-logo">
-    <img src="images/pc_logo.svg" alt="Nudot">
-  </div>
-  <div id="text-logo">
-    <img src="images/textlogo.svg" alt="Nu'dot">
-  </div>
-  <button id="menu-btn" aria-label="Open menu">
-    <div class="menu-lines">
-      <span></span>
-      <span></span>
+  <!-- ── NAV (頂部原始三元素) ── -->
+  <div id="nav">
+    <div id="fixed-logo">
+      <img src="images/pc_logo.svg" alt="Nudot">
     </div>
-    Menu
-  </button>
+    <!-- <button id="menu-btn" aria-label="Open menu">
+      <div class="menu-lines">
+        <span></span>
+        <span></span>
+      </div>
+      Menu
+    </button> -->
+  </div>
+
+  <!-- ── NAV_SCROLL (滾動後出現的 bar) ── -->
+  <div id="nav_scroll_container" aria-hidden="true">
+    <nav id="nav_scroll">
+      <!-- 左側漢堡 -->
+      <button class="ns-icon" aria-label="Open menu">
+        <svg viewBox="0 0 24 24">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <!-- 中間 Logo -->
+      <div class="ns-logo">
+        <img src="images/pc_logo.svg" alt="Nudot">
+      </div>
+      <!-- 右側信封 -->
+      <button class="ns-icon" aria-label="Contact">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </button>
+    </nav>
+  </div>
   <div id="cursor-dot"></div>
   <div id="cursor-ring"></div>
 
@@ -1811,13 +1890,12 @@
   </div>
 
   <script>
-    setTimeout(function () { if (window._heroTl) window._heroTl.play(); }, 2300);
+    setTimeout(function () { if (window._heroTl) window._heroTl.play(); }, 2700);
     setTimeout(function () {
       var el = document.getElementById('nudot-loader');
       if (el) el.remove();
-    }, 3400);
+    }, 4000);
   </script>
-
   <div class="scroll-track">
     <div class="sticky-container">
 
@@ -2197,6 +2275,221 @@
 
   </div>
 
+  <!-- =========================================================
+       DRAFT.X & MUSEUM — WebGL Marquee + Stacked Cards Section
+       ========================================================= -->
+  <style>
+    .dxm-marquee-section {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      min-height: 600px;
+      background-color: #000000;
+      color: #ffffff;
+      overflow: visible;
+      z-index: 10;
+      font-family: 'Inter', 'DM Sans', sans-serif;
+    }
+    /* ── dxm 背景直線 grid ── */
+    .dxm-marquee-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image: linear-gradient(to right, rgba(255,255,255,0.07) 1px, transparent 1px);
+      background-size: calc(100% / 8) 100%;
+    }
+
+      .gallery-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image: linear-gradient(to right, rgba(255,255,255,0.07) 1px, transparent 1px);
+      background-size: calc(100% / 8) 100%;
+    }
+    /* ── dxm 中央大字壓字 ── */
+    .dxm-center-overlay {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      transform: translateY(-50%);
+      text-align: center;
+      z-index: 2;
+      pointer-events: none;
+      font-family: 'Zalando Sans SemiExpanded', 'DM Sans', sans-serif;
+      font-size: clamp(5.5rem, 14vw, 13rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      color: #ffffff;
+      mix-blend-mode: difference;
+      line-height: 1;
+      white-space: nowrap;
+      /* 讓 data-reveal 的 overflow:clip wrapper 不裁切大字 */
+      overflow: visible;
+    }
+    /* reveal wrapper 對大字不裁切 */
+    .dxm-center-overlay > span {
+      overflow: visible !important;
+    }
+    #dxm-webgl-canvas {
+      display: none;
+    }
+    #dxm-strip-wrap {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      width: 100%;
+      height: 440px;
+      overflow: hidden;
+      z-index: 1;
+    }
+    #dxm-strip {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      display: flex;
+      align-items: center;
+      gap: 25px;
+      padding: 0 100px;
+      will-change: transform;
+      transform: translateY(-50%);
+    }
+    .dxm-item {
+      flex-shrink: 0;
+      overflow: hidden;
+      border-radius: 10px;
+      position: relative;
+      will-change: transform;
+    }
+    .dxm-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+      will-change: transform;
+    }
+    .dxm-item:nth-child(1)  { width: 200px; height: 300px; margin-top:  30px; }
+    .dxm-item:nth-child(2)  { width: 220px; height: 280px; margin-top: -20px; }
+    .dxm-item:nth-child(3)  { width: 260px; height: 350px; margin-top:  10px; }
+    .dxm-item:nth-child(4)  { width: 300px; height: 220px; margin-top: -30px; }
+    .dxm-item:nth-child(5)  { width: 220px; height: 300px; margin-top:  20px; }
+    .dxm-item:nth-child(6)  { width: 200px; height: 260px; margin-top: -10px; }
+    .dxm-item:nth-child(7)  { width: 240px; height: 320px; margin-top:  25px; }
+    .dxm-item:nth-child(8)  { width: 220px; height: 220px; margin-top: -25px; }
+    .dxm-item:nth-child(9)  { width: 280px; height: 380px; margin-top:  15px; }
+    .dxm-item:nth-child(10) { width: 200px; height: 300px; margin-top: -15px; }
+    /* ── dxm 頂部大標區 ── */
+    .dxm-top-title {
+      position: absolute;
+      top: clamp(36px, 10vw, 150px);
+      left: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(12px, 2vw, 32px);
+      z-index: 3;
+      pointer-events: none;
+      padding: 0 clamp(20px, 4vw, 60px);
+    }
+    .dxm-top-title .dtt-word {
+      font-family: 'Zalando Sans SemiExpanded', 'DM Sans', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      text-align: center;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      line-height: 1;
+      overflow: visible;
+    }
+    /* reveal wrapper 不裁切頂部大標 */
+    .dxm-top-title .dtt-word > span {
+      overflow: visible !important;
+    }
+    /* reveal wrapper 不裁切底部 h2 */
+    .dxm-bottom-copy h2 > span {
+      overflow: visible !important;
+    }
+    .dxm-top-title .dtt-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(10px, 1vw, 13px);
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.12em;
+      white-space: nowrap;
+    }
+    .dxm-top-title .dtt-plus {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(14px, 1.4vw, 18px);
+      font-weight: 300;
+      color: rgba(255,255,255,0.4);
+      flex-shrink: 0;
+    }
+    /* ── dxm 圖片中夺小標 ── */
+    .dxm-strip-label {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      transform: translateY(-50%);
+      margin-top: 80px;
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(9px, 0.85vw, 11px);
+      font-weight: 500;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+    }
+    /* ── dxm 底部文案區 ── */
+    .dxm-bottom-copy {
+      position: absolute;
+         bottom: clamp(32px, 7vw, 130px);
+      left: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      z-index: 10;
+      pointer-events: none;
+      text-align: center;
+      padding: 0 clamp(20px, 8vw, 200px);
+    }
+    .dxm-bottom-copy h2 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(13px, 1.2vw, 17px);
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: 0.04em;
+      margin: 0;
+    }
+    .dxm-bottom-copy p {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(11px, 0.9vw, 13px);
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.03em;
+      line-height: 1.7;
+      margin: 0;
+      max-width: 520px;
+    }
+  </style>
+
+  <!-- WebGL Marquee Section -->
+ 
+
+  <!-- /DRAFT.X & MUSEUM -->
+
   <section class="s3-gallery-section" id="s3-gallery">
     <div class="gallery-header">
       <span class="gallery-header-label" data-reveal="fade">最近專案</span>
@@ -2210,75 +2503,64 @@
 
     <div class="pg-gallery">
       <div class="pg-item pg-item-1">
-        <div class="pg-item-header"><span>00-1</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
         <div class="pg-img-wrap"><video autoplay muted loop playsinline preload="auto" style="width:100%;height:100%;object-fit:cover;display:block;"><source src="images/work/t1.mp4" type="video/mp4"></video></div>
       </div>
       <div class="pg-item pg-item-2">
-        <div class="pg-item-header"><span>00-2</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
         <div class="pg-img-wrap"><img src="images/work/2.jpg" alt="Project 02" loading="lazy" decoding="async"></div>
       </div>
       <div class="pg-item pg-item-3">
-        <div class="pg-item-header"><span>00-3</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
         <div class="pg-img-wrap"><img src="images/work/3.jpg" alt="Project 03" loading="lazy" decoding="async"></div>
       </div>
       <div class="pg-item pg-item-4">
-        <div class="pg-item-header"><span>00-4</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
         <div class="pg-img-wrap"><img src="images/work/4.jpg" alt="Project 04" loading="lazy" decoding="async"></div>
       </div>
       <div class="pg-item pg-item-5">
-        <div class="pg-item-header"><span>00-5</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
         <div class="pg-img-wrap"><img src="images/work/5.jpg" alt="Project 05" loading="lazy" decoding="async"></div>
       </div>
       <div class="pg-item pg-item-6">
-        <div class="pg-item-header"><span>00-6</span><span>PREVIEW <i class="pg-preview-icon"></i></span></div>
         <div class="pg-img-wrap"><img src="images/work/6.jpg" alt="Project 06" loading="lazy" decoding="async"></div>
       </div>
     </div>
   </section>
 
   <footer class="site-footer" id="site-footer">
-    <video class="footer-video-bg" autoplay muted loop playsinline preload="none">
-      <source src="images/bg.mp4" type="video/mp4">
-    </video>
 
-    <div class="footer-inner">
-      <div class="footer-logo">
-        <img src="images/textlogo.svg" alt="NUDOT">
+    <div class="footer-contact">
+      <div class="footer-cta">
+        <h2>Got a project<br>in mind?<br>We're listening&nbsp;:)</h2>
       </div>
-      <div class="footer-tagline">Creative Studio — Brand &amp; Digital</div>
-
-      <div class="footer-divider"></div>
-
-      <div class="footer-grid">
-        <div class="ft-col">
-          <div class="ft-col-label">( Services )</div>
-          <div>Strategy, Design, and<br>Development. Lightning-fast,<br>lean, and sensibly priced.</div>
+      <div class="footer-info">
+        <div class="footer-info-group">
+          <div class="fi-label">You got a project ?</div>
+          <a href="mailto:nuclear.xlab@gmail.com">nuclear.xlab@gmail.com</a>
         </div>
-        <div class="ft-col">
-          <div class="ft-col-label">( Contact )</div>
-          <div>
-            <a href="mailto:nuclear.xlab@gmail.com">nuclear.xlab@gmail.com</a><br>
-            0983-750 522<br>
-            Nudot Creative Studio, 2026©
-          </div>
-        </div>
-        <div class="ft-col">
-          <div class="ft-col-label">( Local Time )</div>
-          <div>Taipei, Taiwan<br><span class="footer-time" id="footer-time">--:--:--</span></div>
-        </div>
-        <div class="ft-col ft-col-links">
-          <div class="ft-col-label">( Follow )</div>
-          <a href="#">Instagram</a>
-          <a href="#">Threads</a>
-          <a href="#">Facebook</a>
+        <div class="footer-info-group">
+          <div class="fi-label">Phone</div>
+          <a href="tel:+886983750522">0983-750 522</a>
         </div>
       </div>
-
-      <div class="footer-bottom">
-        <span>Nudot Creative Studio © 2026. All rights reserved.</span>
-        <span>Designed & Developed by Nudot</span>
+      <div class="footer-follow">
+        <div class="fi-label">Follow us :</div>
+        <a href="#">Instagram</a>
+        <a href="#">Threads</a>
+        <a href="#">Facebook</a>
       </div>
     </div>
+
+    <div class="footer-bottom">
+      <div class="footer-bottom-left">
+        <div class="footer-lang">ZH &nbsp;/&nbsp; EN</div>
+        <span>Nudot Creative Studio © 2026</span>
+      </div>
+      <span>Designed &amp; Developed by Nudot</span>
+    </div>
+
+    <div class="footer-video-area">
+      <video autoplay muted loop playsinline preload="auto">
+        <source src="images/work/work_3d.mp4" type="video/mp4">
+      </video>
+    </div>
+
   </footer>
 
   <script>
@@ -2570,13 +2852,9 @@
       }
 
       render() {
-        // 🎯 效能優化：30fps 節流 — 非轉場時每隔一幀才渲染，減少 GPU/主執行緒負擔
-        this._frameSkip = (this._frameSkip || 0) + 1;
+        // 🎯 效能優化:hero 已捲出視口 (scrollY > 兩倍 viewport) 且無轉場時跳過 render
         const progress = this.material.uniforms.uProgress.value;
         const inTransition = progress > 0 && progress < 1;
-        if (!inTransition && this._frameSkip % 2 !== 0) return;
-
-        // 🎯 效能優化：hero 已捲出視口 (scrollY > 兩倍 viewport) 且無轉場時跳過 render
         if (!inTransition && window.scrollY > window.innerHeight * 2) {
           return;
         }
@@ -2707,18 +2985,6 @@
         winW = window.innerWidth;
         winH = window.innerHeight;
       });
-
-      // 🎯 Page Visibility API：分頁隱藏時暫停所有動畫，大幅降低主執行緒耗用
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          gsap.ticker.sleep();
-        } else {
-          gsap.ticker.wake();
-        }
-      });
-
-      // 🎯 GSAP ticker FPS 上限 60，避免高刷螢幕超規運行
-      gsap.ticker.fps(60);
 
       // 1. Initialize WebGL Slideshow
       const imageUrls = Array.from(document.querySelectorAll(".slide__img"))
@@ -2919,37 +3185,16 @@
       const uiGlow1 = document.getElementById('ui-glow1');
       const uiGlow2 = document.getElementById('ui-glow2');
       const fixedLogoEl = document.getElementById('fixed-logo');
-      const textLogoEl = document.getElementById('text-logo');
 
       if (uiNav) { gsap.set(uiNav, { opacity: 0, y: -25 }); }
       if (uiScroll) { gsap.set(uiScroll, { opacity: 0 }); }
       if (uiGlow1) { gsap.set(uiGlow1, { opacity: 0, scale: 0.4 }); }
       if (uiGlow2) { gsap.set(uiGlow2, { opacity: 0, scale: 0.4 }); }
 
-      // Logo: entrance + scroll-driven split animation
-      let logoTargetX = 0;   // pc_logo moves to center
-      let textLogoInitX = 0; // textlogo starts offset right (next to pc_logo)
-
-      function calcLogoPositions() {
-        if (!fixedLogoEl || !textLogoEl) return;
-        const leftBase = parseFloat(getComputedStyle(fixedLogoEl).left);
-        logoTargetX = winW / 2 - fixedLogoEl.offsetWidth / 2 - leftBase;
-        textLogoInitX = fixedLogoEl.offsetWidth + 10; // gap = 10px
-        gsap.set(textLogoEl, { x: textLogoInitX });
-      }
-
       if (fixedLogoEl) {
         gsap.set(fixedLogoEl, { y: -16 });
-        gsap.to(fixedLogoEl, {
-          opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', delay: 2.8,
-          onComplete: calcLogoPositions
-        });
+        gsap.to(fixedLogoEl, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', delay: 2.8 });
       }
-      if (textLogoEl) {
-        gsap.set(textLogoEl, { y: -16 });
-        gsap.to(textLogoEl, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', delay: 2.9 });
-      }
-      window.addEventListener('resize', calcLogoPositions);
 
       function resetReveal() {
         gsap.set(titleSubtitle, { yPercent: 130 });
@@ -3256,14 +3501,6 @@
 
         if (uiNav) gsap.set(uiNav, { opacity: uiEase, y: (1 - uiEase) * -25 });
         if (uiScroll) gsap.set(uiScroll, { opacity: uiEase * 0.7 });
-        if (fixedLogoEl) gsap.set(fixedLogoEl, {
-          x: uiEase * logoTargetX,
-          scale: 1 + uiEase * (30 / 18 - 1),
-          transformOrigin: 'left center'
-        });
-        if (textLogoEl) gsap.set(textLogoEl, {
-          x: textLogoInitX * (1 - uiEase)
-        });
 
         // 🎯 封印光暈：當透明度為 0 時直接拔除可視性，釋放 GPU
         if (uiGlow1) gsap.set(uiGlow1, { opacity: uiEase, scale: 0.4 + uiEase * 0.6, visibility: uiEase > 0 ? 'visible' : 'hidden' });
@@ -3365,7 +3602,7 @@
             let ease = easeInOutCubic(pr);
 
             const spinDisplaySize = baseSceneSize * 1.5;
-            const targetSceneSize = Math.max(winW, winH) * 0.35;
+            const targetSceneSize = Math.hypot(winW, winH) * 1;
             currentSceneSize = spinDisplaySize + (targetSceneSize - spinDisplaySize) * ease;
             currentScale = 1;
             currentX = 0;
@@ -3392,7 +3629,7 @@
           }
 
         } else if (progress > p_Zoom) {
-          const targetSceneSize = Math.max(winW, winH) * 0.35;
+          const targetSceneSize = Math.hypot(winW, winH) * 1;
           currentSceneSize = targetSceneSize;
           currentScale = 1;
           currentX = 0;
@@ -3552,57 +3789,62 @@
 
       _ric(function() { (function initGalleryHeader() {
         const header = document.querySelector('.gallery-header');
-        const gallery = document.querySelector('.pg-gallery');
-        if (!header || !gallery) return;
-        gsap.to(header, {
-          opacity: 0,
-          y: -40,
-          filter: 'blur(12px)',
-          ease: 'none',
+        if (!header) return;
+        const lastItem = document.querySelector('.pg-item-5');
+        if (!lastItem) return;
+
+        // exit: reverse of entry (yPercent 0→130, no blur/fade) when last pg-item scrolls past
+        const wordSpans = header.querySelectorAll('.gh-line span span');
+        const label = header.querySelector('.gallery-header-label');
+        const sub = header.querySelector('.gallery-header-sub');
+
+        const exitTl = gsap.timeline({
           scrollTrigger: {
-            trigger: gallery,
-            start: 'top 70%',
-            end: 'center 20%',
-            scrub: 1.5,
+            trigger: lastItem,
+            start: 'bottom 65%',
+            end: 'bottom 5%',
+            scrub: 1.2,
           }
         });
+
+        if (wordSpans.length) {
+          exitTl.to(wordSpans, { yPercent: 130, ease: 'power2.in', stagger: { each: 0.04, from: 'end' } }, 0);
+        }
+        if (label) exitTl.to(label, { autoAlpha: 0, y: -15, ease: 'power2.in' }, 0);
+        if (sub) exitTl.to(sub, { autoAlpha: 0, y: -15, ease: 'power2.in' }, 0.05);
       })(); }); // end _ric initGalleryHeader
 
-      document.querySelectorAll('.pg-item').forEach((item, i) => {
-        const wrap = item.querySelector('.pg-img-wrap');
-        // 支援 img 與 video 兩種媒體
-        const media = item.querySelector('.pg-img-wrap img') || item.querySelector('.pg-img-wrap video');
-        const isVideo = media && media.tagName === 'VIDEO';
-        const hdr = item.querySelector('.pg-item-header');
+      // ★ 延遲到 macro-task，確保 DXM pin spacer 已插入 + ScrollTrigger.refresh() 已執行
+      //   才建立 pg-item ScrollTriggers，否則 pin 造成的位移會讓 trigger 位置算錯
+      setTimeout(function initPgItems() {
+        document.querySelectorAll('.pg-item').forEach((item, i) => {
+          const wrap = item.querySelector('.pg-img-wrap');
+          const media = item.querySelector('.pg-img-wrap img') || item.querySelector('.pg-img-wrap video');
+          const isVideo = media && media.tagName === 'VIDEO';
 
-        if (wrap) gsap.set(wrap, { clipPath: 'inset(100% 0% 0% 0%)' });
-        // video 不需要 scale in（避免拉伸），img 才做
-        if (media && !isVideo) gsap.set(media, { scale: 1.35 });
+          // 若元素已在 viewport 內（頁面首屏的 pg-item-1），直接給終態，不做遮罩動畫
+          const rect = item.getBoundingClientRect();
+          const alreadyVisible = rect.top < window.innerHeight * 0.9;
 
-        const enterTl = gsap.timeline({
-          scrollTrigger: {
-            trigger: item,
-            start: 'top 90%',
-            toggleActions: 'play none none reverse'
+          if (wrap) gsap.set(wrap, { clipPath: alreadyVisible ? 'inset(0% 0% 0% 0%)' : 'inset(100% 0% 0% 0%)' });
+          if (media && !isVideo) gsap.set(media, { scale: alreadyVisible ? 1.0 : 1.35 });
+
+          const enterTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: item,
+              start: 'top 90%',
+              toggleActions: 'play none none reverse'
+            }
+          });
+
+          if (wrap) {
+            enterTl.to(wrap, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'expo.out' }, 0);
           }
-        });
+          if (media && !isVideo) {
+            enterTl.to(media, { scale: 1.0, duration: 1.0, ease: 'power3.out' }, 0);
+          }
 
-        if (wrap) {
-          enterTl.to(wrap, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'expo.out' }, 0);
-        }
-        if (media && !isVideo) {
-          enterTl.to(media, { scale: 1.0, duration: 1.0, ease: 'power3.out' }, 0);
-        }
-
-        if (hdr) {
-          const spans = hdr.querySelectorAll('span');
-          gsap.set(spans, { y: '110%' });
-          enterTl.to(spans, { y: '0%', duration: 0.6, ease: 'power3.out', stagger: 0.05 }, 0.1);
-        }
-
-        if (media) {
-          // video 不做 parallax（避免 GPU 負擔＋視覺跑版），只對 img 做
-          if (!isVideo) {
+          if (media && !isVideo) {
             const speed = [12, 18, 10, 20, 15, 22][i % 6];
             gsap.fromTo(media,
               { yPercent: -speed },
@@ -3617,33 +3859,91 @@
                 }
               }
             );
-          }
-
-          // hover scale：img 縮放，video 只做亮度效果
-          if (!isVideo) {
             item.addEventListener('mouseenter', () =>
-              gsap.to(media, { scale: 1.05, duration: 0.8, ease: 'power2.out', overwrite: 'auto' })
+              gsap.to(media, { scale: 1.0, duration: 0.8, ease: 'power2.out', overwrite: 'auto' })
             );
             item.addEventListener('mouseleave', () =>
               gsap.to(media, { scale: 1.0, duration: 1.2, ease: 'expo.out', overwrite: 'auto' })
             );
+          }
+        });
+        // 建完所有 pg-item triggers 後再做一次 refresh，確保位置精準
+        if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+      }, 0);
+
+      // =========================================================
+      // pg-item Hover Wave Effect (SVG feTurbulence displacement — 直接扭曲真實像素)
+      // =========================================================
+      (function initPgWave() {
+        // 建立 SVG filter 定義（隱藏在 DOM 中）
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('xmlns', svgNS);
+        svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;';
+        svg.innerHTML = `
+          <defs>
+            <filter id="pg-wave-filter" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="linearRGB">
+              <feTurbulence type="fractalNoise" baseFrequency="0.015 0.02" numOctaves="3" seed="2" result="noise">
+                <animate attributeName="baseFrequency" values="0.015 0.02;0.02 0.025;0.015 0.02" dur="4s" repeatCount="indefinite"/>
+                <animate attributeName="seed" values="2;8;2" dur="6s" repeatCount="indefinite"/>
+              </feTurbulence>
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+              <feComponentTransfer in="displaced">
+                <feFuncA type="linear" slope="1"/>
+              </feComponentTransfer>
+            </filter>
+          </defs>`;
+        document.body.appendChild(svg);
+
+        const displacementMap = svg.querySelector('feDisplacementMap');
+        let currentScale = 0;
+        let targetScale = 0;
+        let rafId = null;
+
+        function animateFilter() {
+          currentScale += (targetScale - currentScale) * 0.07;
+          displacementMap.setAttribute('scale', currentScale.toFixed(2));
+          if (Math.abs(targetScale - currentScale) > 0.1) {
+            rafId = requestAnimationFrame(animateFilter);
           } else {
-            item.addEventListener('mouseenter', () =>
-              gsap.to(wrap, { filter: 'brightness(1.15)', duration: 0.5, ease: 'power2.out', overwrite: 'auto' })
-            );
-            item.addEventListener('mouseleave', () =>
-              gsap.to(wrap, { filter: 'brightness(1)', duration: 0.8, ease: 'expo.out', overwrite: 'auto' })
-            );
+            currentScale = targetScale;
+            displacementMap.setAttribute('scale', currentScale.toFixed(2));
+            rafId = null;
           }
         }
-      });
+
+        function startAnim() {
+          if (rafId) cancelAnimationFrame(rafId);
+          rafId = requestAnimationFrame(animateFilter);
+        }
+
+        document.querySelectorAll('.pg-item').forEach(item => {
+          const wrap = item.querySelector('.pg-img-wrap');
+          if (!wrap) return;
+
+          item.addEventListener('mouseenter', () => {
+            wrap.style.filter = 'url(#pg-wave-filter)';
+            targetScale = 18;
+            startAnim();
+          });
+
+          item.addEventListener('mouseleave', () => {
+            targetScale = 0;
+            startAnim();
+            // filter 歸零後移除，避免影響效能
+            setTimeout(() => {
+              if (targetScale === 0) wrap.style.filter = '';
+            }, 600);
+          });
+        });
+      })();
 
       if (typeof Lenis !== 'undefined') {
         const lenis = new Lenis({
-          duration: 1.2,
+          duration: 1.6,
           easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
           smoothWheel: true,
-          wheelMultiplier: 1.0,
+          wheelMultiplier: 1.1,
           syncTouch: false,
         });
         lenis.on('scroll', ScrollTrigger.update);
@@ -3654,25 +3954,35 @@
         window._lenis = lenis;
 
         let currentVelocity = 0;
-        // 🎯 skew 同時作用於 img 和 video
-        const skewTargets = document.querySelectorAll('.pg-img-wrap img, .pg-img-wrap video');
 
-        // 🎯 效能優化:用 quickTo 取代每次 gsap.to,避免每個 scroll 事件都建立新 tween
-        const skewQT = gsap.quickTo(skewTargets, 'skewY', { duration: 0.6, ease: 'power3.out' });
-        let _skewRested = true;
+        // scroll > 300px → 隱藏 #nav，顯示 #nav_scroll
+        let _showingScrollNav = false;
+        const navScrollContainer = document.getElementById('nav_scroll_container');
+        const navScrollEl = document.getElementById('nav_scroll');
 
-        lenis.on('scroll', ({ velocity }) => {
+        function triggerNavScrollEnter() {
+          if (!navScrollEl) return;
+          navScrollEl.classList.remove('ns-exit');
+          void navScrollEl.offsetWidth; // force reflow
+          navScrollEl.classList.add('ns-enter');
+          if (navScrollContainer) navScrollContainer.style.pointerEvents = 'auto';
+        }
+        function triggerNavScrollExit() {
+          if (!navScrollEl) return;
+          navScrollEl.classList.remove('ns-enter');
+          void navScrollEl.offsetWidth;
+          navScrollEl.classList.add('ns-exit');
+          if (navScrollContainer) navScrollContainer.style.pointerEvents = 'none';
+        }
+
+        lenis.on('scroll', ({ velocity, scroll }) => {
           currentVelocity = velocity;
-          const skewVal = Math.max(-2.0, Math.min(2.0, velocity * 0.20));
-          skewQT(skewVal);
-          _skewRested = false;
-        });
-
-        // 🎯 只在從「非靜止」轉為「靜止」的那一刻 quickTo 回零,避免每幀都 gsap.to
-        gsap.ticker.add(() => {
-          if (Math.abs(currentVelocity) < 0.05 && !_skewRested) {
-            skewQT(0);
-            _skewRested = true;
+          const shouldSwitch = scroll > 300;
+          if (shouldSwitch !== _showingScrollNav) {
+            _showingScrollNav = shouldSwitch;
+            document.documentElement.classList.toggle('show-nav-scroll', _showingScrollNav);
+            if (_showingScrollNav) triggerNavScrollEnter();
+            else triggerNavScrollExit();
           }
         });
       }
@@ -3711,15 +4021,15 @@
         const logo = footer.querySelector('.footer-logo');
         const tagline = footer.querySelector('.footer-tagline');
         const divider = footer.querySelector('.footer-divider');
-        const cols = footer.querySelectorAll('.ft-col');
+        const cols = Array.from(footer.querySelectorAll('.ft-col'));
         const bottom = footer.querySelector('.footer-bottom');
         const videoBg = footer.querySelector('.footer-video-bg');
 
-        gsap.set(logo, { scale: 2.2, opacity: 0, filter: 'blur(30px)', y: 40 });
-        gsap.set(tagline, { opacity: 0, y: 50 });
-        gsap.set(divider, { scaleX: 0, opacity: 0 });
-        gsap.set(cols, { y: 100, opacity: 0 });
-        gsap.set(bottom, { y: 50, opacity: 0 });
+        if (logo) gsap.set(logo, { scale: 2.2, opacity: 0, filter: 'blur(30px)', y: 40 });
+        if (tagline) gsap.set(tagline, { opacity: 0, y: 50 });
+        if (divider) gsap.set(divider, { scaleX: 0, opacity: 0 });
+        if (cols.length) gsap.set(cols, { y: 100, opacity: 0 });
+        if (bottom) gsap.set(bottom, { y: 50, opacity: 0 });
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -3730,12 +4040,12 @@
           }
         });
 
-        tl.to(logo, { scale: 1, opacity: 1, filter: 'blur(0px)', y: 0, duration: 1.2, ease: 'power3.out' }, 0);
+        if (logo) tl.to(logo, { scale: 1, opacity: 1, filter: 'blur(0px)', y: 0, duration: 1.2, ease: 'power3.out' }, 0);
         tl.call(() => { if (videoBg) videoBg.classList.add('is-visible'); }, null, 0.1);
-        tl.to(tagline, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, 0.3);
-        tl.to(divider, { scaleX: 1, opacity: 1, duration: 0.6, ease: 'expo.inOut' }, 0.45);
-        tl.to(cols, { y: 0, opacity: 1, duration: 0.8, stagger: 0.06, ease: 'power4.out' }, 0.55);
-        tl.to(bottom, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, 0.75);
+        if (tagline) tl.to(tagline, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, 0.3);
+        if (divider) tl.to(divider, { scaleX: 1, opacity: 1, duration: 0.6, ease: 'expo.inOut' }, 0.45);
+        if (cols.length) tl.to(cols, { y: 0, opacity: 1, duration: 0.8, stagger: 0.06, ease: 'power4.out' }, 0.55);
+        if (bottom) tl.to(bottom, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, 0.75);
       })(); }); // end _ric initFooterReveal
 
       _ric(function() { (function initGalleryExit() {
@@ -3818,6 +4128,117 @@
         document.addEventListener('mouseenter', () => { dot.style.opacity = ''; ring.style.opacity = ''; });
       }
 
+    });
+  </script>
+
+  <canvas id="film-grain-canvas" style="
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.06;
+  "></canvas>
+  <script>
+    (function () {
+      const canvas = document.getElementById('film-grain-canvas');
+      const ctx = canvas.getContext('2d');
+      let wWidth, wHeight;
+      let noiseData = [];
+      let frame = 0;
+      let loopTimeout;
+
+      const createNoise = () => {
+        const idata = ctx.createImageData(wWidth, wHeight);
+        const buffer32 = new Uint32Array(idata.data.buffer);
+        const len = buffer32.length;
+        for (let i = 0; i < len; i++) {
+          if (Math.random() < 0.5) {
+            buffer32[i] = 0xffffffff;
+          }
+        }
+        noiseData.push(idata);
+      };
+
+      const paintNoise = () => {
+        if (frame === 9) { frame = 0; } else { frame++; }
+        ctx.putImageData(noiseData[frame], 0, 0);
+      };
+
+      const loop = () => {
+        paintNoise();
+        loopTimeout = window.setTimeout(() => {
+          window.requestAnimationFrame(loop);
+        }, 1000 / 25);
+      };
+
+      const setup = () => {
+        wWidth = window.innerWidth;
+        wHeight = window.innerHeight;
+        canvas.width = wWidth;
+        canvas.height = wHeight;
+        noiseData = [];
+        for (let i = 0; i < 10; i++) { createNoise(); }
+        loop();
+      };
+
+      window.addEventListener('resize', () => {
+        window.clearTimeout(loopTimeout);
+        setup();
+      });
+
+      setup();
+    })();
+  </script>
+
+  <!-- =========================================================
+       DRAFT.X & MUSEUM — HTML Strip JS (GSAP-driven, no Three.js)
+       ========================================================= -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function initDXMSection() {
+      const strip = document.getElementById('dxm-strip');
+      if (!strip || typeof gsap === 'undefined') return;
+
+      const topBtn = document.getElementById('dxm-scrollTopBtn');
+      if (topBtn) topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+      function getMaxScroll() {
+        return Math.max(0, strip.scrollWidth - window.innerWidth + 200);
+      }
+      let dxmMaxScroll = getMaxScroll();
+      let dxmTarget = 0, dxmCurrent = 0;
+
+      gsap.to({ v: 0 }, {
+        scrollTrigger: {
+          trigger: '#dxm-marquee',
+          pin: true,
+          scrub: 1,
+          start: 'top top',
+          end: () => '+=' + (dxmMaxScroll * 1.5),
+          onUpdate: self => { dxmTarget = self.progress * dxmMaxScroll; },
+          invalidateOnRefresh: true,
+          onRefresh: () => { dxmMaxScroll = getMaxScroll(); }
+        }
+      });
+
+      // pin spacer 插入後，後面的 pg-gallery trigger 位置會跑掉，必須 refresh
+      // 立即 refresh 一次，再延遲等 _ric 內的 pg-gallery triggers 全部建完後再 refresh 一次
+      ScrollTrigger.refresh();
+      setTimeout(() => { if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh(); }, 800);
+
+      window.addEventListener('resize', () => {
+        dxmMaxScroll = getMaxScroll();
+        if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+      }, { passive: true });
+
+      const items = Array.from(strip.querySelectorAll('.dxm-item'));
+
+      // dxm animate
+      (function dxmAnimate() {
+        requestAnimationFrame(dxmAnimate);
+        dxmCurrent += (dxmTarget - dxmCurrent) * 0.1;
+        gsap.set(strip, { x: -dxmCurrent });
+      })();
     });
   </script>
 
