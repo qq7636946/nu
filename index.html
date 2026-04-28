@@ -89,7 +89,6 @@
     body {
       margin: 0;
       padding: 0;
-      color: var(--color-text);
       background-color: var(--color-bg);
       font-family: "DM Sans", sans-serif;
       overflow-x: hidden;
@@ -3266,9 +3265,32 @@
         }
       }
 
+      function isPriorityVideo(video) {
+        if (!video) return false;
+        if (video.dataset.lazyPriority === 'high') return true;
+
+        var rect = video.getBoundingClientRect();
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+        return rect.top <= viewportHeight * 1.15 && rect.bottom >= viewportHeight * -0.25;
+      }
+
       document.addEventListener('DOMContentLoaded', function () {
         var videos = Array.prototype.slice.call(document.querySelectorAll('video[data-lazy-video]'));
         if (!videos.length) return;
+
+        var priorityVideos = [];
+        var deferredVideos = [];
+
+        videos.forEach(function (video) {
+          if (isPriorityVideo(video)) priorityVideos.push(video);
+          else deferredVideos.push(video);
+        });
+
+        priorityVideos.forEach(function (video) {
+          requestAnimationFrame(function () { hydrateVideo(video); });
+        });
+
+        if (!deferredVideos.length) return;
 
         if ('IntersectionObserver' in window) {
           var observer = new IntersectionObserver(function (entries) {
@@ -3277,11 +3299,13 @@
               hydrateVideo(entry.target);
               observer.unobserve(entry.target);
             });
-          }, { rootMargin: '1600px 0px' });
+          }, { rootMargin: '280px 0px 420px 0px' });
 
-          videos.forEach(function (video) { observer.observe(video); });
+          deferredVideos.forEach(function (video) { observer.observe(video); });
         } else {
-          videos.forEach(hydrateVideo);
+          setTimeout(function () {
+            deferredVideos.forEach(hydrateVideo);
+          }, 1200);
         }
       });
     })();
@@ -4228,8 +4252,7 @@
       container.appendChild(newTitle);
       current.classList.add("exit-up");
 
-      void newTitle.offsetWidth;
-      setTimeout(() => newTitle.classList.remove("enter-up"), 10);
+        requestAnimationFrame(() => newTitle.classList.remove("enter-up"));
       setTimeout(() => current.remove(), 500);
     }
 
@@ -4978,14 +5001,18 @@
       let baseRotY = -45;
       let targetScrollProgress = 0;
       let currentScrollProgress = 0;
+      const scrollTrack = document.querySelector('.scroll-track');
+      let maxScroll = 0;
+
+      function updateMaxScroll() {
+        maxScroll = scrollTrack ? Math.max(0, scrollTrack.offsetHeight - winH) : 0;
+      }
 
       function syncScrollState(jumpToCurrent = false) {
-        const maxScroll = document.querySelector('.scroll-track').offsetHeight - winH;
         const currentScrollY = window._lenis ? window._lenis.scroll : window.scrollY;
         const nextProgress = maxScroll > 0
           ? Math.max(0, Math.min(currentScrollY / maxScroll, 1))
           : 0;
-
         targetScrollProgress = nextProgress;
         if (jumpToCurrent) currentScrollProgress = nextProgress;
       }
@@ -5004,14 +5031,31 @@
       window.addEventListener('scroll', scheduleSyncScrollState, { passive: true });
 
       window.addEventListener('pageshow', () => {
+        updateMaxScroll();
         syncScrollState(true);
       });
 
       window.addEventListener('resize', () => {
+        updateMaxScroll();
         syncScrollState(true);
       }, { passive: true });
 
+      if (window._lenis) {
+        window._lenis.on('scroll', scheduleSyncScrollState);
+      }
+
+      if (scrollTrack && 'ResizeObserver' in window) {
+        const scrollTrackResizeObserver = new ResizeObserver(() => {
+          updateMaxScroll();
+          scheduleSyncScrollState();
+        });
+        scrollTrackResizeObserver.observe(scrollTrack);
+      }
+
+      updateMaxScroll();
+
       requestAnimationFrame(() => {
+        updateMaxScroll();
         syncScrollState(true);
       });
 
@@ -6313,21 +6357,28 @@
           }
         }, { passive: true });
 
+        let navScrollAnimRaf = 0;
+        function scheduleNavScrollState(nextClass) {
+          if (!navScrollContainer) return;
+          if (navScrollAnimRaf) cancelAnimationFrame(navScrollAnimRaf);
+          navScrollContainer.classList.remove('ns-enter', 'ns-exit');
+          navScrollAnimRaf = requestAnimationFrame(() => {
+            navScrollAnimRaf = 0;
+            navScrollContainer.classList.add(nextClass);
+          });
+        }
+
         function triggerNavScrollEnter() {
           if (!navScrollContainer) return;
           clearNavScrollBlend();
           setNavScrollShellState('closed');
-          navScrollContainer.classList.remove('ns-exit');
-          void navScrollContainer.offsetWidth;
-          navScrollContainer.classList.add('ns-enter');
+          scheduleNavScrollState('ns-enter');
           setNavScrollPointerState();
         }
         function triggerNavScrollExit() {
           if (!navScrollContainer) return;
           closeNavScrollMenu({ immediate: true });
-          navScrollContainer.classList.remove('ns-enter');
-          void navScrollContainer.offsetWidth;
-          navScrollContainer.classList.add('ns-exit');
+          scheduleNavScrollState('ns-exit');
           setNavScrollPointerState();
         }
 
@@ -7325,39 +7376,38 @@
         return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
       }
 
-      let stmC = 0,  stmT = 0;
-      let ccapC = 0, ccapT = 0;
+      /* ── STM EXIT: content scales + fades + blurs out as stm scrolls off top ── */
+      if (stm && stmContent && typeof ScrollTrigger !== 'undefined') {
+        ScrollTrigger.create({
+          trigger: stm,
+          start: 'bottom bottom',
+          end: 'bottom top',
+          scrub: 0.35,
+          onUpdate: (self) => {
+            const e = _ease(self.progress);
+            gsap.set(stmContent, {
+              scale: 1 - e * 0.07,
+              opacity: 1 - e * 0.78,
+              filter: `blur(${e * 7}px)`
+            });
+          }
+        });
+      }
 
-      gsap.ticker.add(() => {
-        const vH = window.innerHeight;
-
-        /* ── STM EXIT: content scales + fades + blurs out as stm scrolls off top ── */
-        if (stm && stmContent) {
-          const r = stm.getBoundingClientRect();
-          // progress: 0 = stm bottom at viewport bottom, 1 = stm bottom at viewport top
-          stmT = Math.max(0, Math.min(1 - r.bottom / vH, 1));
-          stmC += (stmT - stmC) * 0.07;
-          if (Math.abs(stmT - stmC) < 0.001) stmC = stmT;
-          const e = _ease(stmC);
-          gsap.set(stmContent, {
-            scale:   1 - e * 0.07,
-            opacity: 1 - e * 0.78,
-            filter:  `blur(${e * 7}px)`
-          });
-        }
-
-        /* ── CCAP EXIT: overlay darkens + main content pulls back ── */
-        if (ccap && ccapOverlay && ccapMain) {
-          const r = ccap.getBoundingClientRect();
-          // progress: 0 = ccap bottom at viewport bottom, 1 = ccap bottom at viewport top
-          ccapT = Math.max(0, Math.min(1 - r.bottom / vH, 1));
-          ccapC += (ccapT - ccapC) * 0.07;
-          if (Math.abs(ccapT - ccapC) < 0.001) ccapC = ccapT;
-          const e = _ease(ccapC);
-          gsap.set(ccapOverlay, { opacity: e * 0.74 });
-          gsap.set(ccapMain,    { scale: 1 - e * 0.046, y: -e * 24 });
-        }
-      });
+      /* ── CCAP EXIT: overlay darkens + main content pulls back ── */
+      if (ccap && ccapOverlay && ccapMain && typeof ScrollTrigger !== 'undefined') {
+        ScrollTrigger.create({
+          trigger: ccap,
+          start: 'bottom bottom',
+          end: 'bottom top',
+          scrub: 0.35,
+          onUpdate: (self) => {
+            const e = _ease(self.progress);
+            gsap.set(ccapOverlay, { opacity: e * 0.74 });
+            gsap.set(ccapMain, { scale: 1 - e * 0.046, y: -e * 24 });
+          }
+        });
+      }
 
     });
   </script>
