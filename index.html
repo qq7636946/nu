@@ -3537,7 +3537,11 @@
       }
 
       .overlay-top {
-        padding-top: 72px;
+        padding-top: 90px;
+      }
+
+      .grid-section {
+        display: none;
       }
 
       .top-header {
@@ -8573,17 +8577,22 @@
 
         var angle = 0;
         var extra = 0;
-        var BASE  = 0.25;   // deg/frame baseline (~15°/s @ 60fps)
-        var FRIC  = 0.90;   // 慣性衰減
-        var K     = 0.10;   // scroll velocity → extra 係數
+          var BASE  = 0.12;   // deg/frame baseline (~7°/s @ 60fps)
+          var FRIC  = 0.86;   // 慣性衰減
+          var K     = 0.04;   // scroll velocity → extra 係數
+          var MAX_EXTRA = 0.65;
         var rafId = 0;
 
-        function addVelocity(v) { extra += v * K; }
+          function addVelocity(v) {
+            extra += v * K;
+            if (extra > MAX_EXTRA) extra = MAX_EXTRA;
+            if (extra < -MAX_EXTRA) extra = -MAX_EXTRA;
+          }
 
         // Lenis scroll velocity
         function hookLenis() {
           if (window._lenis) {
-            window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 4); });
+              window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 2); });
           } else {
             setTimeout(hookLenis, 300);
           }
