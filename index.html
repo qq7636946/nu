@@ -886,6 +886,96 @@
       transform: rotateX(-90deg) translateZ(var(--scene-depth));
     }
 
+    .mobile-cube-section {
+      display: none;
+    }
+
+    @media (max-width: 767px) {
+      .mobile-cube-section {
+        --mobile-cube-size: clamp(150px, 48vw, 210px);
+        --mobile-cube-depth: calc(var(--mobile-cube-size) / 2);
+        display: grid;
+        place-items: center;
+        position: relative;
+        min-height: clamp(360px, 62svh, 520px);
+        padding: 72px 0 48px;
+        box-sizing: border-box;
+        background: #000;
+        overflow: hidden;
+        z-index: 2;
+      }
+
+      .mobile-cube-scene {
+        width: var(--mobile-cube-size);
+        height: var(--mobile-cube-size);
+        perspective: calc(var(--mobile-cube-size) * 5);
+      }
+
+      .mobile-cube {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+        animation: mobileCubeSpin 18s linear infinite;
+      }
+
+      .mobile-cube-face {
+        position: absolute;
+        width: var(--mobile-cube-size);
+        height: var(--mobile-cube-size);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: #080808;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 0 34px rgba(0, 0, 0, 0.88);
+        backface-visibility: hidden;
+      }
+
+      .mobile-cube-face img,
+      .mobile-cube-face video {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+      }
+
+      .mobile-cube-face.is-front {
+        transform: rotateY(0deg) translateZ(var(--mobile-cube-depth));
+      }
+
+      .mobile-cube-face.is-back {
+        transform: rotateY(180deg) translateZ(var(--mobile-cube-depth));
+      }
+
+      .mobile-cube-face.is-right {
+        transform: rotateY(90deg) translateZ(var(--mobile-cube-depth));
+      }
+
+      .mobile-cube-face.is-left {
+        transform: rotateY(-90deg) translateZ(var(--mobile-cube-depth));
+      }
+
+      .mobile-cube-face.is-top {
+        transform: rotateX(90deg) translateZ(var(--mobile-cube-depth));
+      }
+
+      .mobile-cube-face.is-bottom {
+        transform: rotateX(-90deg) translateZ(var(--mobile-cube-depth));
+      }
+
+      @keyframes mobileCubeSpin {
+        from {
+          transform: rotateX(-12deg) rotateY(-28deg);
+        }
+
+        to {
+          transform: rotateX(-12deg) rotateY(332deg);
+        }
+      }
+    }
+
     .face-subtitle {
       font-size: 0.75rem;
       color: #888;
@@ -1231,13 +1321,7 @@
 
     @media (max-width: 768px) {
       .dark-wrapper-mask {
-        position: relative;
-        left: auto;
-        bottom: auto;
-        width: 100%;
-        height: clamp(280px, 45svh, 420px);
-        z-index: 700;
-        overflow: visible;
+        display: none !important;
       }
 
       .dark-wrapper {
@@ -2407,6 +2491,12 @@
     }
 
     @media (max-width: 768px) {
+      .gallery-header {
+        position: relative;
+        top: auto;
+        height: auto;
+      }
+
       .pg-gallery {
         display: flex;
         flex-direction: column;
@@ -3264,6 +3354,8 @@
 
       .sticky-container {
         position: relative;
+        height: auto;
+        overflow: visible;
       }
 
       .hero-section {
@@ -3279,12 +3371,15 @@
       }
 
       #nav_scroll_container {
+        position: fixed;
         top: 16px;
         width: calc(100vw - 24px);
         opacity: 1 !important;
         pointer-events: auto !important;
         animation: none !important;
         transform: translateX(-50%) !important;
+        transition: none !important;
+        will-change: auto;
       }
 
       #nav_scroll_container.ns-enter,
@@ -4218,6 +4313,10 @@
                 activateScrollMedia();
               };
 
+              if (window.innerWidth <= 768) {
+                requestAnimationFrame(activateScrollMedia);
+              }
+
               document.addEventListener('nudot:activate-scroll-media', activateScrollMedia, { once: true });
               window.addEventListener('wheel', activateScrollMedia, { passive: true, once: true });
               window.addEventListener('touchstart', activateScrollMedia, { passive: true, once: true });
@@ -4353,7 +4452,8 @@
               </div>
 
               
-              <!-- 新增輪播時，只要複製一個 .slide，改 data-image 或 data-video，並補上 data-title。 -->
+              <!-- 新增輪播時，只要複製一個 .slide，改 data-image 或 data-video，並補上 data-title。
+                   手機版可另外填 data-mobile-image / data-mobile-video / data-mobile-thumb；未填會沿用桌機素材。 -->
               <div class="slide">
                 <!-- <div class="slide__img" data-video="images/home/banner05.mp4" data-thumb="images/home/banner05.jpg"
               data-title="Brand Film"></div> -->
@@ -4708,6 +4808,39 @@
         </section>
 
       </div>
+
+      <section class="mobile-cube-section" aria-label="Mobile cube showcase">
+        <div class="mobile-cube-scene">
+          <div class="mobile-cube">
+            <div class="mobile-cube-face is-front">
+              <video autoplay muted loop playsinline preload="none" disableRemotePlayback data-lazy-video
+                data-lazy-on-scroll="true">
+                <source data-src="images/cube/t1.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="mobile-cube-face is-right">
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t2.jpg"
+                alt="" width="2752" height="1536" loading="lazy" decoding="async">
+            </div>
+            <div class="mobile-cube-face is-back">
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t3.jpg"
+                alt="" width="2752" height="1536" loading="lazy" decoding="async">
+            </div>
+            <div class="mobile-cube-face is-left">
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t4.jpg"
+                alt="" width="5504" height="3072" loading="lazy" decoding="async">
+            </div>
+            <div class="mobile-cube-face is-top">
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t5.jpg"
+                alt="" width="7360" height="4912" loading="lazy" decoding="async">
+            </div>
+            <div class="mobile-cube-face is-bottom">
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t6.jpg"
+                alt="" width="3000" height="2000" loading="lazy" decoding="async">
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- =========================================================
        DRAFT.X & MUSEUM — WebGL Marquee + Stacked Cards Section
@@ -5338,18 +5471,43 @@
       if (el) el.textContent = String(index + 1).padStart(2, "0");
     }
 
+    const HERO_MOBILE_MEDIA_QUERY = "(max-width: 767px)";
+
+    function shouldUseMobileHeroMedia() {
+      if (window.matchMedia) return window.matchMedia(HERO_MOBILE_MEDIA_QUERY).matches;
+      return window.innerWidth <= 767;
+    }
+
+    function readHeroMediaAttr(el, key) {
+      return (el.dataset[key] || "").trim();
+    }
+
     function collectHeroSlides() {
+      const useMobileMedia = shouldUseMobileHeroMedia();
+
       return Array.from(document.querySelectorAll(".slide__img"))
         .map((el, index) => {
-          const imageUrl = (el.dataset.image || "").trim();
-          const videoUrl = (el.dataset.video || "").trim();
-          const assetUrl = videoUrl || imageUrl;
+          const desktopImage = readHeroMediaAttr(el, "image");
+          const desktopVideo = readHeroMediaAttr(el, "video");
+          const desktopThumb = readHeroMediaAttr(el, "thumb");
+          const mobileImage = readHeroMediaAttr(el, "mobileImage");
+          const mobileVideo = readHeroMediaAttr(el, "mobileVideo");
+          const mobileThumb = readHeroMediaAttr(el, "mobileThumb");
+          const hasMobileAsset = Boolean(mobileImage || mobileVideo);
+          const assetUrl = useMobileMedia && hasMobileAsset
+            ? (mobileVideo || mobileImage)
+            : (desktopVideo || desktopImage);
 
           if (!assetUrl) return null;
 
+          const isVideo = /\.(mp4|webm|ogg)$/i.test(assetUrl);
+          const thumbUrl = useMobileMedia
+            ? (mobileThumb || mobileImage || desktopThumb || desktopImage || (!isVideo ? assetUrl : ""))
+            : (desktopThumb || desktopImage || (!isVideo ? assetUrl : ""));
+
           return {
             assetUrl,
-            thumbUrl: (el.dataset.thumb || imageUrl).trim(),
+            thumbUrl,
             title: (el.dataset.title || `Slide ${String(index + 1).padStart(2, "0")}`).trim()
           };
         })
@@ -5433,6 +5591,7 @@
         this.textureLoader = new THREE.TextureLoader();
         this.texturePromises = {};
         this.videoEls = {};
+        this.textureResolutions = {};
 
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -5572,6 +5731,23 @@
         }
       }
 
+      rememberTextureResolution(index, width, height) {
+        if (!width || !height) return;
+        this.textureResolutions[index] = { width, height };
+        if (index === this.activeTextureIndex) this.applyTextureResolution(index);
+      }
+
+      applyTextureResolution(index, texture) {
+        const resolution = this.textureResolutions[index];
+        if (resolution) {
+          this.material.uniforms.uImageResolution.value.set(resolution.width, resolution.height);
+          return;
+        }
+        if (texture && texture.image && texture.image.width && texture.image.height) {
+          this.material.uniforms.uImageResolution.value.set(texture.image.width, texture.image.height);
+        }
+      }
+
       loadTextureAt(index) {
         if (this.textures[index]) return Promise.resolve(this.textures[index]);
         if (this.texturePromises[index]) return this.texturePromises[index];
@@ -5592,10 +5768,14 @@
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
             this.textures[index] = texture;
+            const rememberVideoResolution = () => {
+              this.rememberTextureResolution(index, vid.videoWidth || 1920, vid.videoHeight || 1080);
+            };
+            vid.addEventListener('loadedmetadata', rememberVideoResolution, { once: true });
             if (index === 0) {
-                this.material.uniforms.uTex1.value = texture;
-                this.material.uniforms.uImageResolution.value.set(1920, 1080);
-              }
+              this.material.uniforms.uTex1.value = texture;
+              rememberVideoResolution();
+            }
             const resolveTexture = () => resolve(texture);
             if (vid.readyState >= 2) resolveTexture();
             else vid.addEventListener('loadeddata', resolveTexture, { once: true });
@@ -5612,11 +5792,12 @@
               texture.generateMipmaps = true;
               texture.minFilter = THREE.LinearMipmapLinearFilter;
               this.textures[index] = texture;
+              if (texture.image) {
+                this.rememberTextureResolution(index, texture.image.width, texture.image.height);
+              }
               if (index === 0) {
                 this.material.uniforms.uTex1.value = texture;
-                if (texture.image) {
-                  this.material.uniforms.uImageResolution.value.set(texture.image.width, texture.image.height);
-                }
+                this.applyTextureResolution(index, texture);
               }
               resolve(texture);
             },
@@ -5721,6 +5902,7 @@
 
           this.material.uniforms.uTex1.value = currentTexture;
           this.material.uniforms.uTex2.value = nextTexture;
+          this.applyTextureResolution(currentIndex, currentTexture);
           this.material.uniforms.uDirection.value = direction;
           this.material.uniforms.uProgress.value = 0;
           this.activeTextureIndex = currentIndex;
@@ -5734,6 +5916,7 @@
               this.material.uniforms.uTex1.value = nextTexture;
               this.material.uniforms.uProgress.value = 0;
               this.activeTextureIndex = nextIndex;
+              this.applyTextureResolution(nextIndex, nextTexture);
               this.syncVideoPlayback(nextIndex);
               if (onCompleteCallback) onCompleteCallback();
             }
@@ -6400,7 +6583,13 @@
       }
 
       function setHeroSectionHidden(hidden) {
-        if (!heroSectionEl || heroSectionHidden === hidden) return;
+        if (!heroSectionEl) return;
+        if (window.innerWidth <= 767) {
+          heroSectionHidden = false;
+          heroSectionEl.style.visibility = '';
+          return;
+        }
+        if (heroSectionHidden === hidden) return;
         heroSectionHidden = hidden;
         heroSectionEl.style.visibility = hidden ? 'hidden' : '';
       }
@@ -7686,6 +7875,12 @@
         let navScrollAnimRaf = 0;
         function scheduleNavScrollState(nextClass) {
           if (!navScrollContainer) return;
+          if (isMobileHomeNav()) {
+            if (navScrollAnimRaf) cancelAnimationFrame(navScrollAnimRaf);
+            navScrollAnimRaf = 0;
+            navScrollContainer.classList.remove('ns-enter', 'ns-exit');
+            return;
+          }
           if (navScrollAnimRaf) cancelAnimationFrame(navScrollAnimRaf);
           navScrollContainer.classList.remove('ns-enter', 'ns-exit');
           navScrollAnimRaf = requestAnimationFrame(() => {
@@ -7696,6 +7891,12 @@
 
         function triggerNavScrollEnter() {
           if (!navScrollContainer) return;
+          if (isMobileHomeNav()) {
+            navScrollContainer.classList.remove('ns-enter', 'ns-exit');
+            setNavScrollShellState('closed');
+            setNavScrollPointerState();
+            return;
+          }
           clearNavScrollBlend();
           setNavScrollShellState('closed');
           scheduleNavScrollState('ns-enter');
@@ -7703,6 +7904,12 @@
         }
         function triggerNavScrollExit() {
           if (!navScrollContainer) return;
+          if (isMobileHomeNav()) {
+            navScrollContainer.classList.remove('ns-enter', 'ns-exit');
+            setNavScrollShellState('closed');
+            setNavScrollPointerState();
+            return;
+          }
           closeNavScrollMenu({ immediate: true });
           scheduleNavScrollState('ns-exit');
           setNavScrollPointerState();
