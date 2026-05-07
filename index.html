@@ -1986,6 +1986,14 @@
       }
     }
 
+    @media (max-width: 767px) {
+      #core-capabilities,
+      .ring-gallery-sticky,
+      #sketch {
+        touch-action: pan-y;
+      }
+    }
+
     #s3-gallery {
       position: relative;
       z-index: 3;
@@ -3461,10 +3469,12 @@
       }
     }
 
-    @media (hover: none) {
+    @media (min-width: 768px),
+    (hover: none) {
 
       #cursor-dot,
-      #cursor-ring {
+      #cursor-ring,
+      .mouseTracker--01 {
         display: none;
       }
     }
@@ -7732,6 +7742,9 @@
         });
       }, '1800px 0px'); // end lazy initGalleryExit
 
+      const disableCustomCursor = window.matchMedia('(min-width: 768px), (hover: none)').matches;
+
+      if (!disableCustomCursor) {
       // ── Grid Mouse Tracker ──
       (function () {
         const settings = {
@@ -7970,6 +7983,7 @@
 
         document.addEventListener('mouseleave', () => { dot.style.opacity = '0'; ring.style.opacity = '0'; wakeCursorLoop(); });
         document.addEventListener('mouseenter', () => { dot.style.opacity = ''; ring.style.opacity = ''; wakeCursorLoop(); });
+      }
       }
 
       // ── Scroll-driven marquee ──
@@ -8256,6 +8270,7 @@
         this.lines = [];
         this.dragDelta = 0;
         this.isDragging = false;
+        this.dragEnabled = true;
         this.isRendering = false;
         this.viewportObserver = null;
         this.lastPointer = { x: 0, y: 0 };
@@ -8317,7 +8332,7 @@
 
         this.container.innerHTML = "";
         this.container.appendChild(this.renderer.domElement);
-        this.container.style.touchAction = "none";
+        this.updateInteractionMode();
 
         this.handleResize();
         this.bindEvents();
@@ -8364,8 +8379,18 @@
         window.addEventListener("pointercancel", this.handlePointerUp);
       }
 
+      updateInteractionMode() {
+        const useTouchScrollMode = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+        this.dragEnabled = !useTouchScrollMode;
+        if (this.container) {
+          this.container.style.touchAction = useTouchScrollMode ? "pan-y" : "none";
+        }
+      }
+
       handleResize() {
         if (!this.container) return;
+
+        this.updateInteractionMode();
 
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
@@ -8383,6 +8408,7 @@
       }
 
       handlePointerDown(event) {
+        if (!this.dragEnabled || event.pointerType !== "mouse") return;
         this.isDragging = true;
         this.lastPointer.x = event.clientX;
         this.lastPointer.y = event.clientY;
@@ -8394,7 +8420,7 @@
           this.mouse.set(event.clientX - rect.left, rect.height - (event.clientY - rect.top));
         }
 
-        if (!this.isDragging) return;
+        if (!this.isDragging || event.pointerType !== "mouse") return;
 
         const deltaX = event.clientX - this.lastPointer.x;
         const deltaY = event.clientY - this.lastPointer.y;

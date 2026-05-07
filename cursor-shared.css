@@ -155,9 +155,10 @@
   }
 }
 
-@media (hover: none) {
+@media (min-width: 768px), (hover: none) {
   #cursor-dot,
-  #cursor-ring {
+  #cursor-ring,
+  .mouseTracker--01 {
     display: none;
   }
 }

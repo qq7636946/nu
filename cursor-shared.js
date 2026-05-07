@@ -2,6 +2,9 @@
   'use strict';
 
   function boot() {
+    var disableCustomCursor = window.matchMedia('(min-width: 768px), (hover: none)').matches;
+    if (disableCustomCursor) return;
+
     var dot = document.getElementById('cursor-dot');
     var ring = document.getElementById('cursor-ring');
     if (!dot || !ring) return;
