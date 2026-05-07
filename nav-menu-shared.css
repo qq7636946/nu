@@ -414,6 +414,68 @@ body.shared-nav-page .ns-showcase-row.is-previewed .ns-showcase-row__thumb img {
   transform: scale(1.08);
 }
 
+@media (max-width: 1024px) {
+  body.shared-nav-page .ns-showcase-row,
+  body.shared-nav-page .ns-showcase-row:hover,
+  body.shared-nav-page .ns-showcase-row:focus-visible,
+  body.shared-nav-page .ns-showcase-row.is-previewed {
+    background: transparent;
+    color: var(--ns-menu-text);
+    transition: none;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  body.shared-nav-page .ns-showcase-row__index,
+  body.shared-nav-page .ns-showcase-row__title,
+  body.shared-nav-page .ns-showcase-row__title-track,
+  body.shared-nav-page .ns-showcase-row__title-layer {
+    transition: none;
+    will-change: auto;
+  }
+
+  body.shared-nav-page .ns-showcase-row__index,
+  body.shared-nav-page .ns-showcase-row__title-track,
+  body.shared-nav-page .ns-showcase-row__title-layer,
+  body.shared-nav-page .ns-showcase-row:hover .ns-showcase-row__thumb.is-left,
+  body.shared-nav-page .ns-showcase-row:focus-visible .ns-showcase-row__thumb.is-left,
+  body.shared-nav-page .ns-showcase-row.is-previewed .ns-showcase-row__thumb.is-left,
+  body.shared-nav-page .ns-showcase-row:hover .ns-showcase-row__thumb.is-right,
+  body.shared-nav-page .ns-showcase-row:focus-visible .ns-showcase-row__thumb.is-right,
+  body.shared-nav-page .ns-showcase-row.is-previewed .ns-showcase-row__thumb.is-right {
+    transform: none !important;
+  }
+
+  body.shared-nav-page .ns-showcase-row__title-layer.is-accent,
+  body.shared-nav-page .ns-showcase-row__thumb,
+  body.shared-nav-page .ns-showcase-row:hover .ns-showcase-row__thumb,
+  body.shared-nav-page .ns-showcase-row:focus-visible .ns-showcase-row__thumb,
+  body.shared-nav-page .ns-showcase-row.is-previewed .ns-showcase-row__thumb {
+    display: none !important;
+    opacity: 0 !important;
+    clip-path: inset(0% 100% 0% 0%) !important;
+  }
+
+  body.shared-nav-page .ns-showcase-row:hover .ns-showcase-row__index,
+  body.shared-nav-page .ns-showcase-row:focus-visible .ns-showcase-row__index,
+  body.shared-nav-page .ns-showcase-row.is-previewed .ns-showcase-row__index {
+    color: inherit;
+  }
+
+  body.shared-nav-page .ns-showcase-row:hover .ns-showcase-row__title-layer.is-primary,
+  body.shared-nav-page .ns-showcase-row:focus-visible .ns-showcase-row__title-layer.is-primary,
+  body.shared-nav-page .ns-showcase-row.is-previewed .ns-showcase-row__title-layer.is-primary,
+  body.shared-nav-page .ns-showcase-row:hover .ns-showcase-row__title-layer.is-accent,
+  body.shared-nav-page .ns-showcase-row:focus-visible .ns-showcase-row__title-layer.is-accent,
+  body.shared-nav-page .ns-showcase-row.is-previewed .ns-showcase-row__title-layer.is-accent,
+  body.shared-nav-page .ns-showcase-row:hover .ns-showcase-row__thumb img,
+  body.shared-nav-page .ns-showcase-row:focus-visible .ns-showcase-row__thumb img,
+  body.shared-nav-page .ns-showcase-row.is-previewed .ns-showcase-row__thumb img {
+    transform: none !important;
+  }
+}
+
 @media (max-width: 767px) {
   body.shared-nav-page #nav_scroll_container {
     top: 16px;

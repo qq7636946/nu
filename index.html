@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -1040,10 +1040,37 @@
         background: #000;
         overflow: hidden;
         z-index: 2;
+        isolation: isolate;
         transition: min-height 0.45s ease, padding 0.45s ease;
       }
 
+      .mobile-cube-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .mobile-cube-bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.42);
+      }
+
+      .mobile-cube-bg video {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+        filter: brightness(0.72);
+        transform: scale(1.04);
+      }
+
       .mobile-cube-scene {
+        position: relative;
+        z-index: 3;
         width: var(--mobile-cube-size);
         height: var(--mobile-cube-size);
         perspective: calc(var(--mobile-cube-size) * 5);
@@ -3463,6 +3490,44 @@
       left: auto;
     }
 
+    @media (max-width: 1024px) {
+      .ns-showcase-row,
+      .ns-showcase-row:hover,
+      .ns-showcase-row:focus-visible,
+      .ns-showcase-row.is-previewed {
+        background: transparent;
+        color: var(--ns-menu-text);
+        transition: none;
+        outline: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      .ns-showcase-row__title,
+      .ns-showcase-row__title-track,
+      .ns-showcase-row__title-layer,
+      .ns-showcase-row__index {
+        transition: none;
+        will-change: auto;
+      }
+
+      .ns-showcase-row__title-track,
+      .ns-showcase-row__title-layer,
+      .ns-showcase-row__index {
+        transform: none !important;
+      }
+
+      .ns-showcase-row__title-layer.is-accent,
+      .ns-showcase-row__thumb,
+      .ns-menu-preview {
+        display: none !important;
+      }
+
+      .ns-showcase-row.is-previewed .ns-showcase-row__index {
+        color: inherit;
+      }
+    }
+
     .ns-menu-preview__card img {
       display: none;
     }
@@ -4630,6 +4695,7 @@
 
                  <div class="slide">
                 <div class="slide__img" data-video="images/home/slider_video01.mp4"
+                  data-mobile-video="images/home/slider_video01_s.mp4"
                   data-thumb="images/home/slider_video01.jpg" data-title="Immersive Film">
                 </div>
               </div>
@@ -4996,6 +5062,12 @@
       </div>
 
       <section class="mobile-cube-section" aria-label="Mobile cube showcase">
+        <div class="mobile-cube-bg" aria-hidden="true">
+          <video autoplay muted loop playsinline preload="none" disableRemotePlayback data-lazy-video
+            data-lazy-on-scroll="true">
+            <source data-src="images/bg.mp4" type="video/mp4">
+          </video>
+        </div>
         <div class="mcube-title">
           <span class="mcube-title__eye">（ 守護美學核心，定義數位落點 ）</span>
           <h2 class="mcube-title__line">ABOUT</h2>
@@ -7523,6 +7595,7 @@
 
       let currentVelocity = 0;
       const isMobileHomeNav = () => window.innerWidth <= 767;
+      const isSimpleTouchNavMode = () => window.innerWidth <= 1024;
 
         // scroll > 300px → 隱藏 #nav，顯示 #nav_scroll
         let _showingScrollNav = false;
@@ -7649,6 +7722,13 @@
         }
 
         function setActiveNavShowcaseRow(row = null) {
+          if (isSimpleTouchNavMode()) {
+            activeNavShowcaseRow = null;
+            navShowcaseRows.forEach((item) => {
+              item.classList.remove('is-previewed');
+            });
+            return;
+          }
           activeNavShowcaseRow = row;
           navShowcaseRows.forEach((item) => {
             item.classList.toggle('is-previewed', item === row);
@@ -7791,6 +7871,11 @@
             navScrollHoverCloseTimer = null;
           }
 
+          if (isSimpleTouchNavMode()) {
+            resetNavShowcaseHoverState(row || null);
+            return;
+          }
+
           if (!row) {
             resetNavShowcaseHoverState();
             return;
@@ -7802,7 +7887,7 @@
             return;
           }
 
-          if (immediate || window.innerWidth <= 767) {
+          if (immediate || isSimpleTouchNavMode()) {
             resetNavShowcaseHoverState(row);
           } else {
             timeline.timeScale(1.14).reverse();
@@ -7811,7 +7896,7 @@
 
         function showNavScrollPreview(row) {
           if (!row || typeof gsap === 'undefined') return;
-          if (window.innerWidth <= 767 || !isNavScrollMenuOpen) return;
+          if (isSimpleTouchNavMode() || !isNavScrollMenuOpen) return;
 
           if (navScrollHoverCloseTimer) {
             clearTimeout(navScrollHoverCloseTimer);
@@ -8093,7 +8178,7 @@
 
         window.addEventListener('resize', () => {
           syncNavScrollMenuLayout();
-          if (window.innerWidth <= 767) {
+          if (isSimpleTouchNavMode()) {
             hideNavScrollPreview(null, true);
           } else if (activeNavShowcaseRow && isNavScrollMenuOpen) {
             showNavScrollPreview(activeNavShowcaseRow);
@@ -8577,10 +8662,10 @@
 
         var angle = 0;
         var extra = 0;
-          var BASE  = 0.12;   // deg/frame baseline (~7°/s @ 60fps)
-          var FRIC  = 0.86;   // 慣性衰減
-          var K     = 0.04;   // scroll velocity → extra 係數
-          var MAX_EXTRA = 0.65;
+          var BASE  = 0.15;   // deg/frame baseline (~9°/s @ 60fps)
+          var FRIC  = 0.87;   // 慣性衰減
+          var K     = 0.05;   // scroll velocity → extra 係數
+          var MAX_EXTRA = 0.78;
         var rafId = 0;
 
           function addVelocity(v) {
@@ -8592,7 +8677,7 @@
         // Lenis scroll velocity
         function hookLenis() {
           if (window._lenis) {
-              window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 2); });
+              window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 2.4); });
           } else {
             setTimeout(hookLenis, 300);
           }
