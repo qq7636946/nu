@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -5547,6 +5547,17 @@
 
         @media (max-width: 768px) {
 
+          #core-capabilities .top-nav,
+          .footer-brand-title,
+          .footer-info-bar {
+            display: none;
+          }
+
+          .footer-video-thumb {
+            width: auto;
+            max-width: none;
+          }
+
           .footer-info-bar,
           .footer-nav-links a,
           .dxm-bottom-copy h2 {
@@ -8683,10 +8694,10 @@
 
         var angle = 0;
         var extra = 0;
-          var BASE  = 0.15;   // deg/frame baseline (~9°/s @ 60fps)
+          var BASE  = 0.18;   // deg/frame baseline (~11°/s @ 60fps)
           var FRIC  = 0.87;   // 慣性衰減
-          var K     = 0.05;   // scroll velocity → extra 係數
-          var MAX_EXTRA = 0.78;
+          var K     = 0.06;   // scroll velocity → extra 係數
+          var MAX_EXTRA = 0.92;
         var rafId = 0;
 
           function addVelocity(v) {
@@ -8698,7 +8709,7 @@
         // Lenis scroll velocity
         function hookLenis() {
           if (window._lenis) {
-              window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 2.4); });
+              window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 2.8); });
           } else {
             setTimeout(hookLenis, 300);
           }
