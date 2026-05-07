@@ -972,6 +972,11 @@ body.page-work-pattern::-webkit-scrollbar-thumb {
 
 
 @media (max-width: 760px) {
+  /* 手機原生 touch scroll 需要 overflow 可見，否則 Lenis smoothTouch:false 時頁面無法滑動 */
+  body.page-work-pattern {
+    overflow: visible;
+  }
+
   .work-hero {
     grid-template-columns: 1fr;
     justify-items: center;
