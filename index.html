@@ -170,6 +170,15 @@
       overscroll-behavior-y: none;
     }
 
+    @media (hover: none),
+    (pointer: coarse) {
+
+      html,
+      body {
+        overscroll-behavior-y: auto;
+      }
+    }
+
     body::-webkit-scrollbar {
       width: 6px;
     }
@@ -6931,9 +6940,16 @@
         document.querySelectorAll('.pg-gallery .pg-hover-copy').forEach((overlay) => overlay.remove());
       })();
 
-      if (typeof Lenis !== 'undefined') {
-        // 🎯 尊重「降低動態」偏好:reduced-motion 時直接 fallback 原生滾動
-        const _prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const _prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const _useNativeTouchScroll = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+      // 🎯 無論是否使用 Lenis，都要在資源就緒後重新校準 ScrollTrigger
+      window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => ScrollTrigger.refresh()).catch(() => { });
+      }
+
+      if (typeof Lenis !== 'undefined' && !_useNativeTouchScroll) {
 
         // 🎯 滾動絲滑核心配置：
         //   - 改用 lerp 模式（取代 duration 模式），消除起步遲鈍的「漂浮感」
@@ -6958,12 +6974,6 @@
         gsap.ticker.lagSmoothing(0);
         window._lenis = lenis;
 
-        // 🎯 視窗尺寸 / 字體載入完成後,重新校準 ScrollTrigger,避免 pin 位置漂移
-        window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
-        if (document.fonts && document.fonts.ready) {
-          document.fonts.ready.then(() => ScrollTrigger.refresh()).catch(() => { });
-        }
-
         // 🎯 分頁切回前景時,Lenis 可能因背景時 rAF 暫停而留下殘餘速度,重置一次避免「進場閃移」
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible' && window._lenis) {
@@ -6983,8 +6993,11 @@
           e.preventDefault();
           window._lenis.scrollTo(target, { duration: 1.4, offset: 0 });
         }, { passive: false });
+      } else {
+        window._lenis = null;
+      }
 
-        let currentVelocity = 0;
+      let currentVelocity = 0;
 
         // scroll > 300px → 隱藏 #nav，顯示 #nav_scroll
         let _showingScrollNav = false;
@@ -7580,16 +7593,26 @@
           setNavScrollPointerState();
         }
 
-        lenis.on('scroll', ({ velocity, scroll }) => {
-          currentVelocity = velocity;
-          const shouldSwitch = scroll > 300;
-          if (shouldSwitch !== _showingScrollNav) {
-            _showingScrollNav = shouldSwitch;
-            document.documentElement.classList.toggle('show-nav-scroll', _showingScrollNav);
-            if (_showingScrollNav) triggerNavScrollEnter();
-            else triggerNavScrollExit();
-          }
+      const syncNavScrollFromPosition = (scroll, velocity = 0) => {
+        currentVelocity = velocity;
+        const shouldSwitch = scroll > 300;
+        if (shouldSwitch !== _showingScrollNav) {
+          _showingScrollNav = shouldSwitch;
+          document.documentElement.classList.toggle('show-nav-scroll', _showingScrollNav);
+          if (_showingScrollNav) triggerNavScrollEnter();
+          else triggerNavScrollExit();
+        }
+      };
+
+      if (window._lenis && typeof window._lenis.on === 'function') {
+        window._lenis.on('scroll', ({ velocity, scroll }) => {
+          syncNavScrollFromPosition(scroll, velocity);
         });
+      } else {
+        window.addEventListener('scroll', () => {
+          syncNavScrollFromPosition(window.scrollY || window.pageYOffset || 0, 0);
+        }, { passive: true });
+        syncNavScrollFromPosition(window.scrollY || window.pageYOffset || 0, 0);
       }
 
       const progressBar = document.getElementById('scroll-progress');
