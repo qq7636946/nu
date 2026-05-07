@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -910,14 +910,6 @@
           transition: opacity 0.45s ease, transform 0.45s ease, max-height 0.45s ease, padding 0.45s ease;
         }
 
-        .mobile-cube-section.is-in-view + .mobile-marquee-section {
-          opacity: 1;
-          max-height: 220px;
-          padding: 8px 0 32px;
-          pointer-events: auto;
-          transform: translateY(0);
-      }
-
       .mobile-marquee-section .mobile-marquee-outer {
         width: 100%;
         overflow: hidden;
@@ -978,13 +970,6 @@
         display: flex;
         flex-direction: column;
         gap: 20px;
-        opacity: 0;
-        transform: translateY(14px);
-        transition: opacity 0.65s ease 0.55s, transform 0.65s ease 0.55s;
-      }
-      .mobile-cube-section.is-in-view .mcube-copy {
-        opacity: 1;
-        transform: translateY(0);
       }
       .mcube-copy__desc {
         font-family: 'DM Sans', sans-serif;
@@ -994,6 +979,7 @@
         line-height: 1.75;
         margin: 0;
         letter-spacing: 0.01em;
+        text-align: center;
       }
       .mcube-copy__tags {
         display: flex;
@@ -1057,11 +1043,6 @@
         transition: min-height 0.45s ease, padding 0.45s ease;
       }
 
-      .mobile-cube-section.is-in-view {
-        min-height: clamp(300px, 54svh, 440px);
-        padding: 56px 0 40px;
-      }
-
       .mobile-cube-scene {
         width: var(--mobile-cube-size);
         height: var(--mobile-cube-size);
@@ -1074,14 +1055,11 @@
         width: 100%;
         height: 100%;
         transform-style: preserve-3d;
-        /* 🎯 預設停在正面,等 .is-in-view 才開始播放動畫 */
-        transform: rotateX(-12deg) rotateY(0deg);
+        /* 🎯 純水平 rotateY,由 JS 跟著手機 scroll 慣性帶動;不再有 CSS 自動動畫 */
+        transform: rotateY(0deg);
         will-change: transform;
       }
 
-      /* 🎯 進場動畫(只在 section 進入視野時觸發):
-         先轉一圈(360°),再繼續旋轉 180° 停在背面,共 540°;
-         之後切到無限慢轉(從背面 540° 出發,每 18s 再轉一圈) */
       /* Title above the mobile cube */
       .mcube-title {
         position: absolute;
@@ -1095,13 +1073,6 @@
         flex-direction: column;
         align-items: center;
         gap: 6px;
-        opacity: 0;
-        transform: translateY(-10px);
-        transition: opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s;
-      }
-      .mobile-cube-section.is-in-view .mcube-title {
-        opacity: 1;
-        transform: translateY(0);
       }
       .mcube-title__eye {
         font-family: 'DM Sans', sans-serif;
@@ -1121,13 +1092,6 @@
         margin: 0;
         line-height: 1;
         text-transform: uppercase;
-      }
-
-      .mobile-cube-section.is-in-view .mobile-cube {
-        animation:
-          mobileCubeIntro 2.2s cubic-bezier(0.65, 0.05, 0.35, 1) 0s 1 both,
-          mobileCubeFlatten 0.55s ease-out 2.2s 1 both,
-          mobileCubeSpin 18s linear 2.75s infinite;
       }
 
       .mobile-cube-face {
@@ -1176,26 +1140,6 @@
         transform: rotateX(-90deg) translateZ(var(--mobile-cube-depth));
       }
 
-      /* 進場:從正面 0° 一口氣旋轉 540°(一圈 + 半圈),結束時背面朝鏡頭 */
-      @keyframes mobileCubeIntro {
-        from {
-          transform: rotateX(-12deg) rotateY(0deg);
-        }
-        to {
-          transform: rotateX(-12deg) rotateY(540deg);
-        }
-      }
-
-      /* 進場結束後先壓平 rotateX,再純水平慢轉 */
-      @keyframes mobileCubeFlatten {
-        from { transform: rotateX(-12deg) rotateY(540deg); }
-        to   { transform: rotateX(0deg)   rotateY(540deg); }
-      }
-
-      @keyframes mobileCubeSpin {
-        from { transform: rotateX(0deg) rotateY(540deg); }
-        to   { transform: rotateX(0deg) rotateY(900deg); }
-      }
     }
 
     .face-subtitle {
@@ -3589,7 +3533,7 @@
 
       .hero-section {
         position: relative;
-          height: 95vh;
+          height: 90vh;
       }
 
       .overlay-top {
@@ -5084,7 +5028,6 @@
         </div>
         <div class="mcube-copy">
           <p class="mcube-copy__desc">
-            核點創意 NUDOT 是一間以品牌策略為核心的數位創意工作室。<br>
             從視覺識別、動態設計到網頁互動開發，我們讓每一個像素都承載商業靈魂，讓每一組代碼都流露美學意志。
           </p>
         </div>
@@ -8623,24 +8566,46 @@
       }
       }
 
-      // ── 手機版 mobile-cube-section 進入視野時觸發進場動畫 ──
+      // ── 手機版 mobile-cube-section：scroll-driven 平轉 ──
       (function () {
-        const sec = document.querySelector('.mobile-cube-section');
-        if (!sec) return;
-        if (!('IntersectionObserver' in window)) {
-          // 不支援 IntersectionObserver 的舊瀏覽器,直接給 in-view 讓動畫跑
-          sec.classList.add('is-in-view');
-          return;
+        var cube = document.querySelector('.mobile-cube');
+        if (!cube) return;
+
+        var angle = 0;
+        var extra = 0;
+        var BASE  = 0.25;   // deg/frame baseline (~15°/s @ 60fps)
+        var FRIC  = 0.90;   // 慣性衰減
+        var K     = 0.10;   // scroll velocity → extra 係數
+        var rafId = 0;
+
+        function addVelocity(v) { extra += v * K; }
+
+        // Lenis scroll velocity
+        function hookLenis() {
+          if (window._lenis) {
+            window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 4); });
+          } else {
+            setTimeout(hookLenis, 300);
+          }
         }
-        const io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('is-in-view');
-              io.unobserve(entry.target);
-            }
-          });
-        }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
-        io.observe(sec);
+        hookLenis();
+
+        // native scroll fallback
+        var lastY = window.scrollY;
+        window.addEventListener('scroll', function () {
+          addVelocity(window.scrollY - lastY);
+          lastY = window.scrollY;
+        }, { passive: true });
+
+        function tick() {
+          extra *= FRIC;
+          angle += BASE + extra;
+          cube.style.transform = 'rotateY(' + angle + 'deg)';
+          rafId = requestAnimationFrame(tick);
+        }
+
+        // 直接啟動，不等 IntersectionObserver
+        tick();
       })();
 
       // ── Scroll-driven marquee (支援多個 .js-scroll-marquee 同時運作) ──
