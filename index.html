@@ -1257,6 +1257,8 @@
       .scene-wrapper {
         top: 50%;
         left: 50%;
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
       }
 
       .dark-wrapper>video {
@@ -6420,11 +6422,14 @@
         currentScrollProgress += (targetScrollProgress - currentScrollProgress) * 0.1;
         if (currentScrollProgress < 0.0001) currentScrollProgress = 0;
 
+        const isMobile = winW <= 768;
+
         // 🎯 當 progress 跟上一幀幾乎相同且已經趨近目標時,完全跳過動畫管線
         //    這是最關鍵的效能修復:避免穩定狀態下仍持續刷新 20+ 個 gsap.set
+        //    mobile scene 目前要靠同一條 ticker 維持 cube 可見，所以這裡保留 mobile 更新
         const progressDelta = Math.abs(currentScrollProgress - _lastAppliedProgress);
         const targetDelta = Math.abs(targetScrollProgress - currentScrollProgress);
-        if (progressDelta < 0.0001 && targetDelta < 0.0001) {
+        if (!isMobile && progressDelta < 0.0001 && targetDelta < 0.0001) {
           return;
         }
         _lastAppliedProgress = currentScrollProgress;
@@ -6439,11 +6444,42 @@
         const p_Spin = 0.78;
         const p_PreExit = p_Spin - 0.06;
         const p_Zoom = 1.00;
-        const isMobile = winW <= 768;
-        document.documentElement.classList.toggle(
-          'is-dark-wrapper-mobile-intro',
-          isMobile && progress > p_Reveal * 0.55 && progress < p_TextOut
-        );
+        document.documentElement.classList.remove('is-dark-wrapper-mobile-intro');
+
+        if (isMobile) {
+          baseRotY += 0.25;
+          const mobileSceneSize = Math.min(winW * 0.56, 220);
+          if (darkWrapperMask) darkWrapperMask.style.height = '';
+          if (darkWrapper) darkWrapper.style.clipPath = 'none';
+          if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 0 });
+          if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
+          if (section2) gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 18 });
+          if (newTextGroup) gsap.set(newTextGroup, { opacity: 0 });
+          if (scene) {
+            gsap.set(scene, {
+              '--scene-size': `${mobileSceneSize}px`,
+              '--scene-depth': `${mobileSceneSize / 2}px`
+            });
+          }
+          if (cube) {
+            gsap.set(cube, {
+              rotationX: -12,
+              rotationY: baseRotY,
+              rotationZ: 0
+            });
+          }
+          if (sceneWrapper) {
+            gsap.set(sceneWrapper, {
+              xPercent: -50,
+              yPercent: -50,
+              scale: 1,
+              top: '50%',
+              opacity: 1
+            });
+          }
+          window._marqueeRAFActive = false;
+          return;
+        }
 
         // 🎯 marquee rAF 只在 title 出現期間（p_TextOut → p_Spin + buffer）執行
         //    zoom 階段完全暫停，消除 GPU 競爭造成的卡頓
