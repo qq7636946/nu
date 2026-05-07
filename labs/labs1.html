@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Visual Design Lab</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #030303;
+            color: #ffffff;
+            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+            overflow-x: hidden;
+            overscroll-behavior: none;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scroll-proxy {
+            width: 100%;
+        }
+
+        .fixed-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        /* 括號永遠固定在畫面中央 */
+        .braces-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75vw; /* 為了容納 16:9 圖片，將括號距離拉寬 */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .brace {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 8vh;
+            font-weight: 300;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1;
+        }
+
+        /* 整個列表容器，改用 flex 佈局與 gap 來精準控制間距 */
+        .items-container {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60vw; /* 為了容納 16:9 圖片，將內容區域拉寬 */
+            display: flex;
+            flex-direction: column;
+            gap: 1.5vh; /* 縮小間距，讓下方文字緊密排列 */
+            align-items: center;
+            z-index: 10;
+            will-change: transform;
+        }
+
+        /* 每個獨立項目的容器 */
+        .item {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            will-change: height;
+        }
+
+        /* 文字列永遠相對於 item 垂直居中，所以會跟著大圖一起上下移動！ */
+        .text-row {
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            opacity: 0.35; /* 稍微調亮，接近截圖質感 */
+            z-index: 2;
+            will-change: opacity;
+        }
+
+        /* 圖片容器 */
+        .img-wrapper {
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #111;
+            z-index: 1;
+            will-change: width, height;
+        }
+
+        .img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.4);
+            will-change: transform, filter;
+        }
+
+        @media (max-width: 1024px) {
+            .braces-wrapper { width: 90vw; }
+            .items-container { width: 80vw; }
+        }
+        @media (max-width: 768px) {
+            .text-row { font-size: 9px; letter-spacing: 0.05em; }
+            .brace { font-size: 6vh; }
+            .braces-wrapper { width: 95vw; }
+            .items-container { width: 85vw; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scroll-proxy"></div>
+    
+    <div class="fixed-wrapper">
+        <div class="braces-wrapper">
+            <span class="brace">{</span>
+            <span class="brace">}</span>
+        </div>
+        <div class="items-container">
+            <!-- JS 動態生成內容 -->
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        const imagePool = [
+            "images/vibrant-array-of-colorful-leaves-dangling-from-tre-2026-01-07-23-45-17-utc.jpg",
+            "images/green-leaves-in-the-garden-2026-03-09-03-23-34-utc.jpg",
+            "images/log-wood-texture-stylish-minimal-wallpaper-bio-ec-2026-01-05-01-02-41-utc.jpg",
+            "images/cosmetic-essence-liquid-bubble-molecule-inside-liquid-bubble-white-water-background-ai-generated.jpg",
+            "images/brick-wall-and-sunlight-2026-01-07-06-59-58-utc.jpg",
+            "images/old-red-brick-wall-texture-background-2026-01-07-05-56-12-utc.jpg",
+            "images/newly-manufactured-cylinders-in-the-factory-2026-01-07-01-21-17-utc.JPG",
+            "images/iron-wire-industrial-fence-panel-background.jpg",
+            "images/magnific_img1-code-01_2878063572.png",
+            "images/magnific_img1_2846264082.png",
+            "images/magnific_img1_2846279722.png",
+            "images/magnific_img1_2854248950.png",
+            "images/magnific_img1_2867919638.png",
+            "images/magnific_ai_2877864955.png",
+            "images/magnific_img1-code-01_2877934526.png",
+            "images/magnific_img1-code-01_2877937166.png",
+            "images/magnific_img1-code-01_2877938890.png",
+            "images/magnific_img1-code-01_2877953959.png"
+        ];
+
+        function getRandomImages(count) {
+            return [...imagePool]
+                .sort(() => Math.random() - 0.5)
+                .slice(0, count);
+        }
+
+        const selectedImages = getRandomImages(8);
+
+        const itemsData = [
+            { left: "VISUAL SYSTEM ::", right: "/ WEB DESIGN", img: selectedImages[0] },
+            { left: "LAYOUT COMPOSITION ::", right: "/ GRID STUDY", img: selectedImages[1] },
+            { left: "INTERFACE DETAIL ::", right: "/ UI DESIGN", img: selectedImages[2] },
+            { left: "MOTION RHYTHM ::", right: "/ SCROLL FLOW", img: selectedImages[3] },
+            { left: "TYPOGRAPHY SCALE ::", right: "/ CONTENT LAYER", img: selectedImages[4] },
+            { left: "BRAND EXPERIENCE ::", right: "/ DIGITAL TOUCH", img: selectedImages[5] },
+            { left: "RESPONSIVE FRAME ::", right: "/ DEVICE LOGIC", img: selectedImages[6] },
+            { left: "CREATIVE DIRECTION ::", right: "/ VISUAL LAB", img: selectedImages[7] }
+        ];
+
+        const container = document.querySelector('.items-container');
+        const scrollProxy = document.querySelector('.scroll-proxy');
+        const numItems = itemsData.length;
+
+        itemsData.forEach((data, i) => {
+            const item = document.createElement('div');
+            item.className = 'item';
+            item.id = `item-${i}`;
+            item.innerHTML = `
+                <div class="text-row" id="text-row-${i}">
+                    <span>${data.left}</span>
+                    <span>${data.right}</span>
+                </div>
+                <div class="img-wrapper" id="img-wrapper-${i}">
+                    <img src="${data.img}" id="img-${i}" alt="web visual design reference">
+                </div>
+            `;
+            container.appendChild(item);
+        });
+
+        let mainTimeline;
+
+        function initAnimation() {
+            if (mainTimeline) mainTimeline.kill();
+            ScrollTrigger.getAll().forEach(t => t.kill());
+
+            const vh = window.innerHeight;
+            const vw = window.innerWidth;
+            
+            // 核心尺寸參數 (改為 16:9 比例)
+            const gap = vh * 0.015;           // 必須與 CSS gap 同步 (1.5vh)，創造緊湊文字排版
+            const maxImgW = vw > 768 ? vw * 0.35 : vw * 0.75; // 展開時的大圖寬度
+            const maxItemH = maxImgW * (9 / 16);              // 嚴格鎖定 16:9 的大圖高度
+            
+            // 下方的項目高度縮減為僅容納文字的高度 (例如 3vh)，讓未展開的項目文字緊緊貼合
+            const minItemH = vh * 0.03; 
+
+            // 撐開原生捲動條
+            scrollProxy.style.height = `${numItems * 100}vh`;
+
+            // 設定容器初始 Y 位置：精準計算讓第一個項目對齊畫面正中央
+            const initialY = (vh / 2) - (maxItemH / 2);
+
+            // 【第一步：重置所有狀態】
+            gsap.set(".items-container", { y: initialY });
+            
+            // 下方未進入的項目設定為「圖片為 0，只有文字」
+            for(let i = 1; i < numItems; i++) {
+                gsap.set(`#item-${i}`, { height: minItemH });
+                gsap.set(`#img-wrapper-${i}`, { width: 0, height: 0 }); // 完全隱藏圖片，從 0 開始生長
+                gsap.set(`#text-row-${i}`, { opacity: 0.2 });
+                gsap.set(`#img-${i}`, { scale: 1.5, filter: "brightness(0.3)" });
+            }
+
+            // 第一個項目預設為「展開的活躍狀態」
+            gsap.set("#item-0", { height: maxItemH });
+            gsap.set("#img-wrapper-0", { width: maxImgW, height: maxItemH });
+            gsap.set("#text-row-0", { opacity: 1 });
+            gsap.set("#img-0", { scale: 1, filter: "brightness(1)" });
+
+            mainTimeline = gsap.timeline({
+                scrollTrigger: {
+                    trigger: ".scroll-proxy",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1, 
+                    snap: {
+                        snapTo: 1 / (numItems - 1),
+                        duration: { min: 0.3, max: 0.6 },
+                        ease: "power2.inOut"
+                    }
+                }
+            });
+
+            // 【第二步：核心非對稱過渡運算】
+            for (let i = 0; i < numItems - 1; i++) {
+                
+                // 1. 整個容器向上平移 (精準移動一個大圖高度 + 一個間距)
+                mainTimeline.to(".items-container", {
+                    y: initialY - ((i + 1) * (maxItemH + gap)),
+                    duration: 1,
+                    ease: "none"
+                }, i);
+
+                // 2. 舊項目退出 (i)：注意！這裡「不」改變 height 和 width，完全保留大圖尺寸！
+                // 只有讓文字稍微變暗，然後原封不動地往上離開畫面 (含字退出)
+                mainTimeline.to(`#text-row-${i}`, { opacity: 0.3, duration: 1, ease: "none" }, i);
+                mainTimeline.to(`#img-${i}`, { filter: "brightness(0.4)", duration: 1, ease: "none" }, i);
+
+                // 3. 新項目進入 (i+1)：從底部的小縮圖，隨著進入中央括號，慢慢長成大圖並點亮
+                mainTimeline.to(`#item-${i+1}`, { height: maxItemH, duration: 1, ease: "none" }, i);
+                mainTimeline.to(`#img-wrapper-${i+1}`, { width: maxImgW, height: maxItemH, duration: 1, ease: "none" }, i);
+                mainTimeline.to(`#text-row-${i+1}`, { opacity: 1, duration: 1, ease: "none" }, i);
+                mainTimeline.to(`#img-${i+1}`, { scale: 1, filter: "brightness(1)", duration: 1, ease: "none" }, i);
+            }
+        }
+
+        initAnimation();
+
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                initAnimation();
+            }, 200);
+        });
+    </script>
+</body>
+</html>

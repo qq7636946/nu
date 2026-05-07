@@ -1,0 +1,32 @@
+# Editor and local tool state
+.vscode/
+.claude/
+
+# Local reports and scratch output
+verify-shots/
+lighthouse*.json
+
+# Backup and archive folders
+bk20260501/
+bk20260501-2/
+xx/
+2系列/
+nudot-logo-intro/
+
+# One-off local backup files
+index - 複製*.html
+work - 複製.html
+index0506.html
+index0506-2.html
+index0507.html
+index260505.html
+0507.html
+
+# Heavy authoring/source files not needed for site deploys
+*.zip
+*.aep
+*.mogrt
+
+# OS noise
+.DS_Store
+Thumbs.db
