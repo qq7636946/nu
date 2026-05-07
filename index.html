@@ -74,7 +74,7 @@
       href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single:wght@100..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Zalando+Sans+SemiExpanded:ital,wght@0,200..900;1,200..900&display=swap">
   </noscript>
 
-  <link rel="icon" href="fav.png" type="image/png">
+  <link rel="icon" href="images/fav.png" type="image/png">
   <!-- Critical inline: page-transitions (formerly page-transitions.css) -->
   <style>
     :root{--pt-bg:#000;--pt-top:-102%;--pt-bottom:102%}
@@ -890,6 +890,157 @@
       display: none;
     }
 
+    /* 🎯 手機版 cube 後面的 marquee — PC 不顯示 */
+    .mobile-marquee-section {
+      display: none;
+    }
+
+    @media (max-width: 767px) {
+      .mobile-marquee-section {
+        display: block;
+        position: relative;
+        background: #000;
+          padding: 0;
+        overflow: hidden;
+        z-index: 2;
+          opacity: 0;
+          max-height: 0;
+          pointer-events: none;
+          transform: translateY(-20px);
+          transition: opacity 0.45s ease, transform 0.45s ease, max-height 0.45s ease, padding 0.45s ease;
+        }
+
+        .mobile-cube-section.is-in-view + .mobile-marquee-section {
+          opacity: 1;
+          max-height: 220px;
+          padding: 8px 0 32px;
+          pointer-events: auto;
+          transform: translateY(0);
+      }
+
+      .mobile-marquee-section .mobile-marquee-outer {
+        width: 100%;
+        overflow: hidden;
+        mix-blend-mode: difference;
+      }
+
+      .mobile-marquee-section .marquee-inner {
+        display: flex;
+        align-items: center;
+        transform: translateZ(0);
+        will-change: transform;
+      }
+
+      .mobile-marquee-section .marquee-set {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .mobile-marquee-section .marquee-block {
+        display: inline-flex;
+        align-items: baseline;
+        flex-shrink: 0;
+        padding: 0;
+      }
+
+      .mobile-marquee-section .huge-title.marquee-item {
+        font-family: 'Zalando Sans SemiExpanded', 'DM Sans', sans-serif;
+        font-stretch: semi-expanded;
+        font-size: 14vw;
+        font-weight: 600;
+        line-height: 1;
+        margin: 0 0.4em 0 0;
+        color: #fff;
+        white-space: nowrap;
+      }
+
+      .mobile-marquee-section .marquee-label {
+        font-family: 'DM Sans', sans-serif;
+        font-size: clamp(0.7rem, 2.4vw, 0.95rem);
+        font-weight: 400;
+        color: #fff;
+        white-space: nowrap;
+        letter-spacing: 0.05em;
+        line-height: 1;
+        flex-shrink: 0;
+        margin-right: 1.2em;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .mcube-copy {
+        position: relative;
+        z-index: 4;
+        width: 100%;
+        padding: 150px 28px 0 28px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        opacity: 0;
+        transform: translateY(14px);
+        transition: opacity 0.65s ease 0.55s, transform 0.65s ease 0.55s;
+      }
+      .mobile-cube-section.is-in-view .mcube-copy {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .mcube-copy__desc {
+        font-family: 'DM Sans', sans-serif;
+        font-size: clamp(0.78rem, 3.6vw, 0.95rem);
+        font-weight: 400;
+        color: rgba(255,255,255,0.62);
+        line-height: 1.75;
+        margin: 0;
+        letter-spacing: 0.01em;
+      }
+      .mcube-copy__tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .mcube-copy__tag {
+        font-family: 'DM Sans', sans-serif;
+        font-size: clamp(0.6rem, 2.6vw, 0.7rem);
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.5);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 2px;
+        padding: 4px 10px;
+        white-space: nowrap;
+      }
+      .mcube-copy__stats {
+        display: flex;
+        gap: 24px;
+        padding-top: 4px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+      }
+      .mcube-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .mcube-stat__num {
+        font-family: 'Zalando Sans SemiExpanded', 'DM Sans', sans-serif;
+        font-size: clamp(1.3rem, 6vw, 1.6rem);
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.02em;
+        line-height: 1;
+      }
+      .mcube-stat__label {
+        font-family: 'DM Sans', sans-serif;
+        font-size: clamp(0.58rem, 2.4vw, 0.65rem);
+        font-weight: 400;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.38);
+      }
+    }
+
     @media (max-width: 767px) {
       .mobile-cube-section {
         --mobile-cube-size: clamp(150px, 48vw, 210px);
@@ -903,12 +1054,19 @@
         background: #000;
         overflow: hidden;
         z-index: 2;
+        transition: min-height 0.45s ease, padding 0.45s ease;
+      }
+
+      .mobile-cube-section.is-in-view {
+        min-height: clamp(300px, 54svh, 440px);
+        padding: 56px 0 40px;
       }
 
       .mobile-cube-scene {
         width: var(--mobile-cube-size);
         height: var(--mobile-cube-size);
         perspective: calc(var(--mobile-cube-size) * 5);
+        padding-top: 80px;
       }
 
       .mobile-cube {
@@ -916,7 +1074,60 @@
         width: 100%;
         height: 100%;
         transform-style: preserve-3d;
-        animation: mobileCubeSpin 18s linear infinite;
+        /* 🎯 預設停在正面,等 .is-in-view 才開始播放動畫 */
+        transform: rotateX(-12deg) rotateY(0deg);
+        will-change: transform;
+      }
+
+      /* 🎯 進場動畫(只在 section 進入視野時觸發):
+         先轉一圈(360°),再繼續旋轉 180° 停在背面,共 540°;
+         之後切到無限慢轉(從背面 540° 出發,每 18s 再轉一圈) */
+      /* Title above the mobile cube */
+      .mcube-title {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        z-index: 4;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s;
+      }
+      .mobile-cube-section.is-in-view .mcube-title {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .mcube-title__eye {
+        font-family: 'DM Sans', sans-serif;
+        font-size: clamp(0.6rem, 2.8vw, 0.75rem);
+        font-weight: 400;
+        letter-spacing: 0.18em;
+        color: rgba(255,255,255,0.45);
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .mcube-title__line {
+        font-family: 'Zalando Sans SemiExpanded', 'DM Sans', sans-serif;
+        font-size: 10vw;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: #fff;
+        margin: 0;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      .mobile-cube-section.is-in-view .mobile-cube {
+        animation:
+          mobileCubeIntro 2.2s cubic-bezier(0.65, 0.05, 0.35, 1) 0s 1 both,
+          mobileCubeFlatten 0.55s ease-out 2.2s 1 both,
+          mobileCubeSpin 18s linear 2.75s infinite;
       }
 
       .mobile-cube-face {
@@ -965,14 +1176,25 @@
         transform: rotateX(-90deg) translateZ(var(--mobile-cube-depth));
       }
 
-      @keyframes mobileCubeSpin {
+      /* 進場:從正面 0° 一口氣旋轉 540°(一圈 + 半圈),結束時背面朝鏡頭 */
+      @keyframes mobileCubeIntro {
         from {
-          transform: rotateX(-12deg) rotateY(-28deg);
+          transform: rotateX(-12deg) rotateY(0deg);
         }
-
         to {
-          transform: rotateX(-12deg) rotateY(332deg);
+          transform: rotateX(-12deg) rotateY(540deg);
         }
+      }
+
+      /* 進場結束後先壓平 rotateX,再純水平慢轉 */
+      @keyframes mobileCubeFlatten {
+        from { transform: rotateX(-12deg) rotateY(540deg); }
+        to   { transform: rotateX(0deg)   rotateY(540deg); }
+      }
+
+      @keyframes mobileCubeSpin {
+        from { transform: rotateX(0deg) rotateY(540deg); }
+        to   { transform: rotateX(0deg) rotateY(900deg); }
       }
     }
 
@@ -1208,6 +1430,7 @@
       overflow: hidden;
       mix-blend-mode: difference;
     }
+
 
     .marquee-outer {
       overflow: hidden;
@@ -2163,6 +2386,12 @@
       object-fit: cover;
       display: block;
       opacity: 0.5;
+    }
+
+    @media (max-width: 768px) {
+      .gallery-header-video {
+        display: none;
+      }
     }
 
     .gallery-header {
@@ -3641,8 +3870,11 @@
       }
     }
 
-    @media (min-width: 768px),
-    (hover: none) {
+    /* 🎯 自訂鼠標只在 PC(可 hover、精細指標、寬度 > 1024px)顯示;
+       iPad/手機/任何觸控裝置一律隱藏 */
+    @media (max-width: 1024px),
+    (hover: none),
+    (pointer: coarse) {
 
       #cursor-dot,
       #cursor-ring,
@@ -3832,6 +4064,13 @@
       pointer-events: none;
     }
 
+    @media (max-width: 1024px) {
+      .footer-copyright-bridge,
+      .footer-parallax-section {
+        display: none !important;
+      }
+    }
+
     @media (max-width: 768px) {
       .footer-main-content {
         grid-template-columns: 1fr;
@@ -3840,11 +4079,6 @@
       .footer-right-panel {
         align-items: flex-start;
         margin-top: 40px;
-      }
-
-      .footer-copyright-bridge {
-        width: 72px;
-        height: 72px;
       }
     }
   </style>
@@ -4573,7 +4807,7 @@
                 </h2>
                 <div class="title-reveal-wrap">
                   <div id="title-marquee" class="marquee-outer">
-                    <div class="marquee-inner" id="marquee-inner">
+                    <div class="marquee-inner js-scroll-marquee" id="marquee-inner" data-marquee-dir="-1">
                       <div class="marquee-set">
                         <span class="marquee-block">
                           <span class="huge-title marquee-item">WEBDESIGN</span>
@@ -4637,7 +4871,7 @@
             </div>
 
             <div class="scene-wrapper" id="sceneWrapper">
-              <div class="scene">
+              <div class="scene" id="cubeScene">
                 <div class="cube" id="cube">
                   <div class="face front" style="padding: 0;">
                     <video class="face-media" autoplay muted loop playsinline preload="none" disableRemotePlayback
@@ -4813,6 +5047,10 @@
       </div>
 
       <section class="mobile-cube-section" aria-label="Mobile cube showcase">
+        <div class="mcube-title">
+          <span class="mcube-title__eye">（ 守護美學核心，定義數位落點 ）</span>
+          <h2 class="mcube-title__line">ABOUT</h2>
+        </div>
         <div class="mobile-cube-scene">
           <div class="mobile-cube">
             <div class="mobile-cube-face is-front">
@@ -4843,7 +5081,15 @@
             </div>
           </div>
         </div>
+        <div class="mcube-copy">
+          <p class="mcube-copy__desc">
+            核點創意 NUDOT 是一間以品牌策略為核心的數位創意工作室。<br>
+            從視覺識別、動態設計到網頁互動開發，我們讓每一個像素都承載商業靈魂，讓每一組代碼都流露美學意志。
+          </p>
+        </div>
       </section>
+
+  
 
       <!-- =========================================================
        DRAFT.X & MUSEUM — WebGL Marquee + Stacked Cards Section
@@ -5254,7 +5500,7 @@
 
         @media (max-width: 900px) {
           #core-capabilities .giant-title {
-            font-size: 14vw;
+            font-size: 10vw;
           }
         }
 
@@ -5639,7 +5885,8 @@
           uniform float uProgress;
           uniform float uDirection;
           uniform vec2 uResolution;
-          uniform vec2 uImageResolution;
+          uniform vec2 uImageResolution;   // tex1's intrinsic resolution
+          uniform vec2 uImageResolution2;  // tex2's intrinsic resolution
           uniform vec2 uMouse;
           varying vec2 vUv;
 
@@ -5667,27 +5914,40 @@
             return 130.0 * dot(m, g);
           }
 
-          void main() {
+          // 🎯 修正手機輪播圖片變形 0.5s bug:
+          //    原本兩張圖共用同一組 ratio,導致桌機/手機素材切換時(長寬比不同),
+          //    新圖會被舊圖的比例壓扁,等 transition 結束才彈回。
+          //    現在每張圖都依自己的 uImageResolution 計算 cover ratio。
+          vec2 fitCover(vec2 vUv, vec2 imgRes) {
             vec2 ratio = vec2(
-                min((uResolution.x / uResolution.y) / (uImageResolution.x / uImageResolution.y), 1.0),
-                min((uResolution.y / uResolution.x) / (uImageResolution.y / uImageResolution.x), 1.0)
+                min((uResolution.x / uResolution.y) / (imgRes.x / imgRes.y), 1.0),
+                min((uResolution.y / uResolution.x) / (imgRes.y / imgRes.x), 1.0)
             );
-            vec2 uv = vec2(
+            return vec2(
                 vUv.x * ratio.x + (1.0 - ratio.x) * 0.5,
                 vUv.y * ratio.y + (1.0 - ratio.y) * 0.5
             );
+          }
 
-            uv = (uv - 0.5) * 0.95 + 0.5;
-            uv -= uMouse * 0.015;
+          void main() {
+            vec2 uvA = fitCover(vUv, uImageResolution);
+            vec2 uvB = fitCover(vUv, uImageResolution2);
+
+            uvA = (uvA - 0.5) * 0.95 + 0.5;
+            uvA -= uMouse * 0.015;
+            uvB = (uvB - 0.5) * 0.95 + 0.5;
+            uvB -= uMouse * 0.015;
 
             float p = uProgress;
 
-            float noiseVal = snoise(uv * 3.0 + p * 2.0);
-            float warp = noiseVal * p * (1.0 - p) * 0.3; 
+            // 用平均 uv 計算噪聲,讓兩張圖的 warp 一致避免接縫感
+            vec2 uvNoise = mix(uvA, uvB, 0.5);
+            float noiseVal = snoise(uvNoise * 3.0 + p * 2.0);
+            float warp = noiseVal * p * (1.0 - p) * 0.3;
 
             vec2 center = vec2(0.5, 0.5);
-            vec2 uv1 = mix(uv, center, p * 0.15) + vec2(0.0, uDirection * p * 0.3) + warp;
-            vec2 uv2 = mix(uv, center, (1.0 - p) * 0.15) - vec2(0.0, uDirection * (1.0 - p) * 0.3) + warp;
+            vec2 uv1 = mix(uvA, center, p * 0.15) + vec2(0.0, uDirection * p * 0.3) + warp;
+            vec2 uv2 = mix(uvB, center, (1.0 - p) * 0.15) - vec2(0.0, uDirection * (1.0 - p) * 0.3) + warp;
 
             float shift = 0.04 * p * (1.0 - p) * (noiseVal + 1.0);
 
@@ -5718,7 +5978,8 @@
             uProgress: { value: 0 },
             uDirection: { value: 1 },
             uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-            uImageResolution: { value: new THREE.Vector2(1920, 1080) },
+            uImageResolution: { value: new THREE.Vector2(1920, 1080) },   // for uTex1
+            uImageResolution2: { value: new THREE.Vector2(1920, 1080) },  // for uTex2
             uMouse: { value: new THREE.Vector2(0, 0) }
           }
         });
@@ -5737,17 +5998,25 @@
       rememberTextureResolution(index, width, height) {
         if (!width || !height) return;
         this.textureResolutions[index] = { width, height };
-        if (index === this.activeTextureIndex) this.applyTextureResolution(index);
+        // 同步把這張紋理的解析度寫進對應 slot,避免動畫進行中突然切換 ratio。
+        if (index === this.activeTextureIndex) {
+          this.applyTextureResolution(index, null, 1);
+          // 若 uTex2 也指向同一張(初始狀態),把 slot2 一併補上,避免第一次切換還沒拿到 nextRes 時被擠壓
+          this.applyTextureResolution(index, null, 2);
+        }
       }
 
-      applyTextureResolution(index, texture) {
+      applyTextureResolution(index, texture, slot) {
+        // slot: 1 → uImageResolution (對應 uTex1);2 → uImageResolution2 (對應 uTex2)
+        const targetSlot = slot === 2 ? 2 : 1;
+        const uniformName = targetSlot === 2 ? 'uImageResolution2' : 'uImageResolution';
         const resolution = this.textureResolutions[index];
         if (resolution) {
-          this.material.uniforms.uImageResolution.value.set(resolution.width, resolution.height);
+          this.material.uniforms[uniformName].value.set(resolution.width, resolution.height);
           return;
         }
         if (texture && texture.image && texture.image.width && texture.image.height) {
-          this.material.uniforms.uImageResolution.value.set(texture.image.width, texture.image.height);
+          this.material.uniforms[uniformName].value.set(texture.image.width, texture.image.height);
         }
       }
 
@@ -5778,6 +6047,8 @@
             if (index === 0) {
               this.material.uniforms.uTex1.value = texture;
               rememberVideoResolution();
+              // 初始時 uTex2 還沒綁紋理,把 slot2 也補上同一比例,避免第一次切換瞬間的壓扁
+              this.applyTextureResolution(index, texture, 2);
             }
             const resolveTexture = () => resolve(texture);
             if (vid.readyState >= 2) resolveTexture();
@@ -5800,7 +6071,9 @@
               }
               if (index === 0) {
                 this.material.uniforms.uTex1.value = texture;
-                this.applyTextureResolution(index, texture);
+                this.applyTextureResolution(index, texture, 1);
+                // 同步補上 slot2,讓第一次切換前的渲染就以正確比例顯示
+                this.applyTextureResolution(index, texture, 2);
               }
               resolve(texture);
             },
@@ -5905,7 +6178,9 @@
 
           this.material.uniforms.uTex1.value = currentTexture;
           this.material.uniforms.uTex2.value = nextTexture;
-          this.applyTextureResolution(currentIndex, currentTexture);
+          // 🎯 同步把兩張紋理各自的解析度寫進對應 slot,避免動畫途中圖片被舊比例壓扁
+          this.applyTextureResolution(currentIndex, currentTexture, 1);
+          this.applyTextureResolution(nextIndex, nextTexture, 2);
           this.material.uniforms.uDirection.value = direction;
           this.material.uniforms.uProgress.value = 0;
           this.activeTextureIndex = currentIndex;
@@ -5919,7 +6194,9 @@
               this.material.uniforms.uTex1.value = nextTexture;
               this.material.uniforms.uProgress.value = 0;
               this.activeTextureIndex = nextIndex;
-              this.applyTextureResolution(nextIndex, nextTexture);
+              // uTex1 現在指向 nextTexture,同步把 slot1 的解析度更新成 next
+              this.applyTextureResolution(nextIndex, nextTexture, 1);
+              this.applyTextureResolution(nextIndex, nextTexture, 2);
               this.syncVideoPlayback(nextIndex);
               if (onCompleteCallback) onCompleteCallback();
             }
@@ -8100,7 +8377,8 @@
         });
       }, '1800px 0px'); // end lazy initGalleryExit
 
-      const disableCustomCursor = window.matchMedia('(min-width: 768px), (hover: none)').matches;
+      // 🎯 自訂鼠標:只在 PC(寬 >1024、可 hover、精細指標)啟用,iPad/手機停用
+      const disableCustomCursor = window.matchMedia('(max-width: 1024px), (hover: none), (pointer: coarse)').matches;
 
       if (!disableCustomCursor) {
       // ── Grid Mouse Tracker ──
@@ -8344,27 +8622,59 @@
       }
       }
 
-      // ── Scroll-driven marquee ──
+      // ── 手機版 mobile-cube-section 進入視野時觸發進場動畫 ──
       (function () {
-        const inner = document.getElementById('marquee-inner');
-        if (!inner) return;
+        const sec = document.querySelector('.mobile-cube-section');
+        if (!sec) return;
+        if (!('IntersectionObserver' in window)) {
+          // 不支援 IntersectionObserver 的舊瀏覽器,直接給 in-view 讓動畫跑
+          sec.classList.add('is-in-view');
+          return;
+        }
+        const io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-in-view');
+              io.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+        io.observe(sec);
+      })();
+
+      // ── Scroll-driven marquee (支援多個 .js-scroll-marquee 同時運作) ──
+      (function () {
+        const inners = Array.from(document.querySelectorAll('.js-scroll-marquee'));
+        // 相容舊有單一 ID 寫法
+        const legacy = document.getElementById('marquee-inner');
+        if (legacy && !inners.includes(legacy)) inners.unshift(legacy);
+        if (!inners.length) return;
 
         const baseSpeed = 1;   // px per tick baseline
         let lenisVel = 0;
-        let xPos = 0;
-        let setWidth = 0;
         let marqueeRaf = 0;
 
-        // Measure after fonts / layout settle
+        const tracks = inners.map(function (inner) {
+          const dirAttr = parseFloat(inner.getAttribute('data-marquee-dir'));
+          return {
+            inner: inner,
+            xPos: 0,
+            setWidth: 0,
+            dir: isFinite(dirAttr) && dirAttr !== 0 ? Math.sign(dirAttr) : -1
+          };
+        });
+
         function measureSetWidth() {
-          const firstSet = inner.querySelector('.marquee-set');
-          setWidth = firstSet ? firstSet.offsetWidth : 0;
+          tracks.forEach(function (t) {
+            const firstSet = t.inner.querySelector('.marquee-set');
+            t.setWidth = firstSet ? firstSet.offsetWidth : 0;
+          });
         }
         window.addEventListener('load', measureSetWidth, { once: true });
         window.addEventListener('resize', measureSetWidth, { passive: true });
         measureSetWidth();
 
-        // Hook into Lenis velocity (waits until Lenis is initialised)
+        // Hook into Lenis velocity
         setTimeout(function () {
           if (window._lenis) {
             window._lenis.on('scroll', function (e) {
@@ -8379,21 +8689,27 @@
         }
         window._requestMarqueeRAF = requestMarqueeTick;
 
-        // Fully decoupled rAF loop — no gsap.ticker involvement
+        // 🎯 手機版有獨立的 marquee section,不受桌機 cube ScrollTrigger 控制
+        const isMobileBreakpoint = window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
+
         function tick() {
           marqueeRaf = 0;
-          // 🎯 阻尼 0.93 (原 0.90) 讓滾動停止時,跑馬燈慣性收尾更優雅,不會突然定住
           lenisVel *= 0.93;
-          if (!window._marqueeRAFActive) {
-            return; // 🎯 zoom 階段跳過 DOM 寫入，消除 style recalculation 開銷
-          }
-          xPos -= (baseSpeed + lenisVel);
-          if (setWidth > 0 && xPos <= -setWidth) xPos += setWidth;
-          if (setWidth > 0 && xPos > 0) xPos -= setWidth;
-          inner.style.transform = 'translate3d(' + xPos + 'px, 0, 0)';
+          // 桌機沿用 _marqueeRAFActive 省效能;手機端永遠跑
+          if (!isMobileBreakpoint && !window._marqueeRAFActive) return;
+
+          tracks.forEach(function (t) {
+            // dir = -1 → 往左走(預設),+1 → 往右走;與 Lenis 滾動速度疊加
+            t.xPos += (baseSpeed + lenisVel) * t.dir;
+            if (t.setWidth > 0) {
+              if (t.xPos <= -t.setWidth) t.xPos += t.setWidth;
+              if (t.xPos >= t.setWidth) t.xPos -= t.setWidth;
+            }
+            t.inner.style.transform = 'translate3d(' + t.xPos + 'px, 0, 0)';
+          });
           requestMarqueeTick();
         }
-        if (window._marqueeRAFActive) requestMarqueeTick();
+        if (window._marqueeRAFActive || isMobileBreakpoint) requestMarqueeTick();
       })();
 
     });

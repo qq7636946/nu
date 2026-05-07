@@ -2,7 +2,8 @@
   'use strict';
 
   function boot() {
-    var disableCustomCursor = window.matchMedia('(min-width: 768px), (hover: none)').matches;
+    // 🎯 自訂鼠標:只在 PC(寬 >1024、可 hover、精細指標)啟用,iPad/手機停用
+    var disableCustomCursor = window.matchMedia('(max-width: 1024px), (hover: none), (pointer: coarse)').matches;
     if (disableCustomCursor) return;
 
     var dot = document.getElementById('cursor-dot');

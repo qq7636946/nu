@@ -155,7 +155,9 @@
   }
 }
 
-@media (min-width: 768px), (hover: none) {
+/* 🎯 自訂鼠標只在 PC(可 hover、精細指標、寬度 > 1024px)顯示;
+   iPad/手機/任何觸控裝置一律隱藏 */
+@media (max-width: 1024px), (hover: none), (pointer: coarse) {
   #cursor-dot,
   #cursor-ring,
   .mouseTracker--01 {
