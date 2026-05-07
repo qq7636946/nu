@@ -1093,6 +1093,7 @@
         height: var(--mobile-cube-size);
         perspective: calc(var(--mobile-cube-size) * 5);
         padding-top: 80px;
+        touch-action: pan-y;
       }
 
       .mobile-cube {
@@ -1100,7 +1101,7 @@
         width: 100%;
         height: 100%;
         transform-style: preserve-3d;
-        /* 🎯 純水平 rotateY,由 JS 跟著手機 scroll 慣性帶動;不再有 CSS 自動動畫 */
+        /* 🎯 預設維持水平 rotateY，觸控時可暫時做多軸旋轉 */
         transform: rotateY(0deg);
         will-change: transform;
       }
@@ -8690,14 +8691,24 @@
       // ── 手機版 mobile-cube-section：scroll-driven 平轉 ──
       (function () {
         var cube = document.querySelector('.mobile-cube');
+        var scene = document.querySelector('.mobile-cube-scene');
         if (!cube) return;
 
         var angle = 0;
         var extra = 0;
-          var BASE  = 0.18;   // deg/frame baseline (~11°/s @ 60fps)
+        var touchRotateX = 0;
+        var touchRotateY = 0;
+        var isTouching = false;
+        var snapBackBoost = 0;
+          var BASE  = 0.21;   // deg/frame baseline (~13°/s @ 60fps)
           var FRIC  = 0.87;   // 慣性衰減
-          var K     = 0.06;   // scroll velocity → extra 係數
-          var MAX_EXTRA = 0.92;
+          var K     = 0.07;   // scroll velocity → extra 係數
+          var MAX_EXTRA = 1.12;
+        var TOUCH_DRAG_X = 0.55;
+        var TOUCH_DRAG_Y = 0.48;
+        var TOUCH_MOMENTUM = 0.16;
+        var RETURN_EASE = 0.1;
+        var RETURN_EASE_SCROLL = 0.22;
         var rafId = 0;
 
           function addVelocity(v) {
@@ -8709,24 +8720,74 @@
         // Lenis scroll velocity
         function hookLenis() {
           if (window._lenis) {
-              window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 2.8); });
+              window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 3.2); });
           } else {
             setTimeout(hookLenis, 300);
           }
         }
         hookLenis();
 
+        if (scene) {
+          var lastTouchX = 0;
+          var lastTouchY = 0;
+
+          scene.addEventListener('touchstart', function (e) {
+            if (!e.touches || !e.touches.length) return;
+            isTouching = true;
+            snapBackBoost = 0;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+          }, { passive: true });
+
+          scene.addEventListener('touchmove', function (e) {
+            if (!e.touches || !e.touches.length) return;
+            var touchX = e.touches[0].clientX;
+            var touchY = e.touches[0].clientY;
+            var deltaX = touchX - lastTouchX;
+            var deltaY = touchY - lastTouchY;
+            lastTouchX = touchX;
+            lastTouchY = touchY;
+            touchRotateY += deltaX * TOUCH_DRAG_X;
+            touchRotateX -= deltaY * TOUCH_DRAG_Y;
+            addVelocity(deltaX * TOUCH_MOMENTUM);
+          }, { passive: true });
+
+          scene.addEventListener('touchend', function () {
+            isTouching = false;
+            snapBackBoost = RETURN_EASE_SCROLL;
+            lastTouchX = 0;
+            lastTouchY = 0;
+          }, { passive: true });
+
+          scene.addEventListener('touchcancel', function () {
+            isTouching = false;
+            snapBackBoost = RETURN_EASE_SCROLL;
+            lastTouchX = 0;
+            lastTouchY = 0;
+          }, { passive: true });
+        }
+
         // native scroll fallback
         var lastY = window.scrollY;
         window.addEventListener('scroll', function () {
-          addVelocity(window.scrollY - lastY);
+          var deltaY = window.scrollY - lastY;
+          addVelocity(deltaY);
+          if (deltaY > 0) snapBackBoost = RETURN_EASE_SCROLL;
           lastY = window.scrollY;
         }, { passive: true });
 
         function tick() {
           extra *= FRIC;
           angle += BASE + extra;
-          cube.style.transform = 'rotateY(' + angle + 'deg)';
+
+          if (!isTouching) {
+            var returnEase = Math.max(RETURN_EASE, snapBackBoost);
+            touchRotateX += (0 - touchRotateX) * returnEase;
+            touchRotateY += (0 - touchRotateY) * returnEase;
+            snapBackBoost *= 0.92;
+          }
+
+          cube.style.transform = 'rotateX(' + touchRotateX + 'deg) rotateY(' + (angle + touchRotateY) + 'deg)';
           rafId = requestAnimationFrame(tick);
         }
 
