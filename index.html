@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -9022,8 +9022,8 @@
     (function () {
       const canvas = document.getElementById('film-grain-canvas');
       const ctx = canvas.getContext('2d');
+      const ENABLE_FILM_GRAIN = false;
       const DESKTOP_FILM_GRAIN_OPACITY = 0.06;
-      const MOBILE_FILM_GRAIN_OPACITY = 0.03;
       const MOBILE_FILM_GRAIN_BREAKPOINT = 900;
       let wWidth, wHeight;
       let noiseData = [];
@@ -9043,6 +9043,10 @@
           ? window.visualViewport.width
           : 0;
         return visualWidth > 0 ? visualWidth : window.innerWidth;
+      }
+
+      function isFilmGrainDisabled() {
+        return !ENABLE_FILM_GRAIN || getFilmGrainViewportWidth() <= MOBILE_FILM_GRAIN_BREAKPOINT;
       }
 
       const createNoise = () => {
@@ -9079,13 +9083,14 @@
         rafId = 0;
         wWidth = window.innerWidth;
         wHeight = window.innerHeight;
-        canvas.style.opacity = getFilmGrainViewportWidth() <= MOBILE_FILM_GRAIN_BREAKPOINT
-          ? String(MOBILE_FILM_GRAIN_OPACITY)
-          : String(DESKTOP_FILM_GRAIN_OPACITY);
+        const disableFilmGrain = isFilmGrainDisabled();
+        canvas.style.opacity = disableFilmGrain ? '0' : String(DESKTOP_FILM_GRAIN_OPACITY);
         canvas.width = wWidth;
         canvas.height = wHeight;
         canvas.style.imageRendering = '';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         noiseData = [];
+        if (disableFilmGrain) return;
         for (let i = 0; i < 10; i++) { createNoise(); }
         loop();
       };
