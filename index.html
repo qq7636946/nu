@@ -4762,7 +4762,7 @@
               <div class="slide">
                 <!-- <div class="slide__img" data-video="images/home/banner05.mp4" data-thumb="images/home/banner05.jpg"
               data-title="Brand Film"></div> -->
-                <div class="slide__img" data-image="images/home/banner0.jpg"  data-mobile-image="images/home/banner0_s.jpg"
+                <div class="slide__img" data-image="images/home/banner0.jpg" data-mobile-image="images/home/banner0_s.jpg"
                   data-mobile-thumb="images/home/banner0_s.jpg" data-title="Quantum Field"></div>
               </div>
 
@@ -9022,6 +9022,9 @@
     (function () {
       const canvas = document.getElementById('film-grain-canvas');
       const ctx = canvas.getContext('2d');
+      const DESKTOP_FILM_GRAIN_OPACITY = 0.06;
+      const MOBILE_FILM_GRAIN_OPACITY = 0.03;
+      const MOBILE_FILM_GRAIN_BREAKPOINT = 900;
       let wWidth, wHeight;
       let noiseData = [];
       let frame = 0;
@@ -9033,6 +9036,13 @@
 
       function holdFilmGrainDuringScroll() {
         scrollHoldUntil = performance.now() + SCROLL_HOLD_MS;
+      }
+
+      function getFilmGrainViewportWidth() {
+        const visualWidth = window.visualViewport && typeof window.visualViewport.width === 'number'
+          ? window.visualViewport.width
+          : 0;
+        return visualWidth > 0 ? visualWidth : window.innerWidth;
       }
 
       const createNoise = () => {
@@ -9069,6 +9079,9 @@
         rafId = 0;
         wWidth = window.innerWidth;
         wHeight = window.innerHeight;
+        canvas.style.opacity = getFilmGrainViewportWidth() <= MOBILE_FILM_GRAIN_BREAKPOINT
+          ? String(MOBILE_FILM_GRAIN_OPACITY)
+          : String(DESKTOP_FILM_GRAIN_OPACITY);
         canvas.width = wWidth;
         canvas.height = wHeight;
         canvas.style.imageRendering = '';
