@@ -5919,6 +5919,14 @@
       });
     }
 
+    function getOptimalDPR() {
+      const dpr = window.devicePixelRatio || 1;
+      const mem = navigator.deviceMemory || 8;
+      if (mem <= 4) return 1;
+      if (window.innerWidth <= 768) return Math.min(dpr, 1.25);
+      return Math.min(dpr, 2);
+    }
+
     // =========================================================
     // WebGL Ultra-Premium Manager
     // =========================================================
@@ -5937,7 +5945,7 @@
         this.videoEls = {};
         this.textureResolutions = {};
 
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        this.renderer.setPixelRatio(getOptimalDPR());
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.container.appendChild(this.renderer.domElement);
 
@@ -6037,7 +6045,7 @@
 
             // 用平均 uv 計算噪聲,讓兩張圖的 warp 一致避免接縫感
             vec2 uvNoise = mix(uvA, uvB, 0.5);
-            float noiseVal = snoise(uvNoise * 3.0 + p * 2.0);
+            float noiseVal = (p > 0.001 && p < 0.999) ? snoise(uvNoise * 3.0 + p * 2.0) : 0.0;
             float warp = noiseVal * p * (1.0 - p) * 0.3;
 
             vec2 center = vec2(0.5, 0.5);
@@ -6222,7 +6230,7 @@
       }
 
       onResize() {
-        const nextDpr = Math.min(window.devicePixelRatio || 1, 2);
+        const nextDpr = getOptimalDPR();
         if (this.renderer.getPixelRatio && this.renderer.getPixelRatio() !== nextDpr) {
           this.renderer.setPixelRatio(nextDpr);
         }
@@ -6924,7 +6932,7 @@
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
         _resize() {
-          const dpr = Math.min(devicePixelRatio || 1, 2);
+          const dpr = typeof getOptimalDPR === 'function' ? getOptimalDPR() : Math.min(devicePixelRatio || 1, 2);
           const nextWidth = Math.max(1, Math.floor(this.canvas.offsetWidth * dpr));
           const nextHeight = Math.max(1, Math.floor(this.canvas.offsetHeight * dpr));
           if (this.canvas.width === nextWidth && this.canvas.height === nextHeight) return;
@@ -6977,6 +6985,37 @@
         heroSectionEl.style.visibility = hidden ? 'hidden' : '';
       }
 
+      let mobileHeroStaticReady = false;
+      let _mobileWebglFrameToggle = 0;
+
+      function updateMobileSceneSize() {
+        if (!scene) return;
+        const mobileSceneSize = Math.min(window.innerWidth * 0.56, 220);
+        scene.style.setProperty('--scene-size', `${mobileSceneSize}px`);
+        scene.style.setProperty('--scene-depth', `${mobileSceneSize / 2}px`);
+      }
+
+      function applyMobileHeroStaticState() {
+        if (mobileHeroStaticReady) return;
+        mobileHeroStaticReady = true;
+        if (darkWrapperMask) darkWrapperMask.style.height = '';
+        if (darkWrapper) darkWrapper.style.clipPath = 'none';
+        if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 0 });
+        if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
+        if (section2) gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 18 });
+        if (newTextGroup) gsap.set(newTextGroup, { opacity: 0 });
+        if (sceneWrapper) {
+          gsap.set(sceneWrapper, { xPercent: -50, yPercent: -50, scale: 1, top: '50%', opacity: 1 });
+        }
+        updateMobileSceneSize();
+      }
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth <= 768) updateMobileSceneSize();
+      }, { passive: true });
+
+      if (winW <= 768) applyMobileHeroStaticState();
+
       // =========================================================
       // Gallery Header WebGL Wave Effect
       // =========================================================
@@ -6986,7 +7025,12 @@
         setHeroBlendHints(!heroRenderSleeping);
         if (webglManager) {
           if (heroRenderSleeping) webglManager.setRenderPaused(true);
-          else webglManager.render();
+          else {
+            const isMobileNow = winW <= 768;
+            if (!isMobileNow || (++_mobileWebglFrameToggle & 1)) {
+              webglManager.render();
+            }
+          }
         }
 
         // 🎯 Lenis 已平滑一層,此處再 lerp 0.1 (原 0.06) 避免雙重平滑的「拖延感」
@@ -7019,35 +7063,10 @@
         document.documentElement.classList.remove('is-dark-wrapper-mobile-intro');
 
         if (isMobile) {
+          applyMobileHeroStaticState();
           baseRotY += 0.25;
-          const mobileSceneSize = Math.min(winW * 0.56, 220);
-          if (darkWrapperMask) darkWrapperMask.style.height = '';
-          if (darkWrapper) darkWrapper.style.clipPath = 'none';
-          if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 0 });
-          if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
-          if (section2) gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 18 });
-          if (newTextGroup) gsap.set(newTextGroup, { opacity: 0 });
-          if (scene) {
-            gsap.set(scene, {
-              '--scene-size': `${mobileSceneSize}px`,
-              '--scene-depth': `${mobileSceneSize / 2}px`
-            });
-          }
           if (cube) {
-            gsap.set(cube, {
-              rotationX: -12,
-              rotationY: baseRotY,
-              rotationZ: 0
-            });
-          }
-          if (sceneWrapper) {
-            gsap.set(sceneWrapper, {
-              xPercent: -50,
-              yPercent: -50,
-              scale: 1,
-              top: '50%',
-              opacity: 1
-            });
+            cube.style.transform = `rotateX(-12deg) rotateY(${baseRotY}deg)`;
           }
           window._marqueeRAFActive = false;
           return;
@@ -8760,6 +8779,7 @@
         var RETURN_EASE = 0.1;
         var RETURN_EASE_SCROLL = 0.22;
         var rafId = 0;
+        var isVisible = false;
 
           function addVelocity(v) {
             extra += v * K;
@@ -8827,6 +8847,7 @@
         }, { passive: true });
 
         function tick() {
+          rafId = 0;
           extra *= FRIC;
           angle += BASE + extra;
 
@@ -8838,11 +8859,29 @@
           }
 
           cube.style.transform = 'rotateX(' + touchRotateX + 'deg) rotateY(' + (angle + touchRotateY) + 'deg)';
-          rafId = requestAnimationFrame(tick);
+          rafId = isVisible ? requestAnimationFrame(tick) : 0;
         }
 
-        // 直接啟動，不等 IntersectionObserver
-        tick();
+        if ('IntersectionObserver' in window && scene) {
+          const io = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting && !isVisible) {
+                isVisible = true;
+                if (!rafId) tick();
+              } else if (!entry.isIntersecting && isVisible) {
+                isVisible = false;
+                if (rafId) {
+                  cancelAnimationFrame(rafId);
+                  rafId = 0;
+                }
+              }
+            });
+          }, { rootMargin: '200px 0px' });
+          io.observe(scene);
+        } else {
+          isVisible = true;
+          tick();
+        }
       })();
 
       // ── Scroll-driven marquee (支援多個 .js-scroll-marquee 同時運作) ──
@@ -8910,7 +8949,7 @@
           if (window._lenis) {
             window._lenis.on('scroll', function (e) {
               lenisVel = (e.velocity || 0) * 0.25;
-              if (window._marqueeRAFActive) requestMarqueeTick();
+              if (shouldRunMarquee()) requestMarqueeTick();
             });
           }
         }, 200);
@@ -8922,12 +8961,34 @@
 
         // 🎯 手機版有獨立的 marquee section,不受桌機 cube ScrollTrigger 控制
         const isMobileBreakpoint = window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
+        let mobileMarqueeVisible = !isMobileBreakpoint;
+
+        function shouldRunMarquee() {
+          return isMobileBreakpoint ? mobileMarqueeVisible : window._marqueeRAFActive;
+        }
+
+        if (isMobileBreakpoint && 'IntersectionObserver' in window && inners.length) {
+          const observedSections = new Set();
+          const io = new IntersectionObserver((entries) => {
+            mobileMarqueeVisible = entries.some((entry) => entry.isIntersecting);
+            if (mobileMarqueeVisible) requestMarqueeTick();
+          }, { rootMargin: '300px 0px' });
+
+          inners.forEach(function (inner) {
+            const section = inner.closest('.mobile-marquee-section, .section-2-content, section') || inner.parentElement;
+            if (section && !observedSections.has(section)) {
+              observedSections.add(section);
+              io.observe(section);
+            }
+          });
+        } else if (isMobileBreakpoint) {
+          mobileMarqueeVisible = true;
+        }
 
         function tick() {
           marqueeRaf = 0;
           lenisVel *= 0.93;
-          // 桌機沿用 _marqueeRAFActive 省效能;手機端永遠跑
-          if (!isMobileBreakpoint && !window._marqueeRAFActive) return;
+          if (!shouldRunMarquee()) return;
 
           tracks.forEach(function (t) {
             // dir = -1 → 往左走(預設),+1 → 往右走;與 Lenis 滾動速度疊加
@@ -8940,7 +9001,7 @@
           });
           requestMarqueeTick();
         }
-        if (window._marqueeRAFActive || isMobileBreakpoint) requestMarqueeTick();
+        if (shouldRunMarquee()) requestMarqueeTick();
       })();
 
     });
@@ -9010,6 +9071,7 @@
         wHeight = window.innerHeight;
         canvas.width = wWidth;
         canvas.height = wHeight;
+        canvas.style.imageRendering = '';
         noiseData = [];
         for (let i = 0; i < 10; i++) { createNoise(); }
         loop();
@@ -9299,7 +9361,7 @@
 
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
-        const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        const pixelRatio = typeof getOptimalDPR === 'function' ? getOptimalDPR() : Math.min(window.devicePixelRatio || 1, 2);
         const renderWidth = Math.max(1, Math.floor(width * pixelRatio));
         const renderHeight = Math.max(1, Math.floor(height * pixelRatio));
 
@@ -9732,9 +9794,13 @@
       ScrollTrigger.refresh();
       setTimeout(() => { if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh(); }, 800);
 
+      let _dxmResizeTO = 0;
       window.addEventListener('resize', () => {
         dxmMaxScroll = getMaxScroll();
-        if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+        clearTimeout(_dxmResizeTO);
+        _dxmResizeTO = setTimeout(() => {
+          if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+        }, 200);
       }, { passive: true });
 
       const items = Array.from(strip.querySelectorAll('.dxm-item'));
@@ -9751,7 +9817,7 @@
         if (Math.abs(dxmTarget - dxmCurrent) < 0.05) dxmCurrent = dxmTarget;
         // 🎯 改用 translate3d,強制 GPU 合成,大型 strip 滑動不會掉幀
         gsap.set(strip, { x: -dxmCurrent, force3D: true });
-        if (dxmActive || Math.abs(dxmTarget - dxmCurrent) > 0.05) requestDxmFrame();
+        if (Math.abs(dxmTarget - dxmCurrent) > 0.05) requestDxmFrame();
       }
       requestDxmFrame();
     });
