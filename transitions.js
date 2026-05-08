@@ -315,16 +315,14 @@
         var target = document.querySelector(destination.hash);
         if (!target) return;
         event.preventDefault();
-        closeSharedMenu(false, function () {
-          scrollToTarget(target);
-        });
+        closeSharedMenu(false);
+        scrollToTarget(target);
         return;
       }
 
       event.preventDefault();
-      closeSharedMenu(false, function () {
-        navigateWithTransition(destination.href, link.dataset.transitionLabel || link.textContent || '');
-      });
+      closeSharedMenu(true);
+      navigateWithTransition(destination.href, link.dataset.transitionLabel || link.textContent || '');
     }, false);
   }
 
@@ -564,10 +562,8 @@
     container.classList.remove('is-menu-animating', 'is-menu-phase-compact', 'is-menu-phase-line');
 
     menuBtn.addEventListener('click', function () {
-      var expanded = menuBtn.getAttribute('aria-expanded') === 'true';
+      var expanded = sharedMenuState.open;
       killSharedMenuTimeline('closeTl');
-
-      if (sharedMenuState.animating) return;
 
       if (expanded) {
         closeSharedMenu(false);

@@ -31,7 +31,7 @@ body.shared-nav-page #nav_scroll_container {
   overflow: hidden;
   opacity: 1;
   transform: translateX(-50%);
-  will-change: top, width, height, opacity, border-radius, background-color;
+  will-change: transform, opacity;
   pointer-events: auto;
   transition:
     top 0.6s cubic-bezier(0.22, 1, 0.36, 1),
