@@ -321,8 +321,19 @@
       }
 
       event.preventDefault();
+      var transitionLabel = link.dataset.transitionLabel || link.textContent || '';
+      var navContainer = document.getElementById('nav_scroll_container');
+      if (document.body.classList.contains('shared-nav-page') && navContainer && (navContainer.classList.contains('is-menu-open') || sharedMenuState.animating)) {
+        document.documentElement.classList.add('is-menu-link-transition');
+        closeSharedMenu(false, function () {
+          document.documentElement.classList.remove('is-menu-link-transition');
+        });
+        navigateWithTransition(destination.href, transitionLabel);
+        return;
+      }
+
       closeSharedMenu(true);
-      navigateWithTransition(destination.href, link.dataset.transitionLabel || link.textContent || '');
+      navigateWithTransition(destination.href, transitionLabel);
     }, false);
   }
 
