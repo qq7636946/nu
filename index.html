@@ -240,9 +240,6 @@
       background-color: #000;
       z-index: 1;
       isolation: isolate;
-      contain: layout paint style;
-      content-visibility: auto;
-      contain-intrinsic-size: 100vh;
     }
 
     .hero-section,
@@ -706,11 +703,13 @@
       left: 0;
       bottom: 0;
       width: 100vw;
-      height: 0%;
+      height: 100vh;
       z-index: 10;
       overflow: hidden;
-      will-change: height;
-      contain: layout paint;
+      clip-path: inset(100% 0 0 0);
+      -webkit-clip-path: inset(100% 0 0 0);
+      will-change: clip-path;
+      contain: layout paint style;
     }
 
     .dark-wrapper {
@@ -1309,8 +1308,8 @@
       }
 
       .intro-panel .wave-column {
-        gap: 2.5rem;
-        font-size: 5vw;
+        /* gap: 2.5rem; */
+         font-size: clamp(1.3rem, 2.5vw, 2.35rem);
       }
 
       .intro-panel .image-thumbnail-wrapper {
@@ -4554,11 +4553,30 @@
               requestAnimationFrame(function () { hydrateVideo(video); });
             });
 
+            var requestScrollMediaIdle = window.requestIdleCallback
+              ? window.requestIdleCallback.bind(window)
+              : function (callback) { return setTimeout(callback, 1200); };
+
             function hydrateScrollMedia() {
-              scrollDeferredVideos.forEach(hydrateVideo);
-              scrollDeferredImages.forEach(hydrateDeferredImage);
+              // 🎯 分幀串流 hydrate：把影片解碼與大圖 GPU 上傳分散到數幀,避開首次滾動 long task。
+              var videoQueue = scrollDeferredVideos.slice();
+              var imageQueue = scrollDeferredImages.slice();
               scrollDeferredVideos.length = 0;
               scrollDeferredImages.length = 0;
+
+              function pump() {
+                if (videoQueue.length) {
+                  hydrateVideo(videoQueue.shift());
+                }
+                for (var i = 0; i < 2 && imageQueue.length; i++) {
+                  hydrateDeferredImage(imageQueue.shift());
+                }
+                if (videoQueue.length || imageQueue.length) {
+                  requestAnimationFrame(pump);
+                }
+              }
+
+              requestAnimationFrame(pump);
             }
 
             if (scrollDeferredVideos.length || scrollDeferredImages.length) {
@@ -4590,6 +4608,14 @@
               window.addEventListener('keydown', activateOnKey);
               window.addEventListener('scroll', activateOnScroll, { passive: true });
               requestAnimationFrame(activateOnScroll);
+
+              if (window.innerWidth > 768) {
+                var preheatScrollMedia = function () {
+                  requestScrollMediaIdle(function () { activateScrollMedia(); }, { timeout: 2500 });
+                };
+                if (document.readyState === 'complete') preheatScrollMedia();
+                else window.addEventListener('load', preheatScrollMedia, { once: true });
+              }
             }
 
             if (deferredVideos.length && 'IntersectionObserver' in window) {
@@ -4725,10 +4751,15 @@
               <div class="slide">
                 <!-- <div class="slide__img" data-video="images/home/banner05.mp4" data-thumb="images/home/banner05.jpg"
               data-title="Brand Film"></div> -->
-                <div class="slide__img" data-image="images/home/banner01-1.jpg" data-title="Quantum Field"></div>
+                <div class="slide__img" data-image="images/home/banner0.jpg"  data-mobile-image="images/home/banner0_s.jpg"
+                  data-mobile-thumb="images/home/banner0_s.jpg" data-title="Quantum Field"></div>
               </div>
+
+
+
               <div class="slide">
-                <div class="slide__img" data-image="images/home/banner01.jpg" data-title="Cosmic Harmony"></div>
+                <div class="slide__img" data-image="images/home/banner01.jpg"  data-mobile-image="images/home/banner01_s.jpg"
+                  data-mobile-thumb="images/home/banner01_s.jpg" data-title="Cosmic Harmony"></div>
               </div>
             
 
@@ -6557,7 +6588,6 @@
       const imgOverlay = document.getElementById('img-overlay');
       const darkWrapper = document.getElementById('dark-wrapper');
       const darkWrapperMask = document.getElementById('dark-wrapper-mask');
-      const setDarkMaskHeight = darkWrapperMask && gsap.quickSetter ? gsap.quickSetter(darkWrapperMask, 'height', '%') : null;
       const dwBlackOverlay = document.getElementById('dw-black-overlay');
       const stmLogoEl = document.getElementById('stmLogo');
       const titleLine1 = document.getElementById('title-line1');
@@ -6791,11 +6821,20 @@
       function setDarkWrapperReveal(hiddenPercent) {
         if (winW <= 768) {
           if (darkWrapperMask) darkWrapperMask.style.height = '';
+          if (darkWrapperMask) {
+            darkWrapperMask.style.clipPath = '';
+            darkWrapperMask.style.webkitClipPath = '';
+          }
           if (darkWrapper) darkWrapper.style.clipPath = 'none';
           return;
         }
-        if (setDarkMaskHeight) {
-          setDarkMaskHeight(100 - hiddenPercent);
+        if (darkWrapperMask) {
+          const safeHiddenPercent = Math.max(0, Math.min(hiddenPercent, 100));
+          const nextClip = `inset(${safeHiddenPercent}% 0 0 0)`;
+          if (darkWrapperMask.style.clipPath !== nextClip) {
+            darkWrapperMask.style.clipPath = nextClip;
+            darkWrapperMask.style.webkitClipPath = nextClip;
+          }
           return;
         }
         if (darkWrapper) {
@@ -8809,23 +8848,51 @@
 
         const tracks = inners.map(function (inner) {
           const dirAttr = parseFloat(inner.getAttribute('data-marquee-dir'));
+          const firstSet = inner.querySelector('.marquee-set');
+          const templateSet = firstSet ? firstSet.cloneNode(true) : null;
           return {
             inner: inner,
+            templateSet: templateSet,
             xPos: 0,
             setWidth: 0,
             dir: isFinite(dirAttr) && dirAttr !== 0 ? Math.sign(dirAttr) : -1
           };
+        }).filter(function (track) {
+          return !!track.templateSet;
         });
 
-        function measureSetWidth() {
-          tracks.forEach(function (t) {
-            const firstSet = t.inner.querySelector('.marquee-set');
-            t.setWidth = firstSet ? firstSet.offsetWidth : 0;
-          });
+        function rebuildTrack(track) {
+          if (!track.templateSet) return;
+          const outer = track.inner.parentElement;
+          track.inner.innerHTML = '';
+          const firstClone = track.templateSet.cloneNode(true);
+          track.inner.appendChild(firstClone);
+
+          const setWidth = firstClone.getBoundingClientRect().width || firstClone.scrollWidth || 0;
+          const outerWidth = outer ? outer.getBoundingClientRect().width : window.innerWidth;
+          track.setWidth = setWidth;
+
+          if (!setWidth) return;
+
+          const minTrackWidth = outerWidth + setWidth * 2;
+          while (track.inner.scrollWidth < minTrackWidth) {
+            track.inner.appendChild(track.templateSet.cloneNode(true));
+          }
+          track.xPos = ((track.xPos % setWidth) + setWidth) % setWidth;
+          if (track.dir < 0 && track.xPos > 0) track.xPos -= setWidth;
+          track.inner.style.transform = 'translate3d(' + track.xPos + 'px, 0, 0)';
         }
-        window.addEventListener('load', measureSetWidth, { once: true });
-        window.addEventListener('resize', measureSetWidth, { passive: true });
-        measureSetWidth();
+
+        function rebuildMarquees() {
+          tracks.forEach(rebuildTrack);
+        }
+
+        window.addEventListener('load', rebuildMarquees, { once: true });
+        window.addEventListener('resize', rebuildMarquees, { passive: true });
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(rebuildMarquees).catch(function () { });
+        }
+        rebuildMarquees();
 
         // Hook into Lenis velocity
         setTimeout(function () {
@@ -8855,8 +8922,8 @@
             // dir = -1 → 往左走(預設),+1 → 往右走;與 Lenis 滾動速度疊加
             t.xPos += (baseSpeed + lenisVel) * t.dir;
             if (t.setWidth > 0) {
-              if (t.xPos <= -t.setWidth) t.xPos += t.setWidth;
-              if (t.xPos >= t.setWidth) t.xPos -= t.setWidth;
+              while (t.xPos <= -t.setWidth) t.xPos += t.setWidth;
+              while (t.xPos >= t.setWidth) t.xPos -= t.setWidth;
             }
             t.inner.style.transform = 'translate3d(' + t.xPos + 'px, 0, 0)';
           });
