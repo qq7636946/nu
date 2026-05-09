@@ -9294,8 +9294,6 @@
         this.mouse = new THREE.Vector2(0, 0);
         this.clock = new THREE.Clock();
         this.gallerySpec = null;
-        this.lastRenderTime = 0;
-        this.touchFrameInterval = 1000 / 12;
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(this.config.bgColor);
@@ -9370,14 +9368,12 @@
         const start = () => {
           if (this.isRendering) return;
           this.isRendering = true;
-          this.lastRenderTime = 0;
           this.renderer.setAnimationLoop(this.renderFrame);
         };
 
         const stop = () => {
           if (!this.isRendering) return;
           this.isRendering = false;
-          this.lastRenderTime = 0;
           this.renderer.setAnimationLoop(null);
         };
 
@@ -9770,32 +9766,20 @@
       }
 
       renderFrame() {
-        const now = performance.now();
-        if (this.useTouchScrollMode && this.lastRenderTime && now - this.lastRenderTime < this.touchFrameInterval) {
-          return;
-        }
-
-        const frameDelta = this.lastRenderTime
-          ? Math.min((now - this.lastRenderTime) / 16.6667, this.useTouchScrollMode ? 5 : 2)
-          : 1;
-        this.lastRenderTime = now;
-
         let scrollDelta = 0;
         if (window._lenis) {
           scrollDelta = window._lenis.velocity * 0.02;
         }
 
         const rotationMultiplier = this.gallerySpec?.rotationMultiplier ?? 1;
-        const scrollBoost = this.useTouchScrollMode ? 6 : 10;
 
         this.rings.forEach((ring, ringIndex) => {
           ring.rotation.z +=
             0.0025 *
             (this.isOddRing(ringIndex) ? -1 : 1) *
-            (1 + Math.abs(scrollDelta * scrollBoost) + Math.abs(this.dragDelta)) *
+            (1 + Math.abs(scrollDelta * 10) + Math.abs(this.dragDelta)) *
             this.params.rotateSpeed *
-            rotationMultiplier *
-            frameDelta;
+            rotationMultiplier;
         });
 
         this.dragDelta *= 0.9;
@@ -9806,6 +9790,8 @@
             THREE.MathUtils.lerp(10, 0, this.params.enterProgress);
         });
 
+        // 🎯 手機跳過 post-processing(省 grain/RGB shift/vignette 的 fragment 成本)
+        //    但 ring 旋轉本身仍以原生 60fps 進行,看起來會順,不再有 12fps 跳格感
         if (this.useTouchScrollMode) {
           this.renderer.setRenderTarget(null);
           this.renderer.render(this.scene, this.camera);
