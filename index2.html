@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -99,8 +99,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer fetchpriority="high"></script>
   <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js" defer fetchpriority="high"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer fetchpriority="low"></script>
-  <script src="js/Flip.min.js" defer fetchpriority="low"></script>
-  <script src="js/ScrambleTextPlugin.min.js" defer fetchpriority="low"></script>
   <script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.min.js" defer fetchpriority="low"></script>
   <script src="transitions.js" defer fetchpriority="low"></script>
   <style>
@@ -2333,26 +2331,7 @@
       #core-capabilities,
       .ring-gallery-sticky,
       #sketch {
-        height: 100svh;
-        min-height: 100svh;
         touch-action: pan-y;
-      }
-
-      #core-capabilities main {
-        min-height: 100svh;
-      }
-
-      .ring-gallery-sticky::before,
-      .ring-gallery-sticky::after {
-        height: clamp(56px, 10svh, 112px);
-      }
-
-      .ccap-side-fade {
-        width: clamp(28px, 8vw, 64px);
-      }
-
-      #sketch canvas {
-        opacity: .62;
       }
     }
 
@@ -2743,7 +2722,7 @@
         position: relative;
         top: auto;
         height: auto;
-        z-index: 9;
+        z-index: 4;
       }
 
       .pg-gallery {
@@ -2865,14 +2844,13 @@
       top: 0;
       left: 0;
       height: 1.5px;
-      width: 100%;
+      width: 0%;
       background: rgba(255, 255, 255, 0.85);
       box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
       z-index: 99997;
       pointer-events: none;
-      transform: scaleX(0);
-      transform-origin: left center;
-      will-change: transform;
+      transform-origin: left;
+      will-change: width;
     }
 
     /* ── NAV wrapper ── */
@@ -4483,8 +4461,15 @@
       <script>
         // Anchor hero reveal to page-load time using performance.now()
         // DOMContentLoaded fires AFTER all defer scripts → _heroTl is guaranteed to exist
-        var _loaderTarget = 2700; // ms from navigation start
-        var _loaderDismissTarget = 3200; // release click shield shortly after loader exit
+        var _coarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+        var _pendingPageTransition = document.documentElement.classList.contains('has-pending-page-transition');
+        var _reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var _loaderTarget = _reducedMotion
+          ? 0
+          : (_pendingPageTransition ? 520 : (_coarsePointer ? 900 : 1250)); // ms from navigation start
+        var _loaderDismissTarget = _reducedMotion
+          ? 0
+          : (_pendingPageTransition ? 760 : (_coarsePointer ? 1180 : 1560)); // release click shield shortly after loader exit
 
         function dismissNudotLoader() {
           var el = document.getElementById('nudot-loader');
@@ -4556,12 +4541,7 @@
 
           function isPriorityVideo(video) {
             if (!video) return false;
-            if (video.dataset.lazyPriority === 'high') return true;
-            if (video.dataset.lazyOnScroll === 'true') return false;
-
-            var rect = video.getBoundingClientRect();
-            var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-            return rect.top <= viewportHeight * 1.15 && rect.bottom >= viewportHeight * -0.25;
+            return video.dataset.lazyPriority === 'high';
           }
 
           document.addEventListener('DOMContentLoaded', function () {
@@ -4783,21 +4763,21 @@
               <div class="slide">
                 <!-- <div class="slide__img" data-video="images/home/banner05.mp4" data-thumb="images/home/banner05.jpg"
               data-title="Brand Film"></div> -->
-                <div class="slide__img" data-image="images/home/banner0.jpg" data-mobile-image="images/home/banner0_s.jpg"
-                  data-mobile-thumb="images/home/banner0_s.jpg" data-title="Quantum Field"></div>
+                <div class="slide__img" data-image="images/home/banner0.webp" data-mobile-image="images/home/banner0_s.webp"
+                  data-mobile-thumb="images/home/banner0_s.webp" data-title="Quantum Field"></div>
               </div>
 
 
 
               <div class="slide">
-                <div class="slide__img" data-image="images/home/banner01.jpg"  data-mobile-image="images/home/rwd.webp"
-                  data-mobile-thumb="images/home/rwd.webp" data-title="Cosmic Harmony"></div>
+                <div class="slide__img" data-image="images/home/banner01.webp"  data-mobile-image="images/home/banner01_s.webp"
+                  data-mobile-thumb="images/home/banner01_s.webp" data-title="Cosmic Harmony"></div>
               </div>
             
 
 
               <div class="slide">
-                <div class="slide__img" data-image="images/home/banner03.jpg"
+                <div class="slide__img" data-image="images/home/banner03.webp"
                 data-mobile-image="images/home/banner03_s.webp"
                   data-mobile-thumb="images/home/banner03_s.webp"
                 data-title="Ethereal Vision"></div>
@@ -4982,7 +4962,7 @@
                       style="position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity 0.1s;">
                     </div>
                   </div>
-                    <div class="face right"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
+                  <div class="face right"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
                       data-defer-src="images/cube/t2.webp" alt="Cube right" class="face-media" width="2752"
                       height="1536" loading="lazy" decoding="async"></div>
                   <div class="face back"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
@@ -5968,8 +5948,6 @@
 
         const initialRenderSize = this.getRenderSize();
 
-        // 🎯 hero banner 使用原生 DPR(不 cap),保留 retina 銳利度
-        //    其他 WebGL(reveal canvas / ring gallery)仍透過 getOptimalDPR() cap 省效能
         this.renderer.setPixelRatio(window.devicePixelRatio || 1);
         this.renderer.setSize(initialRenderSize.width, initialRenderSize.height);
         this.container.appendChild(this.renderer.domElement);
@@ -6271,7 +6249,6 @@
 
       onResize() {
         const nextRenderSize = this.getRenderSize();
-        // 🎯 hero banner 使用原生 DPR(不 cap),保留 retina 銳利度
         const nextDpr = window.devicePixelRatio || 1;
         if (this.renderer.getPixelRatio && this.renderer.getPixelRatio() !== nextDpr) {
           this.renderer.setPixelRatio(nextDpr);
@@ -6678,16 +6655,110 @@
         gsap.to(fixedLogoEl, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', delay: 2.8 });
       }
 
+      function createQuickSetter(el, prop, unit, precision = 1000) {
+        if (!el) return () => { };
+        const setter = gsap.quickSetter(el, prop, unit);
+        let initialized = false;
+        let lastValue = null;
+        return (value) => {
+          const nextValue = typeof value === 'number' && precision > 0
+            ? Math.round(value * precision) / precision
+            : value;
+          if (initialized && nextValue === lastValue) return;
+          initialized = true;
+          lastValue = nextValue;
+          setter(nextValue);
+        };
+      }
+
+      function createStyleSetter(el, prop, format) {
+        if (!el) return () => { };
+        let initialized = false;
+        let lastValue = null;
+        return (value) => {
+          const nextValue = format ? format(value) : value;
+          if (initialized && nextValue === lastValue) return;
+          initialized = true;
+          lastValue = nextValue;
+          el.style[prop] = nextValue;
+        };
+      }
+
+      function createCssVarSetter(el, name, suffix = '') {
+        if (!el) return () => { };
+        let initialized = false;
+        let lastValue = null;
+        return (value) => {
+          const nextValue = `${value}${suffix}`;
+          if (initialized && nextValue === lastValue) return;
+          initialized = true;
+          lastValue = nextValue;
+          el.style.setProperty(name, nextValue);
+        };
+      }
+
+      const setUiNavOpacity = createQuickSetter(uiNav, 'opacity');
+      const setUiNavY = createQuickSetter(uiNav, 'y', 'px', 100);
+      const setUiScrollOpacity = createQuickSetter(uiScroll, 'opacity');
+      const setUiGlow1Opacity = createQuickSetter(uiGlow1, 'opacity');
+      const setUiGlow1Scale = createQuickSetter(uiGlow1, 'scale', null, 1000);
+      const setUiGlow1Visibility = createStyleSetter(uiGlow1, 'visibility');
+      const setUiGlow2Opacity = createQuickSetter(uiGlow2, 'opacity');
+      const setUiGlow2Scale = createQuickSetter(uiGlow2, 'scale', null, 1000);
+      const setUiGlow2Visibility = createStyleSetter(uiGlow2, 'visibility');
+      const setIntroPanelOpacity = createQuickSetter(introPanel, 'opacity');
+      const setIntroPanelVisibility = createStyleSetter(introPanel, 'visibility');
+      const setIntroTopHeaderOpacity = createQuickSetter(introTopHeader, 'opacity');
+      const setIntroTopTitleY = createQuickSetter(introTopTitle, 'yPercent', null, 100);
+      const setIntroBottomLetterOpacity = createQuickSetter(introBottomLetter, 'opacity');
+      const setIntroBottomTitleY = createQuickSetter(introBottomTitle, 'yPercent', null, 100);
+      const setTitleSubtitleY = createQuickSetter(titleSubtitle, 'yPercent', null, 100);
+      const setTitleLine1Y = createQuickSetter(titleLine1, 'yPercent', null, 100);
+      const setTitleLine2Y = createQuickSetter(titleLine2, 'yPercent', null, 100);
+      const setTitleMarqueeY = createQuickSetter(titleMarquee, 'yPercent', null, 100);
+      const setTitleDescY = createQuickSetter(titleDesc, 'yPercent', null, 100);
+      const setNewSubtitleY = createQuickSetter(newSubtitle, 'yPercent', null, 100);
+      const setNewLine1Y = createQuickSetter(newLine1, 'yPercent', null, 100);
+      const setNewLine2Y = createQuickSetter(newLine2, 'yPercent', null, 100);
+      const setNewDescY = createQuickSetter(newDesc, 'yPercent', null, 100);
+      const setNewTextGroupOpacity = createQuickSetter(newTextGroup, 'opacity');
+      const setDwBlackOverlayOpacity = createQuickSetter(dwBlackOverlay, 'opacity');
+      const setSection2Opacity = createQuickSetter(section2, 'opacity');
+      const setImgOverlayOpacity = createQuickSetter(imgOverlay, 'opacity');
+      const setFaceFrontBoxShadow = createStyleSetter(faceFront, 'boxShadow');
+      const setFaceFrontBorder = createStyleSetter(faceFront, 'border');
+      const setSceneSize = createCssVarSetter(scene, '--scene-size', 'px');
+      const setSceneDepth = createCssVarSetter(scene, '--scene-depth', 'px');
+      const setCubeRotationX = createQuickSetter(cube, 'rotationX', 'deg', 100);
+      const setCubeRotationY = createQuickSetter(cube, 'rotationY', 'deg', 100);
+      const setSceneWrapperScale = createQuickSetter(sceneWrapper, 'scale', null, 1000);
+      const setSceneWrapperTop = createStyleSetter(sceneWrapper, 'top', (value) => `${value}%`);
+      let lastSection2ZIndex = null;
+      let lastSection2PointerEvents = null;
+
+      function setSection2State(opacity, zIndex, pointerEvents = 'none') {
+        if (!section2) return;
+        setSection2Opacity(opacity);
+        if (lastSection2ZIndex !== zIndex) {
+          lastSection2ZIndex = zIndex;
+          section2.style.zIndex = String(zIndex);
+        }
+        if (lastSection2PointerEvents !== pointerEvents) {
+          lastSection2PointerEvents = pointerEvents;
+          section2.style.pointerEvents = pointerEvents;
+        }
+      }
+
       function resetReveal() {
-        gsap.set(titleSubtitle, { yPercent: 130 });
-        gsap.set(titleLine1, { yPercent: 130 });
-        gsap.set(titleLine2, { yPercent: 130 });
-        gsap.set(titleMarquee, { yPercent: 130 });
-        gsap.set(titleDesc, { yPercent: 130 });
-        gsap.set(newSubtitle, { yPercent: 130 });
-        gsap.set(newLine1, { yPercent: 130 });
-        gsap.set(newLine2, { yPercent: 130 });
-        gsap.set(newDesc, { yPercent: 130 });
+        setTitleSubtitleY(130);
+        setTitleLine1Y(130);
+        setTitleLine2Y(130);
+        setTitleMarqueeY(130);
+        setTitleDescY(130);
+        setNewSubtitleY(130);
+        setNewLine1Y(130);
+        setNewLine2Y(130);
+        setNewDescY(130);
       }
       resetReveal();
 
@@ -7042,10 +7113,10 @@
         mobileHeroStaticReady = true;
         if (darkWrapperMask) darkWrapperMask.style.height = '';
         if (darkWrapper) darkWrapper.style.clipPath = 'none';
-        if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 0 });
+        setDwBlackOverlayOpacity(0);
         if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
-        if (section2) gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 18 });
-        if (newTextGroup) gsap.set(newTextGroup, { opacity: 0 });
+        setSection2State(0, 18, 'none');
+        setNewTextGroupOpacity(0);
         if (sceneWrapper) {
           gsap.set(sceneWrapper, { xPercent: -50, yPercent: -50, scale: 1, top: '50%', opacity: 1 });
         }
@@ -7102,16 +7173,12 @@
         const p_Spin = 0.78;
         const p_PreExit = p_Spin - 0.06;
         const p_Zoom = 1.00;
-        if (document.documentElement.classList.contains('is-dark-wrapper-mobile-intro')) {
-          document.documentElement.classList.remove('is-dark-wrapper-mobile-intro');
-        }
+        document.documentElement.classList.remove('is-dark-wrapper-mobile-intro');
 
         if (isMobile) {
           applyMobileHeroStaticState();
-          const mobileScrollY = getPerformanceScrollY();
-          const shouldSpinMobileCube = mobileScrollY <= maxScroll + winH * 0.25;
-          if (shouldSpinMobileCube) baseRotY += 0.25;
-          if (cube && shouldSpinMobileCube) {
+          baseRotY += 0.25;
+          if (cube) {
             cube.style.transform = `rotateX(-12deg) rotateY(${baseRotY}deg)`;
           }
           window._marqueeRAFActive = false;
@@ -7147,12 +7214,17 @@
         const uiEntrance = Math.max(0, Math.min((pr_Reveal - 0.60) / 0.40, 1));
         const uiEase = easeInOutCubic(uiEntrance);
 
-        if (uiNav) gsap.set(uiNav, { opacity: uiEase, y: (1 - uiEase) * -25 });
-        if (uiScroll) gsap.set(uiScroll, { opacity: uiEase * 0.7 });
+        setUiNavOpacity(uiEase);
+        setUiNavY((1 - uiEase) * -25);
+        setUiScrollOpacity(uiEase * 0.7);
 
         // 🎯 封印光暈：當透明度為 0 時直接拔除可視性，釋放 GPU
-        if (uiGlow1) gsap.set(uiGlow1, { opacity: uiEase, scale: 0.4 + uiEase * 0.6, visibility: uiEase > 0 ? 'visible' : 'hidden' });
-        if (uiGlow2) gsap.set(uiGlow2, { opacity: uiEase * 0.8, scale: 0.4 + uiEase * 0.6, visibility: uiEase > 0 ? 'visible' : 'hidden' });
+        setUiGlow1Opacity(uiEase);
+        setUiGlow1Scale(0.4 + uiEase * 0.6);
+        setUiGlow1Visibility(uiEase > 0 ? 'visible' : 'hidden');
+        setUiGlow2Opacity(uiEase * 0.8);
+        setUiGlow2Scale(0.4 + uiEase * 0.6);
+        setUiGlow2Visibility(uiEase > 0 ? 'visible' : 'hidden');
 
         {
           const waveRp = progress <= p_Reveal
@@ -7161,7 +7233,8 @@
 
           if (progress <= p_TextOut) {
             // 🎯 封印面板：不顯示時徹底隱藏
-            gsap.set(introPanel, { opacity: waveRp > 0 ? 1 : 0, visibility: waveRp > 0 ? 'visible' : 'hidden' });
+            setIntroPanelOpacity(waveRp > 0 ? 1 : 0);
+            setIntroPanelVisibility(waveRp > 0 ? 'visible' : 'hidden');
 
             if (waveRp > 0) {
               if (revealGL) revealGL.render(waveRp);
@@ -7172,23 +7245,24 @@
               const ndOut = easeInOutCubic(Math.max(0, (panelT - 0.84) / 0.16));
               const ndOpacity = Math.max(0, ndIn * (1 - ndOut));
 
-              if (introTopHeader) gsap.set(introTopHeader, { opacity: ndOpacity });
-              if (introTopTitle) gsap.set(introTopTitle, { yPercent: (1 - ndIn) * 110 });
-              if (introBottomLetter) gsap.set(introBottomLetter, { opacity: ndOpacity });
-              if (introBottomTitle) gsap.set(introBottomTitle, { yPercent: (1 - ndIn) * -110 });
+              setIntroTopHeaderOpacity(ndOpacity);
+              setIntroTopTitleY((1 - ndIn) * 110);
+              setIntroBottomLetterOpacity(ndOpacity);
+              setIntroBottomTitleY((1 - ndIn) * -110);
 
               const outT = easeInOutCubic(Math.max(0, (panelT - 0.83) / 0.17));
-              if (outT > 0) gsap.set(introPanel, { opacity: Math.max(0, 1 - outT) });
+              if (outT > 0) setIntroPanelOpacity(Math.max(0, 1 - outT));
 
               _ipWave.update(panelT);
             }
           } else {
             // 完全重置並隱藏
-            gsap.set(introPanel, { opacity: 0, visibility: 'hidden' });
-            if (introTopHeader) gsap.set(introTopHeader, { opacity: 0 });
-            if (introTopTitle) gsap.set(introTopTitle, { yPercent: 110 });
-            if (introBottomLetter) gsap.set(introBottomLetter, { opacity: 0 });
-            if (introBottomTitle) gsap.set(introBottomTitle, { yPercent: -110 });
+            setIntroPanelOpacity(0);
+            setIntroPanelVisibility('hidden');
+            setIntroTopHeaderOpacity(0);
+            setIntroTopTitleY(110);
+            setIntroBottomLetterOpacity(0);
+            setIntroBottomTitleY(-110);
           }
         }
 
@@ -7202,17 +7276,17 @@
           const revealPr = Math.max(0, Math.min((progress - p_TextOut) / revealTotal, 1));
 
           // 🎯 取代字串串接，啟動 GSAP 高速變形
-          gsap.set(titleSubtitle, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min(revealPr / 0.40, 1)))) * 130 });
-          gsap.set(titleLine1, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.08) / 0.42, 1)))) * 130 });
-          gsap.set(titleLine2, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.18) / 0.42, 1)))) * 130 });
-          gsap.set(titleMarquee, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.08) / 0.42, 1)))) * 130 });
-          gsap.set(titleDesc, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.32) / 0.42, 1)))) * 130 });
+          setTitleSubtitleY((1 - easeInOutCubic(Math.max(0, Math.min(revealPr / 0.40, 1)))) * 130);
+          setTitleLine1Y((1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.08) / 0.42, 1)))) * 130);
+          setTitleLine2Y((1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.18) / 0.42, 1)))) * 130);
+          setTitleMarqueeY((1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.08) / 0.42, 1)))) * 130);
+          setTitleDescY((1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.32) / 0.42, 1)))) * 130);
 
-          gsap.set(newTextGroup, { opacity: 0 });
-          gsap.set(newSubtitle, { yPercent: 130 });
-          gsap.set(newLine1, { yPercent: 130 });
-          gsap.set(newLine2, { yPercent: 130 });
-          gsap.set(newDesc, { yPercent: 130 });
+          setNewTextGroupOpacity(0);
+          setNewSubtitleY(130);
+          setNewLine1Y(130);
+          setNewLine2Y(130);
+          setNewDescY(130);
 
           if (progress <= p_Tumble) {
             let pr = (progress - p_TextOut) / (p_Tumble - p_TextOut);
@@ -7222,9 +7296,10 @@
             currentX = -15 * (1 - ease);
             currentY = baseRotY * (1 - ease) + targetY_Phase1 * ease;
 
-            gsap.set(section2, { opacity: 1, pointerEvents: 'none', zIndex: 18 });
-            gsap.set(imgOverlay, { opacity: 0 });
-            gsap.set(faceFront, { boxShadow: 'inset 0 0 40px rgba(0,0,0,1)', border: '1px solid rgba(255,255,255,0.05)' });
+            setSection2State(1, 18, 'none');
+            setImgOverlayOpacity(0);
+            setFaceFrontBoxShadow('inset 0 0 40px rgba(0,0,0,1)');
+            setFaceFrontBorder('1px solid rgba(255,255,255,0.05)');
 
           } else if (progress <= p_Spin) {
             let pr = (progress - p_Tumble) / (p_Spin - p_Tumble);
@@ -7234,9 +7309,10 @@
             currentX = 0;
             currentY = targetY_Phase1 + 360 * ease;
 
-            gsap.set(section2, { opacity: 1, pointerEvents: 'none', zIndex: 18 });
-            gsap.set(imgOverlay, { opacity: 0 });
-            gsap.set(faceFront, { boxShadow: 'inset 0 0 40px rgba(0,0,0,1)', border: '1px solid rgba(255,255,255,0.05)' });
+            setSection2State(1, 18, 'none');
+            setImgOverlayOpacity(0);
+            setFaceFrontBoxShadow('inset 0 0 40px rgba(0,0,0,1)');
+            setFaceFrontBorder('1px solid rgba(255,255,255,0.05)');
 
           } else {
             let pr = (progress - p_Spin) / (p_Zoom - p_Spin);
@@ -7252,28 +7328,26 @@
             const titleExitPr = Math.max(0, Math.min(ease, 1));
             const titleExitEase = easeInOutCubic(titleExitPr);
 
-            gsap.set(section2, { opacity: Math.max(0, 1 - titleExitEase), pointerEvents: 'none', zIndex: 18 });
-            gsap.set(imgOverlay, { opacity: ease * 0 });
-            gsap.set(faceFront, {
-              boxShadow: `inset 0 0 ${40 * (1 - ease)}px rgba(0,0,0,1)`,
-              border: `1px solid rgba(255,255,255,${0.05 * (1 - ease)})`
-            });
+            setSection2State(Math.max(0, 1 - titleExitEase), 18, 'none');
+            setImgOverlayOpacity(0);
+            setFaceFrontBoxShadow(`inset 0 0 ${40 * (1 - ease)}px rgba(0,0,0,1)`);
+            setFaceFrontBorder(`1px solid rgba(255,255,255,${0.05 * (1 - ease)})`);
 
-            if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: ease });
+            setDwBlackOverlayOpacity(ease);
             if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
 
-            gsap.set(titleDesc, { yPercent: -easeInOutCubic(Math.min(titleExitPr, 1)) * 130 });
-            gsap.set(titleLine2, { yPercent: -easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.10) / 0.90, 1))) * 130 });
-            gsap.set(titleLine1, { yPercent: -easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.20) / 0.80, 1))) * 130 });
-            gsap.set(titleMarquee, { yPercent: -easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.10) / 0.90, 1))) * 130 });
-            gsap.set(titleSubtitle, { yPercent: -easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.30) / 0.70, 1))) * 130 });
+            setTitleDescY(-easeInOutCubic(Math.min(titleExitPr, 1)) * 130);
+            setTitleLine2Y(-easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.10) / 0.90, 1))) * 130);
+            setTitleLine1Y(-easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.20) / 0.80, 1))) * 130);
+            setTitleMarqueeY(-easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.10) / 0.90, 1))) * 130);
+            setTitleSubtitleY(-easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.30) / 0.70, 1))) * 130);
 
-            gsap.set(newTextGroup, { opacity: titleExitPr > 0 ? 1 : 0 });
+            setNewTextGroupOpacity(titleExitPr > 0 ? 1 : 0);
             const enterPr = Math.max(0, Math.min(titleExitPr / 0.70, 1));
-            gsap.set(newSubtitle, { yPercent: (1 - easeInOutCubic(Math.min(enterPr / 0.60, 1))) * 130 });
-            gsap.set(newLine1, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.10) / 0.60, 1)))) * 130 });
-            gsap.set(newLine2, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.20) / 0.60, 1)))) * 130 });
-            gsap.set(newDesc, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.35) / 0.55, 1)))) * 130 });
+            setNewSubtitleY((1 - easeInOutCubic(Math.min(enterPr / 0.60, 1))) * 130);
+            setNewLine1Y((1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.10) / 0.60, 1)))) * 130);
+            setNewLine2Y((1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.20) / 0.60, 1)))) * 130);
+            setNewDescY((1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.35) / 0.55, 1)))) * 130);
           }
 
         } else if (progress > p_Zoom) {
@@ -7283,51 +7357,44 @@
           currentX = 0;
           currentY = targetY_Phase1 + 360;
 
-          gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 18 });
-          gsap.set(imgOverlay, { opacity: 0 });
+          setSection2State(0, 18, 'none');
+          setImgOverlayOpacity(0);
 
-          if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 1 });
+          setDwBlackOverlayOpacity(1);
           if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
 
-          gsap.set(newTextGroup, { opacity: 1 });
-          gsap.set([titleDesc, titleLine2, titleLine1, titleMarquee, titleSubtitle], { yPercent: -130 });
+          setNewTextGroupOpacity(1);
+          setTitleDescY(-130);
+          setTitleLine2Y(-130);
+          setTitleLine1Y(-130);
+          setTitleMarqueeY(-130);
+          setTitleSubtitleY(-130);
         } else {
           currentScale = 0.0001;
 
-          gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 22 });
-          gsap.set(imgOverlay, { opacity: 0 });
+          setSection2State(0, 22, 'none');
+          setImgOverlayOpacity(0);
 
-          if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 0 });
+          setDwBlackOverlayOpacity(0);
           if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
-          gsap.set(newTextGroup, { opacity: 0 });
+          setNewTextGroupOpacity(0);
 
           resetReveal();
         }
 
-        gsap.set(scene, {
-          '--scene-size': `${currentSceneSize}px`,
-          '--scene-depth': `${currentSceneSize / 2}px`
-        });
-
-        gsap.set(cube, {
-          rotationX: currentX,
-          rotationY: currentY,
-          rotationZ: 0
-        });
-
-        gsap.set(sceneWrapper, {
-          xPercent: -50,
-          yPercent: -50,
-          scale: currentScale,
-          top: `${currentTop}%`
-        });
+        setSceneSize(currentSceneSize);
+        setSceneDepth(currentSceneSize / 2);
+        setCubeRotationX(currentX);
+        setCubeRotationY(currentY);
+        setSceneWrapperScale(currentScale);
+        setSceneWrapperTop(currentTop);
 
         if (stmLogoEl && progress <= p_TextOut) {
           stmLogoEl.classList.remove('is-visible');
         }
       });
 
-      gsap.registerPlugin(ScrollTrigger, Flip, ScrambleTextPlugin);
+      gsap.registerPlugin(ScrollTrigger);
 
       // 🎯 ScrollTrigger 全域效能設定:
       //   - limitCallbacks: 限制 callback 頻率,避免快速滑動時 CPU 爆炸
@@ -7336,6 +7403,77 @@
         limitCallbacks: true,
         ignoreMobileResize: true,
       });
+
+      window.__nudotQueueScrollTriggerRefresh = window.__nudotQueueScrollTriggerRefresh || (function () {
+        let rafId = 0;
+        let timerId = 0;
+        const flush = () => {
+          if (rafId) return;
+          rafId = requestAnimationFrame(() => {
+            rafId = 0;
+            if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+          });
+        };
+        return function queueScrollTriggerRefresh(delay = 0) {
+          if (delay > 0) {
+            clearTimeout(timerId);
+            timerId = setTimeout(() => {
+              timerId = 0;
+              flush();
+            }, delay);
+            return;
+          }
+          flush();
+        };
+      })();
+
+      const loadScriptOnce = window.__nudotLoadScriptOnce || (window.__nudotLoadScriptOnce = (function () {
+        const cache = new Map();
+        return function loadScriptOnce(src) {
+          if (!src) return Promise.resolve();
+          if (cache.has(src)) return cache.get(src);
+          const promise = new Promise((resolve, reject) => {
+            const existing = document.querySelector(`script[data-dynamic-src="${src}"]`);
+            if (existing) {
+              if (existing.dataset.loaded === 'true') {
+                resolve();
+                return;
+              }
+              existing.addEventListener('load', () => resolve(), { once: true });
+              existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+              return;
+            }
+
+            const script = document.createElement('script');
+            script.src = src;
+            script.defer = true;
+            script.async = false;
+            script.dataset.dynamicSrc = src;
+            script.addEventListener('load', () => {
+              script.dataset.loaded = 'true';
+              resolve();
+            }, { once: true });
+            script.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+            document.head.appendChild(script);
+          });
+          cache.set(src, promise);
+          return promise;
+        };
+      })());
+
+      let stmPluginsPromise = null;
+      function ensureStmPlugins() {
+        if (stmPluginsPromise) return stmPluginsPromise;
+        stmPluginsPromise = Promise.all([
+          loadScriptOnce('js/Flip.min.js'),
+          loadScriptOnce('js/ScrambleTextPlugin.min.js')
+        ]).then(() => {
+          if (window.gsap && window.Flip && window.ScrambleTextPlugin) {
+            window.gsap.registerPlugin(window.Flip, window.ScrambleTextPlugin);
+          }
+        });
+        return stmPluginsPromise;
+      }
 
       // 🎯 延遲非關鍵動畫初始化，讓主執行緒優先完成 paint
       var _ric = typeof requestIdleCallback === 'function' ? requestIdleCallback : function (cb) { setTimeout(cb, 200); };
@@ -7369,7 +7507,8 @@
       }
 
       runWhenNear(document.getElementById('stm-section'), function () {
-        _ric(function () {
+        _ric(async function () {
+        await ensureStmPlugins();
         (function initSTM() {
           const stmSection = document.getElementById('stm-section');
           if (!stmSection) return;
@@ -7670,7 +7809,7 @@
           }
         });
         // 建完所有 pg-item triggers 後再做一次 refresh，確保位置精準
-        if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+        if (typeof ScrollTrigger !== 'undefined') window.__nudotQueueScrollTriggerRefresh();
         }, 0);
       }, '2200px 0px');
 
@@ -7688,9 +7827,9 @@
       const _useNativeTouchScroll = window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
       // 🎯 無論是否使用 Lenis，都要在資源就緒後重新校準 ScrollTrigger
-      window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
+      window.addEventListener('load', () => window.__nudotQueueScrollTriggerRefresh(), { once: true });
       if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => ScrollTrigger.refresh()).catch(() => { });
+        document.fonts.ready.then(() => window.__nudotQueueScrollTriggerRefresh()).catch(() => { });
       }
 
       if (typeof Lenis !== 'undefined' && !_useNativeTouchScroll) {
@@ -8114,11 +8253,16 @@
 
         function initNavScrollMenu() {
           if (!navScrollContainer || !navScrollDropdown || !navScrollDropdownContent || typeof gsap === 'undefined') return;
+          const canUseHoverPreview = !isSimpleTouchNavMode();
 
           setNavScrollShellState('closed');
           syncNavScrollMenuCursorLabel();
-          initNavShowcaseHoverTimelines();
-          resetNavShowcaseHoverState();
+          if (canUseHoverPreview) {
+            initNavShowcaseHoverTimelines();
+            resetNavShowcaseHoverState();
+          } else {
+            setActiveNavShowcaseRow(null);
+          }
           stopNavScrollCloseTimeline();
 
           if (isMobileHomeNav()) {
@@ -8287,31 +8431,33 @@
           });
         });
 
-        navShowcaseRows.forEach((row) => {
-          row.addEventListener('pointerenter', () => {
-            showNavScrollPreview(row);
+        if (!isSimpleTouchNavMode()) {
+          navShowcaseRows.forEach((row) => {
+            row.addEventListener('pointerenter', () => {
+              showNavScrollPreview(row);
+            });
+            row.addEventListener('focus', () => {
+              showNavScrollPreview(row);
+            });
+            row.addEventListener('pointerleave', () => {
+              scheduleHideNavScrollPreview(row);
+            });
+            row.addEventListener('blur', () => {
+              scheduleHideNavScrollPreview(row);
+            });
           });
-          row.addEventListener('focus', () => {
-            showNavScrollPreview(row);
-          });
-          row.addEventListener('pointerleave', () => {
-            scheduleHideNavScrollPreview(row);
-          });
-          row.addEventListener('blur', () => {
-            scheduleHideNavScrollPreview(row);
-          });
-        });
 
-        navScrollDropdown?.addEventListener('pointerenter', () => {
-          if (navScrollHoverCloseTimer) {
-            clearTimeout(navScrollHoverCloseTimer);
-            navScrollHoverCloseTimer = null;
-          }
-        });
+          navScrollDropdown?.addEventListener('pointerenter', () => {
+            if (navScrollHoverCloseTimer) {
+              clearTimeout(navScrollHoverCloseTimer);
+              navScrollHoverCloseTimer = null;
+            }
+          });
 
-        navScrollDropdown?.addEventListener('pointerleave', () => {
-          hideNavScrollPreview();
-        });
+          navScrollDropdown?.addEventListener('pointerleave', () => {
+            hideNavScrollPreview();
+          });
+        }
 
         document.addEventListener('click', (event) => {
           if (!isNavScrollMenuOpen || !navScrollContainer) return;
@@ -8428,9 +8574,7 @@
 
         function updateProgressTarget() {
           const scrollY = window._lenis ? window._lenis.scroll : window.scrollY;
-          targetWidth = _progressMax > 0
-            ? Math.max(0, Math.min((scrollY / _progressMax) * 100, 100))
-            : 0;
+          targetWidth = _progressMax > 0 ? (scrollY / _progressMax) * 100 : 0;
           requestProgressTick();
         }
 
@@ -8438,7 +8582,7 @@
           progressRaf = 0;
           currentWidth += (targetWidth - currentWidth) * 0.12;
           if (Math.abs(currentWidth - _lastWrittenWidth) > 0.05) {
-            progressBar.style.transform = 'scaleX(' + (currentWidth / 100) + ')';
+            progressBar.style.width = currentWidth + '%';
             _lastWrittenWidth = currentWidth;
           }
           if (Math.abs(targetWidth - currentWidth) > 0.05) requestProgressTick();
@@ -8828,8 +8972,6 @@
         var RETURN_EASE_SCROLL = 0.22;
         var rafId = 0;
         var isVisible = false;
-        var lenisHooked = false;
-        var lenisHookAttempts = 0;
 
           function addVelocity(v) {
             extra += v * K;
@@ -8839,15 +8981,10 @@
 
         // Lenis scroll velocity
         function hookLenis() {
-          if (lenisHooked) return;
-          if (window._lenis && typeof window._lenis.on === 'function') {
-              lenisHooked = true;
+          if (window._lenis) {
               window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 3.2); });
-          } else if (window._lenis !== null && lenisHookAttempts < 20) {
-            lenisHookAttempts += 1;
-            setTimeout(hookLenis, 300);
           } else {
-            lenisHooked = true;
+            setTimeout(hookLenis, 300);
           }
         }
         hookLenis();
@@ -8896,10 +9033,6 @@
         var lastY = window.scrollY;
         window.addEventListener('scroll', function () {
           var deltaY = window.scrollY - lastY;
-          if (!isVisible) {
-            lastY = window.scrollY;
-            return;
-          }
           addVelocity(deltaY);
           if (deltaY > 0) snapBackBoost = RETURN_EASE_SCROLL;
           lastY = window.scrollY;
@@ -9081,8 +9214,8 @@
     (function () {
       const canvas = document.getElementById('film-grain-canvas');
       const ctx = canvas.getContext('2d');
-      const ENABLE_FILM_GRAIN = true;
       const DESKTOP_FILM_GRAIN_OPACITY = 0.06;
+      const MOBILE_FILM_GRAIN_BREAKPOINT = 900;
       let wWidth, wHeight;
       let noiseData = [];
       let frame = 0;
@@ -9096,8 +9229,15 @@
         scrollHoldUntil = performance.now() + SCROLL_HOLD_MS;
       }
 
+      function getFilmGrainViewportWidth() {
+        const visualWidth = window.visualViewport && typeof window.visualViewport.width === 'number'
+          ? window.visualViewport.width
+          : 0;
+        return visualWidth > 0 ? visualWidth : window.innerWidth;
+      }
+
       function isFilmGrainDisabled() {
-        return !ENABLE_FILM_GRAIN;
+        return getFilmGrainViewportWidth() <= MOBILE_FILM_GRAIN_BREAKPOINT;
       }
 
       const createNoise = () => {
@@ -9132,9 +9272,8 @@
         window.clearTimeout(loopTimeout);
         if (rafId) window.cancelAnimationFrame(rafId);
         rafId = 0;
-        const resolutionScale = Math.min(window.devicePixelRatio || 1, 2);
-        wWidth = Math.max(1, Math.floor(window.innerWidth * resolutionScale));
-        wHeight = Math.max(1, Math.floor(window.innerHeight * resolutionScale));
+        wWidth = window.innerWidth;
+        wHeight = window.innerHeight;
         const disableFilmGrain = isFilmGrainDisabled();
         canvas.style.opacity = disableFilmGrain ? '0' : String(DESKTOP_FILM_GRAIN_OPACITY);
         canvas.width = wWidth;
@@ -9272,20 +9411,20 @@
         customImageUrls: [
           // Optional manual override.
           // You can use fewer than 72 images; the gallery will loop them automatically.
-          // "images/core-capabilities/ring/01.webp",
-          // "images/core-capabilities/ring/02.webp",
-          // "images/core-capabilities/ring/03.webp",
+          // "images/core-capabilities/ring/01.jpg",
+          // "images/core-capabilities/ring/02.jpg",
+          // "images/core-capabilities/ring/03.jpg",
         ],
         // Automatic folder scan uses contiguous names like:
-        // images/core-capabilities/ring/01.webp
-        // images/core-capabilities/ring/02.webp
-        // images/core-capabilities/ring/03.webp
+        // images/core-capabilities/ring/01.jpg
+        // images/core-capabilities/ring/02.jpg
+        // images/core-capabilities/ring/03.jpg
         autoImageFolder: "images/core-capabilities/ring",
         autoImageBaseName: "",
         autoImageStartIndex: 1,
         autoImageCount: 25,
         autoImageZeroPad: 2,
-        autoImageExtension: ".webp",
+        autoImageExtension: ".jpg",
         placeholderImageUrls: Array.from({ length: circleImgTotalCount }, (_, index) => {
           return `https://picsum.photos/id/${index + 1}/320/400`;
         })
@@ -9295,7 +9434,6 @@
     class Sketch {
       constructor(selector) {
         this.container = document.querySelector(selector);
-        this.useTouchScrollMode = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
         this.config = {
           bgColor: "#000000"
         };
@@ -9314,7 +9452,6 @@
         this.lastPointer = { x: 0, y: 0 };
         this.mouse = new THREE.Vector2(0, 0);
         this.clock = new THREE.Clock();
-        this.gallerySpec = null;
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(this.config.bgColor);
@@ -9322,7 +9459,7 @@
         this.camera = new THREE.PerspectiveCamera(75, 1, 0.1, 100);
         this.camera.position.set(0, 0, 16);
 
-        this.renderer = new THREE.WebGLRenderer({ antialias: !this.useTouchScrollMode, alpha: true });
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.renderer.setClearColor(new THREE.Color(this.config.bgColor), 1);
         this.renderer.domElement.style.width = "100%";
         this.renderer.domElement.style.height = "100%";
@@ -9372,8 +9509,6 @@
         this.container.innerHTML = "";
         this.container.appendChild(this.renderer.domElement);
         this.updateInteractionMode();
-        this.gallerySpec = this.getGallerySpec();
-        this.camera.position.z = this.gallerySpec.cameraZ;
 
         this.handleResize();
         this.bindEvents();
@@ -9413,53 +9548,28 @@
       }
 
       bindEvents() {
-        window.addEventListener("resize", this.handleResize, { passive: true });
-        this.container.addEventListener("pointerdown", this.handlePointerDown, { passive: true });
-        window.addEventListener("pointermove", this.handlePointerMove, { passive: true });
-        window.addEventListener("pointerup", this.handlePointerUp, { passive: true });
-        window.addEventListener("pointercancel", this.handlePointerUp, { passive: true });
+        window.addEventListener("resize", this.handleResize);
+        this.container.addEventListener("pointerdown", this.handlePointerDown);
+        window.addEventListener("pointermove", this.handlePointerMove);
+        window.addEventListener("pointerup", this.handlePointerUp);
+        window.addEventListener("pointercancel", this.handlePointerUp);
       }
 
       updateInteractionMode() {
         const useTouchScrollMode = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
-        this.useTouchScrollMode = useTouchScrollMode;
         this.dragEnabled = !useTouchScrollMode;
         if (this.container) {
           this.container.style.touchAction = useTouchScrollMode ? "pan-y" : "none";
         }
       }
 
-      getGallerySpec() {
-        const sumFormula = (count) => (count * (count + 1)) / 2;
-        const baseCircleCount = CCAP_RING_GALLERY_CONFIG.circleCount;
-        const baseCircleImgCountUnit = CCAP_RING_GALLERY_CONFIG.circleImgCountUnit;
-        const circleCount = baseCircleCount;
-        const circleImgCountUnit = baseCircleImgCountUnit;
-
-        return {
-          circleCount,
-          circleImgCountUnit,
-          circleImgTotalCount: circleImgCountUnit * sumFormula(circleCount),
-          radius: this.useTouchScrollMode ? 4.9 : 6.4,
-          radiusOffset: this.useTouchScrollMode ? 1.65 : 2.3,
-          firstRingInset: this.useTouchScrollMode ? 0.35 : 0.65,
-          secondRingInset: this.useTouchScrollMode ? 0.5 : 0.8,
-          scale: this.useTouchScrollMode ? 0.58 : 0.8,
-          cameraZ: this.useTouchScrollMode ? 13.2 : 16,
-          rotationMultiplier: this.useTouchScrollMode ? 0.65 : 1
-        };
-      }
-
       handleResize() {
         if (!this.container) return;
 
         this.updateInteractionMode();
-        this.gallerySpec = this.getGallerySpec();
 
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
-        // 🎯 手機跟桌機都用完整尺寸 renderTarget,讓完整 post-processing pipeline 跑同一條 GPU 路徑
-        //    省效能交給 getOptimalDPR() cap pixelRatio(手機 DPR=1 已經減 75% fragment 工作量)
         const pixelRatio = typeof getOptimalDPR === 'function' ? getOptimalDPR() : Math.min(window.devicePixelRatio || 1, 2);
         const renderWidth = Math.max(1, Math.floor(width * pixelRatio));
         const renderHeight = Math.max(1, Math.floor(height * pixelRatio));
@@ -9470,7 +9580,6 @@
         this.postMaterial.uniforms.iResolution.value.set(renderWidth, renderHeight);
 
         this.camera.aspect = width / Math.max(height, 1);
-        this.camera.position.z = this.gallerySpec.cameraZ;
         this.camera.updateProjectionMatrix();
       }
 
@@ -9482,14 +9591,12 @@
       }
 
       handlePointerMove(event) {
-        if (this.useTouchScrollMode || event.pointerType !== "mouse") return;
-
         const rect = this.container ? this.container.getBoundingClientRect() : null;
         if (rect) {
           this.mouse.set(event.clientX - rect.left, rect.height - (event.clientY - rect.top));
         }
 
-        if (!this.isDragging) return;
+        if (!this.isDragging || event.pointerType !== "mouse") return;
 
         const deltaX = event.clientX - this.lastPointer.x;
         const deltaY = event.clientY - this.lastPointer.y;
@@ -9504,12 +9611,12 @@
 
       createTextureUrlList(sourceList = []) {
         const {
+          circleImgTotalCount,
           placeholderImageUrls
         } = CCAP_RING_GALLERY_CONFIG;
-        const gallerySpec = this.gallerySpec || this.getGallerySpec();
         const activeSourceList = sourceList.length > 0 ? sourceList : placeholderImageUrls;
 
-        return Array.from({ length: gallerySpec.circleImgTotalCount }, (_, index) => {
+        return Array.from({ length: circleImgTotalCount }, (_, index) => {
           return activeSourceList[index % activeSourceList.length];
         });
       }
@@ -9531,15 +9638,15 @@
           autoImageStartIndex,
           autoImageCount,
           autoImageZeroPad,
-          autoImageExtension
+          autoImageExtension,
+          circleImgTotalCount
         } = CCAP_RING_GALLERY_CONFIG;
-        const gallerySpec = this.gallerySpec || this.getGallerySpec();
         const buildAutoUrl = (index) => {
           const fileNumber = String(autoImageStartIndex + index).padStart(autoImageZeroPad, "0");
           return `${autoImageFolder}/${autoImageBaseName}${fileNumber}${autoImageExtension}`;
         };
         const safeAutoImageCount = Number.isFinite(autoImageCount)
-          ? Math.max(0, Math.min(gallerySpec.circleImgTotalCount, Math.floor(autoImageCount)))
+          ? Math.max(0, Math.min(circleImgTotalCount, Math.floor(autoImageCount)))
           : 0;
 
         if (safeAutoImageCount > 0) {
@@ -9626,16 +9733,12 @@
       buildGallery(textures) {
         const sumFormula = (count) => (count * (count + 1)) / 2;
         const isOdd = (count) => count % 2 === 1;
-        const gallerySpec = this.gallerySpec || this.getGallerySpec();
-        const {
-          circleCount,
-          circleImgCountUnit,
-          radius,
-          radiusOffset,
-          firstRingInset,
-          secondRingInset,
-          scale
-        } = gallerySpec;
+        const { circleCount, circleImgCountUnit } = CCAP_RING_GALLERY_CONFIG;
+        const radius = 6.4;
+        const radiusOffset = 2.3;
+        const firstRingInset = 0.65;
+        const secondRingInset = 0.8;
+        const scale = 0.8;
         const baseMaterial = new THREE.MeshBasicMaterial({ transparent: true });
 
         this.isOddRing = isOdd;
@@ -9685,8 +9788,6 @@
         const titleTargets = ccapSection.querySelectorAll(".giant-title .reveal-inner, .sub-title .reveal-inner");
         const staticTextTargets = ccapSection.querySelectorAll(".top-nav .reveal-inner, .service-label .reveal-inner, .service-tags .reveal-inner, .footer-desc .reveal-inner");
         const mediaTargets = ccapSection.querySelectorAll(".media-box, .center-video-box");
-        const rotateSpeedStart = this.useTouchScrollMode ? 6 : 10;
-        const rotateSpeedEnd = this.useTouchScrollMode ? 0.7 : 1;
         const initialRect = ccapSection.getBoundingClientRect();
         const alreadyVisible = initialRect.top <= window.innerHeight * 0.95;
 
@@ -9771,7 +9872,7 @@
 
         enterTl
           .to(this.params, { transitionProgress: 1, duration: 1, ease: "power1.inOut" })
-          .fromTo(this.params, { enterProgress: 0, rotateSpeed: rotateSpeedStart }, { enterProgress: 1, rotateSpeed: rotateSpeedEnd, duration: 1.5, ease: "power1.inOut" }, "-=1")
+          .fromTo(this.params, { enterProgress: 0, rotateSpeed: 10 }, { enterProgress: 1, rotateSpeed: 1, duration: 1.5, ease: "power1.inOut" }, "-=1")
           .to(heroDom, { opacity: 1, duration: 1 }, "-=1");
 
         const exitTl = window.gsap.timeline({
@@ -9794,15 +9895,12 @@
           scrollDelta = window._lenis.velocity * 0.02;
         }
 
-        const rotationMultiplier = this.gallerySpec?.rotationMultiplier ?? 1;
-
         this.rings.forEach((ring, ringIndex) => {
           ring.rotation.z +=
             0.0025 *
             (this.isOddRing(ringIndex) ? -1 : 1) *
             (1 + Math.abs(scrollDelta * 10) + Math.abs(this.dragDelta)) *
-            this.params.rotateSpeed *
-            rotationMultiplier;
+            this.params.rotateSpeed;
         });
 
         this.dragDelta *= 0.9;
@@ -9813,8 +9911,6 @@
             THREE.MathUtils.lerp(10, 0, this.params.enterProgress);
         });
 
-        // 🎯 手機跟桌機都跑完整 post-processing pipeline,GPU driver 走同一條最佳化過的快路
-        //    之前讓手機跳過 post-processing 反而造成 framebuffer state 切換成本,改回統一 pipeline 順很多
         this.postMaterial.uniforms.iTime.value = this.clock.getElapsedTime();
         this.postMaterial.uniforms.iMouse.value.copy(this.mouse);
         this.postMaterial.uniforms.uTransitionProgress.value = this.params.transitionProgress;
@@ -9828,23 +9924,22 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       const runSketchWhenNear = (target, callback) => {
-        const useTouchLead = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
         if (!target || !('IntersectionObserver' in window)) {
-          window.setTimeout(callback, useTouchLead ? 120 : 500);
+          window.setTimeout(callback, 500);
           return;
         }
 
         const rect = target.getBoundingClientRect();
-        const leadPx = useTouchLead ? 900 : 2200;
+        const leadPx = 2200;
         if (rect.top < window.innerHeight + leadPx && rect.bottom > -leadPx) {
-          window.setTimeout(callback, useTouchLead ? 90 : 250);
+          window.setTimeout(callback, 250);
           return;
         }
 
         const observer = new IntersectionObserver((entries) => {
           if (!entries.some(entry => entry.isIntersecting)) return;
           observer.disconnect();
-          window.setTimeout(callback, useTouchLead ? 80 : 120);
+          window.setTimeout(callback, 120);
         }, { rootMargin: `${leadPx}px 0px` });
         observer.observe(target);
       };
@@ -9906,14 +10001,24 @@
       // pin spacer 插入後，後面的 pg-gallery trigger 位置會跑掉，必須 refresh
       // 立即 refresh 一次，再延遲等 _ric 內的 pg-gallery triggers 全部建完後再 refresh 一次
       ScrollTrigger.refresh();
-      setTimeout(() => { if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh(); }, 800);
+      setTimeout(() => {
+        if (typeof window.__nudotQueueScrollTriggerRefresh === 'function') {
+          window.__nudotQueueScrollTriggerRefresh();
+        } else if (typeof ScrollTrigger !== 'undefined') {
+          ScrollTrigger.refresh();
+        }
+      }, 800);
 
       let _dxmResizeTO = 0;
       window.addEventListener('resize', () => {
         dxmMaxScroll = getMaxScroll();
         clearTimeout(_dxmResizeTO);
         _dxmResizeTO = setTimeout(() => {
-          if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+          if (typeof window.__nudotQueueScrollTriggerRefresh === 'function') {
+            window.__nudotQueueScrollTriggerRefresh();
+          } else if (typeof ScrollTrigger !== 'undefined') {
+            ScrollTrigger.refresh();
+          }
         }, 200);
       }, { passive: true });
 
