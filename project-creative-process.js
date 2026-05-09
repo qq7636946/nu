@@ -713,6 +713,19 @@
     if (!boxes.length) return;
 
     const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const hideWorkVideos = window.matchMedia('(max-width: 1024px), (hover: none), (pointer: coarse)').matches;
+
+    if (hideWorkVideos) {
+      boxes.forEach((box) => {
+        const video = box.querySelector('video');
+        if (!video) return;
+        video.pause();
+        try {
+          video.currentTime = 0;
+        } catch (error) {}
+      });
+      return;
+    }
 
     boxes.forEach((box) => {
       const video = box.querySelector('video');
