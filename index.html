@@ -2724,7 +2724,6 @@
         position: relative;
         top: auto;
         height: auto;
-        z-index: 9;
       }
 
       .pg-gallery {
@@ -4770,16 +4769,16 @@
 
 
               <div class="slide">
-                <div class="slide__img" data-image="images/home/banner01.jpg"  data-mobile-image="images/home/rwd.webp"
-                  data-mobile-thumb="images/home/rwd.webp" data-title="Cosmic Harmony"></div>
+                <div class="slide__img" data-image="images/home/banner01.jpg"  data-mobile-image="images/home/banner01_s.jpg"
+                  data-mobile-thumb="images/home/banner01_s.jpg" data-title="Cosmic Harmony"></div>
               </div>
             
 
 
               <div class="slide">
                 <div class="slide__img" data-image="images/home/banner03.jpg"
-                data-mobile-image="images/home/banner03_s.webp"
-                  data-mobile-thumb="images/home/banner03_s.webp"
+                data-mobile-image="images/home/banner03_s.jpg"
+                  data-mobile-thumb="images/home/banner03_s.jpg"
                 data-title="Ethereal Vision"></div>
               </div>
               <div class="slide">
@@ -4962,20 +4961,20 @@
                       style="position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity 0.1s;">
                     </div>
                   </div>
-                    <div class="face right"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
-                      data-defer-src="images/cube/t2.webp" alt="Cube right" class="face-media" width="2752"
+                  <div class="face right"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
+                      data-defer-src="images/cube/t2.jpg" alt="Cube right" class="face-media" width="2752"
                       height="1536" loading="lazy" decoding="async"></div>
                   <div class="face back"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
-                      data-defer-src="images/cube/t3.webp" alt="Cube back" class="face-media" width="2752"
+                      data-defer-src="images/cube/t3.jpg" alt="Cube back" class="face-media" width="2752"
                       height="1536" loading="lazy" decoding="async"></div>
                   <div class="face left"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
-                      data-defer-src="images/cube/t4.webp" alt="Cube left" class="face-media" width="5504"
+                      data-defer-src="images/cube/t4.jpg" alt="Cube left" class="face-media" width="5504"
                       height="3072" loading="lazy" decoding="async"></div>
                   <div class="face top"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
-                      data-defer-src="images/cube/t5.webp" alt="Cube top" class="face-media" width="7360"
+                      data-defer-src="images/cube/t5.jpg" alt="Cube top" class="face-media" width="7360"
                       height="4912" loading="lazy" decoding="async"></div>
                   <div class="face bottom"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
-                      data-defer-src="images/cube/t6.webp" alt="Cube bottom" class="face-media"
+                      data-defer-src="images/cube/t6.jpg" alt="Cube bottom" class="face-media"
                       width="3000" height="2000" loading="lazy" decoding="async"></div>
                 </div>
               </div>
@@ -5146,23 +5145,23 @@
               </video>
             </div>
             <div class="mobile-cube-face is-right">
-              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t2.webp"
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t2.jpg"
                 alt="" width="2752" height="1536" loading="lazy" decoding="async">
             </div>
             <div class="mobile-cube-face is-back">
-              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t3.webp"
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t3.jpg"
                 alt="" width="2752" height="1536" loading="lazy" decoding="async">
             </div>
             <div class="mobile-cube-face is-left">
-              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t4.webp"
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t4.jpg"
                 alt="" width="5504" height="3072" loading="lazy" decoding="async">
             </div>
             <div class="mobile-cube-face is-top">
-              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t5.webp"
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t5.jpg"
                 alt="" width="7360" height="4912" loading="lazy" decoding="async">
             </div>
             <div class="mobile-cube-face is-bottom">
-              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t6.webp"
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t6.jpg"
                 alt="" width="3000" height="2000" loading="lazy" decoding="async">
             </div>
           </div>
@@ -5946,10 +5945,8 @@
         this.videoEls = {};
         this.textureResolutions = {};
 
-        const initialRenderSize = this.getRenderSize();
-
         this.renderer.setPixelRatio(getOptimalDPR());
-        this.renderer.setSize(initialRenderSize.width, initialRenderSize.height);
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.container.appendChild(this.renderer.domElement);
 
         this.mouse = new THREE.Vector2(0, 0);
@@ -5971,28 +5968,12 @@
         window.addEventListener('mousemove', this.onMouseMove.bind(this), { passive: true });
       }
 
-      getRenderSize() {
-        if (!this.container) {
-          return {
-            width: window.innerWidth,
-            height: window.innerHeight
-          };
-        }
-
-        const rect = this.container.getBoundingClientRect();
-        const width = Math.max(1, Math.round(rect.width || this.container.clientWidth || window.innerWidth));
-        const height = Math.max(1, Math.round(rect.height || this.container.clientHeight || window.innerHeight));
-
-        return { width, height };
-      }
-
       onMouseMove(e) {
         this.targetMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
         this.targetMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       }
 
       initShader() {
-        const initialRenderSize = this.getRenderSize();
         const vertexShader = `
           varying vec2 vUv;
           void main() {
@@ -6062,6 +6043,7 @@
 
             float p = uProgress;
 
+            // 用平均 uv 計算噪聲,讓兩張圖的 warp 一致避免接縫感
             vec2 uvNoise = mix(uvA, uvB, 0.5);
             float noiseVal = (p > 0.001 && p < 0.999) ? snoise(uvNoise * 3.0 + p * 2.0) : 0.0;
             float warp = noiseVal * p * (1.0 - p) * 0.3;
@@ -6098,7 +6080,7 @@
             uTex2: { value: null },
             uProgress: { value: 0 },
             uDirection: { value: 1 },
-            uResolution: { value: new THREE.Vector2(initialRenderSize.width, initialRenderSize.height) },
+            uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
             uImageResolution: { value: new THREE.Vector2(1920, 1080) },   // for uTex1
             uImageResolution2: { value: new THREE.Vector2(1920, 1080) },  // for uTex2
             uMouse: { value: new THREE.Vector2(0, 0) }
@@ -6248,13 +6230,12 @@
       }
 
       onResize() {
-        const nextRenderSize = this.getRenderSize();
         const nextDpr = getOptimalDPR();
         if (this.renderer.getPixelRatio && this.renderer.getPixelRatio() !== nextDpr) {
           this.renderer.setPixelRatio(nextDpr);
         }
-        this.renderer.setSize(nextRenderSize.width, nextRenderSize.height);
-        this.material.uniforms.uResolution.value.set(nextRenderSize.width, nextRenderSize.height);
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.material.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
       }
 
       render() {
