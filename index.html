@@ -5947,7 +5947,7 @@
 
         const initialRenderSize = this.getRenderSize();
 
-        this.renderer.setPixelRatio(getOptimalDPR());
+        this.renderer.setPixelRatio(window.devicePixelRatio || 1);
         this.renderer.setSize(initialRenderSize.width, initialRenderSize.height);
         this.container.appendChild(this.renderer.domElement);
 
@@ -6054,39 +6054,11 @@
             vec2 uvA = fitCover(vUv, uImageResolution);
             vec2 uvB = fitCover(vUv, uImageResolution2);
 
-            uvA = (uvA - 0.5) * 1.0 + 0.5;
-            uvA -= uMouse * 0.015;
-            uvB = (uvB - 0.5) * 1.0 + 0.5;
-            uvB -= uMouse * 0.015;
+            float p = smoothstep(0.0, 1.0, uProgress);
+            vec4 t1 = texture2D(uTex1, uvA);
+            vec4 t2 = texture2D(uTex2, uvB);
 
-            float p = uProgress;
-
-            // 用平均 uv 計算噪聲,讓兩張圖的 warp 一致避免接縫感
-            vec2 uvNoise = mix(uvA, uvB, 0.5);
-            float noiseVal = (p > 0.001 && p < 0.999) ? snoise(uvNoise * 3.0 + p * 2.0) : 0.0;
-            float warp = noiseVal * p * (1.0 - p) * 0.3;
-
-            vec2 center = vec2(0.5, 0.5);
-            vec2 uv1 = mix(uvA, center, p * 0.15) + vec2(0.0, uDirection * p * 0.3) + warp;
-            vec2 uv2 = mix(uvB, center, (1.0 - p) * 0.15) - vec2(0.0, uDirection * (1.0 - p) * 0.3) + warp;
-
-            float shift = 0.04 * p * (1.0 - p) * (noiseVal + 1.0);
-
-            vec4 t1 = vec4(
-                texture2D(uTex1, uv1 + vec2(shift, 0.0)).r,
-                texture2D(uTex1, uv1).g,
-                texture2D(uTex1, uv1 - vec2(shift, 0.0)).b,
-                1.0
-            );
-
-            vec4 t2 = vec4(
-                texture2D(uTex2, uv2 + vec2(shift, 0.0)).r,
-                texture2D(uTex2, uv2).g,
-                texture2D(uTex2, uv2 - vec2(shift, 0.0)).b,
-                1.0
-            );
-
-            gl_FragColor = mix(t1, t2, smoothstep(0.0, 1.0, p));
+            gl_FragColor = mix(t1, t2, p);
           }
         `;
 
@@ -6249,7 +6221,7 @@
 
       onResize() {
         const nextRenderSize = this.getRenderSize();
-        const nextDpr = getOptimalDPR();
+        const nextDpr = window.devicePixelRatio || 1;
         if (this.renderer.getPixelRatio && this.renderer.getPixelRatio() !== nextDpr) {
           this.renderer.setPixelRatio(nextDpr);
         }
