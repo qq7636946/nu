@@ -5968,10 +5968,9 @@
 
         const initialRenderSize = this.getRenderSize();
 
-        const initialDpr = typeof getOptimalDPR === 'function'
-          ? getOptimalDPR()
-          : Math.min(window.devicePixelRatio || 1, 2);
-        this.renderer.setPixelRatio(initialDpr);
+        // 🎯 hero banner 使用原生 DPR(不 cap),保留 retina 銳利度
+        //    其他 WebGL(reveal canvas / ring gallery)仍透過 getOptimalDPR() cap 省效能
+        this.renderer.setPixelRatio(window.devicePixelRatio || 1);
         this.renderer.setSize(initialRenderSize.width, initialRenderSize.height);
         this.container.appendChild(this.renderer.domElement);
 
@@ -6272,9 +6271,8 @@
 
       onResize() {
         const nextRenderSize = this.getRenderSize();
-        const nextDpr = typeof getOptimalDPR === 'function'
-          ? getOptimalDPR()
-          : Math.min(window.devicePixelRatio || 1, 2);
+        // 🎯 hero banner 使用原生 DPR(不 cap),保留 retina 銳利度
+        const nextDpr = window.devicePixelRatio || 1;
         if (this.renderer.getPixelRatio && this.renderer.getPixelRatio() !== nextDpr) {
           this.renderer.setPixelRatio(nextDpr);
         }
@@ -9460,11 +9458,11 @@
 
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
-        const pixelRatio = this.useTouchScrollMode
-          ? 1
-          : (typeof getOptimalDPR === 'function' ? getOptimalDPR() : Math.min(window.devicePixelRatio || 1, 2));
-        const renderWidth = this.useTouchScrollMode ? 1 : Math.max(1, Math.floor(width * pixelRatio));
-        const renderHeight = this.useTouchScrollMode ? 1 : Math.max(1, Math.floor(height * pixelRatio));
+        // 🎯 手機跟桌機都用完整尺寸 renderTarget,讓完整 post-processing pipeline 跑同一條 GPU 路徑
+        //    省效能交給 getOptimalDPR() cap pixelRatio(手機 DPR=1 已經減 75% fragment 工作量)
+        const pixelRatio = typeof getOptimalDPR === 'function' ? getOptimalDPR() : Math.min(window.devicePixelRatio || 1, 2);
+        const renderWidth = Math.max(1, Math.floor(width * pixelRatio));
+        const renderHeight = Math.max(1, Math.floor(height * pixelRatio));
 
         this.renderer.setPixelRatio(pixelRatio);
         this.renderer.setSize(width, height, false);
@@ -9815,14 +9813,8 @@
             THREE.MathUtils.lerp(10, 0, this.params.enterProgress);
         });
 
-        // 🎯 手機跳過 post-processing(省 grain/RGB shift/vignette 的 fragment 成本)
-        //    但 ring 旋轉本身仍以原生 60fps 進行,看起來會順,不再有 12fps 跳格感
-        if (this.useTouchScrollMode) {
-          this.renderer.setRenderTarget(null);
-          this.renderer.render(this.scene, this.camera);
-          return;
-        }
-
+        // 🎯 手機跟桌機都跑完整 post-processing pipeline,GPU driver 走同一條最佳化過的快路
+        //    之前讓手機跳過 post-processing 反而造成 framebuffer state 切換成本,改回統一 pipeline 順很多
         this.postMaterial.uniforms.iTime.value = this.clock.getElapsedTime();
         this.postMaterial.uniforms.iMouse.value.copy(this.mouse);
         this.postMaterial.uniforms.uTransitionProgress.value = this.params.transitionProgress;
