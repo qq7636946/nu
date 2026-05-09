@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -9461,12 +9461,14 @@
       }
 
       handlePointerMove(event) {
+        if (this.useTouchScrollMode || event.pointerType !== "mouse") return;
+
         const rect = this.container ? this.container.getBoundingClientRect() : null;
         if (rect) {
           this.mouse.set(event.clientX - rect.left, rect.height - (event.clientY - rect.top));
         }
 
-        if (!this.isDragging || event.pointerType !== "mouse") return;
+        if (!this.isDragging) return;
 
         const deltaX = event.clientX - this.lastPointer.x;
         const deltaY = event.clientY - this.lastPointer.y;
@@ -9812,7 +9814,7 @@
         }
 
         const rect = target.getBoundingClientRect();
-        const leadPx = useTouchLead ? 900 : 2200;
+        const leadPx = 2200;
         if (rect.top < window.innerHeight + leadPx && rect.bottom > -leadPx) {
           window.setTimeout(callback, useTouchLead ? 90 : 250);
           return;
@@ -9967,7 +9969,7 @@
           onUpdate: (self) => {
             const e = _ease(self.progress);
             gsap.set(ccapOverlay, { opacity: e * 0.74 });
-            gsap.set(ccapMain, { scale: 1 - e * 0.046, y: -e * 24 });
+            gsap.set(ccapMain, { scale: 1 - e * 0.046, y: -e * 24, force3D: true });
           }
         });
       }
