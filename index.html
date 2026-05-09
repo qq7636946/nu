@@ -5923,8 +5923,8 @@
       const dpr = window.devicePixelRatio || 1;
       const mem = navigator.deviceMemory || 8;
       if (mem <= 4) return 1;
-      if (window.innerWidth <= 768) return Math.min(dpr, 1.25);
-      return Math.min(dpr, 2);
+      if (window.innerWidth <= 768) return Math.min(dpr, 1.5);
+      return Math.min(dpr, 2.5);
     }
 
     // =========================================================
@@ -6054,9 +6054,9 @@
             vec2 uvA = fitCover(vUv, uImageResolution);
             vec2 uvB = fitCover(vUv, uImageResolution2);
 
-            uvA = (uvA - 0.5) * 0.95 + 0.5;
+            uvA = (uvA - 0.5) * 1.0 + 0.5;
             uvA -= uMouse * 0.015;
-            uvB = (uvB - 0.5) * 0.95 + 0.5;
+            uvB = (uvB - 0.5) * 1.0 + 0.5;
             uvB -= uMouse * 0.015;
 
             float p = uProgress;
