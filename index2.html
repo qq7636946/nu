@@ -2865,13 +2865,14 @@
       top: 0;
       left: 0;
       height: 1.5px;
-      width: 0%;
+      width: 100%;
       background: rgba(255, 255, 255, 0.85);
       box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
       z-index: 99997;
       pointer-events: none;
-      transform-origin: left;
-      will-change: width;
+      transform: scaleX(0);
+      transform-origin: left center;
+      will-change: transform;
     }
 
     /* ── NAV wrapper ── */
@@ -5967,7 +5968,10 @@
 
         const initialRenderSize = this.getRenderSize();
 
-        this.renderer.setPixelRatio(window.devicePixelRatio || 1);
+        const initialDpr = typeof getOptimalDPR === 'function'
+          ? getOptimalDPR()
+          : Math.min(window.devicePixelRatio || 1, 2);
+        this.renderer.setPixelRatio(initialDpr);
         this.renderer.setSize(initialRenderSize.width, initialRenderSize.height);
         this.container.appendChild(this.renderer.domElement);
 
@@ -6268,7 +6272,9 @@
 
       onResize() {
         const nextRenderSize = this.getRenderSize();
-        const nextDpr = window.devicePixelRatio || 1;
+        const nextDpr = typeof getOptimalDPR === 'function'
+          ? getOptimalDPR()
+          : Math.min(window.devicePixelRatio || 1, 2);
         if (this.renderer.getPixelRatio && this.renderer.getPixelRatio() !== nextDpr) {
           this.renderer.setPixelRatio(nextDpr);
         }
@@ -7098,12 +7104,16 @@
         const p_Spin = 0.78;
         const p_PreExit = p_Spin - 0.06;
         const p_Zoom = 1.00;
-        document.documentElement.classList.remove('is-dark-wrapper-mobile-intro');
+        if (document.documentElement.classList.contains('is-dark-wrapper-mobile-intro')) {
+          document.documentElement.classList.remove('is-dark-wrapper-mobile-intro');
+        }
 
         if (isMobile) {
           applyMobileHeroStaticState();
-          baseRotY += 0.25;
-          if (cube) {
+          const mobileScrollY = getPerformanceScrollY();
+          const shouldSpinMobileCube = mobileScrollY <= maxScroll + winH * 0.25;
+          if (shouldSpinMobileCube) baseRotY += 0.25;
+          if (cube && shouldSpinMobileCube) {
             cube.style.transform = `rotateX(-12deg) rotateY(${baseRotY}deg)`;
           }
           window._marqueeRAFActive = false;
@@ -8420,7 +8430,9 @@
 
         function updateProgressTarget() {
           const scrollY = window._lenis ? window._lenis.scroll : window.scrollY;
-          targetWidth = _progressMax > 0 ? (scrollY / _progressMax) * 100 : 0;
+          targetWidth = _progressMax > 0
+            ? Math.max(0, Math.min((scrollY / _progressMax) * 100, 100))
+            : 0;
           requestProgressTick();
         }
 
@@ -8428,7 +8440,7 @@
           progressRaf = 0;
           currentWidth += (targetWidth - currentWidth) * 0.12;
           if (Math.abs(currentWidth - _lastWrittenWidth) > 0.05) {
-            progressBar.style.width = currentWidth + '%';
+            progressBar.style.transform = 'scaleX(' + (currentWidth / 100) + ')';
             _lastWrittenWidth = currentWidth;
           }
           if (Math.abs(targetWidth - currentWidth) > 0.05) requestProgressTick();
@@ -8818,6 +8830,8 @@
         var RETURN_EASE_SCROLL = 0.22;
         var rafId = 0;
         var isVisible = false;
+        var lenisHooked = false;
+        var lenisHookAttempts = 0;
 
           function addVelocity(v) {
             extra += v * K;
@@ -8827,10 +8841,15 @@
 
         // Lenis scroll velocity
         function hookLenis() {
-          if (window._lenis) {
+          if (lenisHooked) return;
+          if (window._lenis && typeof window._lenis.on === 'function') {
+              lenisHooked = true;
               window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 3.2); });
-          } else {
+          } else if (window._lenis !== null && lenisHookAttempts < 20) {
+            lenisHookAttempts += 1;
             setTimeout(hookLenis, 300);
+          } else {
+            lenisHooked = true;
           }
         }
         hookLenis();
@@ -8879,6 +8898,10 @@
         var lastY = window.scrollY;
         window.addEventListener('scroll', function () {
           var deltaY = window.scrollY - lastY;
+          if (!isVisible) {
+            lastY = window.scrollY;
+            return;
+          }
           addVelocity(deltaY);
           if (deltaY > 0) snapBackBoost = RETURN_EASE_SCROLL;
           lastY = window.scrollY;
@@ -9392,11 +9415,11 @@
       }
 
       bindEvents() {
-        window.addEventListener("resize", this.handleResize);
-        this.container.addEventListener("pointerdown", this.handlePointerDown);
-        window.addEventListener("pointermove", this.handlePointerMove);
-        window.addEventListener("pointerup", this.handlePointerUp);
-        window.addEventListener("pointercancel", this.handlePointerUp);
+        window.addEventListener("resize", this.handleResize, { passive: true });
+        this.container.addEventListener("pointerdown", this.handlePointerDown, { passive: true });
+        window.addEventListener("pointermove", this.handlePointerMove, { passive: true });
+        window.addEventListener("pointerup", this.handlePointerUp, { passive: true });
+        window.addEventListener("pointercancel", this.handlePointerUp, { passive: true });
       }
 
       updateInteractionMode() {
@@ -9461,12 +9484,14 @@
       }
 
       handlePointerMove(event) {
+        if (this.useTouchScrollMode || event.pointerType !== "mouse") return;
+
         const rect = this.container ? this.container.getBoundingClientRect() : null;
         if (rect) {
           this.mouse.set(event.clientX - rect.left, rect.height - (event.clientY - rect.top));
         }
 
-        if (!this.isDragging || event.pointerType !== "mouse") return;
+        if (!this.isDragging) return;
 
         const deltaX = event.clientX - this.lastPointer.x;
         const deltaY = event.clientY - this.lastPointer.y;

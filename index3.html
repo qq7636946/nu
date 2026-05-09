@@ -799,7 +799,7 @@
       margin-top: 5px;
     }
 
-    /* 
+    /*
     @keyframes float {
 
       0%,
@@ -2333,7 +2333,26 @@
       #core-capabilities,
       .ring-gallery-sticky,
       #sketch {
+        height: 100svh;
+        min-height: 100svh;
         touch-action: pan-y;
+      }
+
+      #core-capabilities main {
+        min-height: 100svh;
+      }
+
+      .ring-gallery-sticky::before,
+      .ring-gallery-sticky::after {
+        height: clamp(56px, 10svh, 112px);
+      }
+
+      .ccap-side-fade {
+        width: clamp(28px, 8vw, 64px);
+      }
+
+      #sketch canvas {
+        opacity: .62;
       }
     }
 
@@ -2724,6 +2743,7 @@
         position: relative;
         top: auto;
         height: auto;
+        z-index: 9;
       }
 
       .pg-gallery {
@@ -2845,13 +2865,14 @@
       top: 0;
       left: 0;
       height: 1.5px;
-      width: 0%;
+      width: 100%;
       background: rgba(255, 255, 255, 0.85);
       box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
       z-index: 99997;
       pointer-events: none;
-      transform-origin: left;
-      will-change: width;
+      transform: scaleX(0);
+      transform-origin: left center;
+      will-change: transform;
     }
 
     /* ── NAV wrapper ── */
@@ -4756,7 +4777,7 @@
                 </div>
               </div>
 
-              
+
               <!-- 新增輪播時，只要複製一個 .slide，改 data-image 或 data-video，並補上 data-title。
                    手機版可另外填 data-mobile-image / data-mobile-video / data-mobile-thumb；未填會沿用桌機素材。 -->
               <div class="slide">
@@ -4769,22 +4790,21 @@
 
 
               <div class="slide">
-                <div class="slide__img" data-image="images/home/banner01.jpg"  data-mobile-image="images/home/banner01_s.jpg"
-                  data-mobile-thumb="images/home/banner01_s.jpg" data-title="Cosmic Harmony"></div>
+                <div class="slide__img" data-image="images/home/banner01.jpg"  data-mobile-image="images/home/rwd.webp"
+                  data-mobile-thumb="images/home/rwd.webp" data-title="Cosmic Harmony"></div>
               </div>
-            
 
 
               <div class="slide">
                 <div class="slide__img" data-image="images/home/banner03.jpg"
-                data-mobile-image="images/home/banner03_s.jpg"
-                  data-mobile-thumb="images/home/banner03_s.jpg"
+                data-mobile-image="images/home/banner03_s.webp"
+                  data-mobile-thumb="images/home/banner03_s.webp"
                 data-title="Ethereal Vision"></div>
               </div>
               <div class="slide">
-                <div class="slide__img" data-image="images/home/banner04.jpg"
-                  data-mobile-image="images/home/banner04_s.jpg"
-                  data-mobile-thumb="images/home/banner04_s.jpg"
+                <div class="slide__img" data-image="images/home/banner04.webp"
+                  data-mobile-image="images/home/banner04_s.webp"
+                  data-mobile-thumb="images/home/banner04_s.webp"
                   data-title="Quantum Field"></div>
               </div>
 
@@ -4961,20 +4981,20 @@
                       style="position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity 0.1s;">
                     </div>
                   </div>
-                  <div class="face right"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
-                      data-defer-src="images/cube/t2.jpg" alt="Cube right" class="face-media" width="2752"
+                    <div class="face right"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
+                      data-defer-src="images/cube/t2.webp" alt="Cube right" class="face-media" width="2752"
                       height="1536" loading="lazy" decoding="async"></div>
                   <div class="face back"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
-                      data-defer-src="images/cube/t3.jpg" alt="Cube back" class="face-media" width="2752"
+                      data-defer-src="images/cube/t3.webp" alt="Cube back" class="face-media" width="2752"
                       height="1536" loading="lazy" decoding="async"></div>
                   <div class="face left"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
-                      data-defer-src="images/cube/t4.jpg" alt="Cube left" class="face-media" width="5504"
+                      data-defer-src="images/cube/t4.webp" alt="Cube left" class="face-media" width="5504"
                       height="3072" loading="lazy" decoding="async"></div>
                   <div class="face top"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
-                      data-defer-src="images/cube/t5.jpg" alt="Cube top" class="face-media" width="7360"
+                      data-defer-src="images/cube/t5.webp" alt="Cube top" class="face-media" width="7360"
                       height="4912" loading="lazy" decoding="async"></div>
                   <div class="face bottom"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
-                      data-defer-src="images/cube/t6.jpg" alt="Cube bottom" class="face-media"
+                      data-defer-src="images/cube/t6.webp" alt="Cube bottom" class="face-media"
                       width="3000" height="2000" loading="lazy" decoding="async"></div>
                 </div>
               </div>
@@ -5145,23 +5165,23 @@
               </video>
             </div>
             <div class="mobile-cube-face is-right">
-              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t2.jpg"
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t2.webp"
                 alt="" width="2752" height="1536" loading="lazy" decoding="async">
             </div>
             <div class="mobile-cube-face is-back">
-              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t3.jpg"
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t3.webp"
                 alt="" width="2752" height="1536" loading="lazy" decoding="async">
             </div>
             <div class="mobile-cube-face is-left">
-              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t4.jpg"
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t4.webp"
                 alt="" width="5504" height="3072" loading="lazy" decoding="async">
             </div>
             <div class="mobile-cube-face is-top">
-              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t5.jpg"
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t5.webp"
                 alt="" width="7360" height="4912" loading="lazy" decoding="async">
             </div>
             <div class="mobile-cube-face is-bottom">
-              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t6.jpg"
+              <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-defer-src="images/cube/t6.webp"
                 alt="" width="3000" height="2000" loading="lazy" decoding="async">
             </div>
           </div>
@@ -5173,7 +5193,7 @@
         </div>
       </section>
 
-  
+
 
       <!-- =========================================================
        DRAFT.X & MUSEUM — WebGL Marquee + Stacked Cards Section
@@ -5685,7 +5705,7 @@
         <div class="gh-side-rail gh-side-rail-right">
            <span class="gh-side-letter">D</span>
           <span class="gh-side-line"></span>
-          
+
         </div>
       </div> -->
           <span class="gallery-header-label" data-reveal="fade">( 重新定義品牌的視覺思維 )</span>
@@ -5923,7 +5943,7 @@
       const dpr = window.devicePixelRatio || 1;
       const mem = navigator.deviceMemory || 8;
       if (mem <= 4) return 1;
-      if (window.innerWidth <= 768) return Math.min(dpr, 1.25);
+      if (window.innerWidth <= 768) return Math.min(dpr, 1.5);
       return Math.min(dpr, 2);
     }
 
@@ -5945,8 +5965,13 @@
         this.videoEls = {};
         this.textureResolutions = {};
 
-        this.renderer.setPixelRatio(getOptimalDPR());
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        const initialRenderSize = this.getRenderSize();
+
+        const initialDpr = typeof getOptimalDPR === 'function'
+          ? getOptimalDPR()
+          : Math.min(window.devicePixelRatio || 1, 2);
+        this.renderer.setPixelRatio(initialDpr);
+        this.renderer.setSize(initialRenderSize.width, initialRenderSize.height);
         this.container.appendChild(this.renderer.domElement);
 
         this.mouse = new THREE.Vector2(0, 0);
@@ -5968,12 +5993,28 @@
         window.addEventListener('mousemove', this.onMouseMove.bind(this), { passive: true });
       }
 
+      getRenderSize() {
+        if (!this.container) {
+          return {
+            width: window.innerWidth,
+            height: window.innerHeight
+          };
+        }
+
+        const rect = this.container.getBoundingClientRect();
+        const width = Math.max(1, Math.round(rect.width || this.container.clientWidth || window.innerWidth));
+        const height = Math.max(1, Math.round(rect.height || this.container.clientHeight || window.innerHeight));
+
+        return { width, height };
+      }
+
       onMouseMove(e) {
         this.targetMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
         this.targetMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       }
 
       initShader() {
+        const initialRenderSize = this.getRenderSize();
         const vertexShader = `
           varying vec2 vUv;
           void main() {
@@ -6043,7 +6084,6 @@
 
             float p = uProgress;
 
-            // 用平均 uv 計算噪聲,讓兩張圖的 warp 一致避免接縫感
             vec2 uvNoise = mix(uvA, uvB, 0.5);
             float noiseVal = (p > 0.001 && p < 0.999) ? snoise(uvNoise * 3.0 + p * 2.0) : 0.0;
             float warp = noiseVal * p * (1.0 - p) * 0.3;
@@ -6080,7 +6120,7 @@
             uTex2: { value: null },
             uProgress: { value: 0 },
             uDirection: { value: 1 },
-            uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+            uResolution: { value: new THREE.Vector2(initialRenderSize.width, initialRenderSize.height) },
             uImageResolution: { value: new THREE.Vector2(1920, 1080) },   // for uTex1
             uImageResolution2: { value: new THREE.Vector2(1920, 1080) },  // for uTex2
             uMouse: { value: new THREE.Vector2(0, 0) }
@@ -6230,12 +6270,15 @@
       }
 
       onResize() {
-        const nextDpr = getOptimalDPR();
+        const nextRenderSize = this.getRenderSize();
+        const nextDpr = typeof getOptimalDPR === 'function'
+          ? getOptimalDPR()
+          : Math.min(window.devicePixelRatio || 1, 2);
         if (this.renderer.getPixelRatio && this.renderer.getPixelRatio() !== nextDpr) {
           this.renderer.setPixelRatio(nextDpr);
         }
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.material.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(nextRenderSize.width, nextRenderSize.height);
+        this.material.uniforms.uResolution.value.set(nextRenderSize.width, nextRenderSize.height);
       }
 
       render() {
@@ -7060,12 +7103,16 @@
         const p_Spin = 0.78;
         const p_PreExit = p_Spin - 0.06;
         const p_Zoom = 1.00;
-        document.documentElement.classList.remove('is-dark-wrapper-mobile-intro');
+        if (document.documentElement.classList.contains('is-dark-wrapper-mobile-intro')) {
+          document.documentElement.classList.remove('is-dark-wrapper-mobile-intro');
+        }
 
         if (isMobile) {
           applyMobileHeroStaticState();
-          baseRotY += 0.25;
-          if (cube) {
+          const mobileScrollY = getPerformanceScrollY();
+          const shouldSpinMobileCube = mobileScrollY <= maxScroll + winH * 0.25;
+          if (shouldSpinMobileCube) baseRotY += 0.25;
+          if (cube && shouldSpinMobileCube) {
             cube.style.transform = `rotateX(-12deg) rotateY(${baseRotY}deg)`;
           }
           window._marqueeRAFActive = false;
@@ -8382,7 +8429,9 @@
 
         function updateProgressTarget() {
           const scrollY = window._lenis ? window._lenis.scroll : window.scrollY;
-          targetWidth = _progressMax > 0 ? (scrollY / _progressMax) * 100 : 0;
+          targetWidth = _progressMax > 0
+            ? Math.max(0, Math.min((scrollY / _progressMax) * 100, 100))
+            : 0;
           requestProgressTick();
         }
 
@@ -8390,7 +8439,7 @@
           progressRaf = 0;
           currentWidth += (targetWidth - currentWidth) * 0.12;
           if (Math.abs(currentWidth - _lastWrittenWidth) > 0.05) {
-            progressBar.style.width = currentWidth + '%';
+            progressBar.style.transform = 'scaleX(' + (currentWidth / 100) + ')';
             _lastWrittenWidth = currentWidth;
           }
           if (Math.abs(targetWidth - currentWidth) > 0.05) requestProgressTick();
@@ -8780,6 +8829,8 @@
         var RETURN_EASE_SCROLL = 0.22;
         var rafId = 0;
         var isVisible = false;
+        var lenisHooked = false;
+        var lenisHookAttempts = 0;
 
           function addVelocity(v) {
             extra += v * K;
@@ -8789,10 +8840,15 @@
 
         // Lenis scroll velocity
         function hookLenis() {
-          if (window._lenis) {
+          if (lenisHooked) return;
+          if (window._lenis && typeof window._lenis.on === 'function') {
+              lenisHooked = true;
               window._lenis.on('scroll', function (e) { addVelocity(e.velocity * 3.2); });
-          } else {
+          } else if (window._lenis !== null && lenisHookAttempts < 20) {
+            lenisHookAttempts += 1;
             setTimeout(hookLenis, 300);
+          } else {
+            lenisHooked = true;
           }
         }
         hookLenis();
@@ -8841,6 +8897,10 @@
         var lastY = window.scrollY;
         window.addEventListener('scroll', function () {
           var deltaY = window.scrollY - lastY;
+          if (!isVisible) {
+            lastY = window.scrollY;
+            return;
+          }
           addVelocity(deltaY);
           if (deltaY > 0) snapBackBoost = RETURN_EASE_SCROLL;
           lastY = window.scrollY;
@@ -9022,8 +9082,9 @@
     (function () {
       const canvas = document.getElementById('film-grain-canvas');
       const ctx = canvas.getContext('2d');
+      const ENABLE_FILM_GRAIN = true;
       const DESKTOP_FILM_GRAIN_OPACITY = 0.06;
-      const MOBILE_FILM_GRAIN_BREAKPOINT = 900;
+      const FILM_GRAIN_RESOLUTION_SCALE = 1.5;
       let wWidth, wHeight;
       let noiseData = [];
       let frame = 0;
@@ -9037,15 +9098,8 @@
         scrollHoldUntil = performance.now() + SCROLL_HOLD_MS;
       }
 
-      function getFilmGrainViewportWidth() {
-        const visualWidth = window.visualViewport && typeof window.visualViewport.width === 'number'
-          ? window.visualViewport.width
-          : 0;
-        return visualWidth > 0 ? visualWidth : window.innerWidth;
-      }
-
       function isFilmGrainDisabled() {
-        return getFilmGrainViewportWidth() <= MOBILE_FILM_GRAIN_BREAKPOINT;
+        return !ENABLE_FILM_GRAIN;
       }
 
       const createNoise = () => {
@@ -9080,8 +9134,9 @@
         window.clearTimeout(loopTimeout);
         if (rafId) window.cancelAnimationFrame(rafId);
         rafId = 0;
-        wWidth = window.innerWidth;
-        wHeight = window.innerHeight;
+        const resolutionScale = Math.min(Math.max(window.devicePixelRatio || 1, FILM_GRAIN_RESOLUTION_SCALE), 2);
+        wWidth = Math.max(1, Math.floor(window.innerWidth * resolutionScale));
+        wHeight = Math.max(1, Math.floor(window.innerHeight * resolutionScale));
         const disableFilmGrain = isFilmGrainDisabled();
         canvas.style.opacity = disableFilmGrain ? '0' : String(DESKTOP_FILM_GRAIN_OPACITY);
         canvas.width = wWidth;
@@ -9219,20 +9274,20 @@
         customImageUrls: [
           // Optional manual override.
           // You can use fewer than 72 images; the gallery will loop them automatically.
-          // "images/core-capabilities/ring/01.jpg",
-          // "images/core-capabilities/ring/02.jpg",
-          // "images/core-capabilities/ring/03.jpg",
+          // "images/core-capabilities/ring/01.webp",
+          // "images/core-capabilities/ring/02.webp",
+          // "images/core-capabilities/ring/03.webp",
         ],
         // Automatic folder scan uses contiguous names like:
-        // images/core-capabilities/ring/01.jpg
-        // images/core-capabilities/ring/02.jpg
-        // images/core-capabilities/ring/03.jpg
+        // images/core-capabilities/ring/01.webp
+        // images/core-capabilities/ring/02.webp
+        // images/core-capabilities/ring/03.webp
         autoImageFolder: "images/core-capabilities/ring",
         autoImageBaseName: "",
         autoImageStartIndex: 1,
         autoImageCount: 25,
         autoImageZeroPad: 2,
-        autoImageExtension: ".jpg",
+        autoImageExtension: ".webp",
         placeholderImageUrls: Array.from({ length: circleImgTotalCount }, (_, index) => {
           return `https://picsum.photos/id/${index + 1}/320/400`;
         })
@@ -9242,6 +9297,7 @@
     class Sketch {
       constructor(selector) {
         this.container = document.querySelector(selector);
+        this.useTouchScrollMode = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
         this.config = {
           bgColor: "#000000"
         };
@@ -9260,6 +9316,7 @@
         this.lastPointer = { x: 0, y: 0 };
         this.mouse = new THREE.Vector2(0, 0);
         this.clock = new THREE.Clock();
+        this.gallerySpec = null;
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(this.config.bgColor);
@@ -9267,7 +9324,7 @@
         this.camera = new THREE.PerspectiveCamera(75, 1, 0.1, 100);
         this.camera.position.set(0, 0, 16);
 
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer = new THREE.WebGLRenderer({ antialias: !this.useTouchScrollMode, alpha: true });
         this.renderer.setClearColor(new THREE.Color(this.config.bgColor), 1);
         this.renderer.domElement.style.width = "100%";
         this.renderer.domElement.style.height = "100%";
@@ -9317,6 +9374,8 @@
         this.container.innerHTML = "";
         this.container.appendChild(this.renderer.domElement);
         this.updateInteractionMode();
+        this.gallerySpec = this.getGallerySpec();
+        this.camera.position.z = this.gallerySpec.cameraZ;
 
         this.handleResize();
         this.bindEvents();
@@ -9356,31 +9415,56 @@
       }
 
       bindEvents() {
-        window.addEventListener("resize", this.handleResize);
-        this.container.addEventListener("pointerdown", this.handlePointerDown);
-        window.addEventListener("pointermove", this.handlePointerMove);
-        window.addEventListener("pointerup", this.handlePointerUp);
-        window.addEventListener("pointercancel", this.handlePointerUp);
+        window.addEventListener("resize", this.handleResize, { passive: true });
+        this.container.addEventListener("pointerdown", this.handlePointerDown, { passive: true });
+        window.addEventListener("pointermove", this.handlePointerMove, { passive: true });
+        window.addEventListener("pointerup", this.handlePointerUp, { passive: true });
+        window.addEventListener("pointercancel", this.handlePointerUp, { passive: true });
       }
 
       updateInteractionMode() {
         const useTouchScrollMode = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+        this.useTouchScrollMode = useTouchScrollMode;
         this.dragEnabled = !useTouchScrollMode;
         if (this.container) {
           this.container.style.touchAction = useTouchScrollMode ? "pan-y" : "none";
         }
       }
 
+      getGallerySpec() {
+        const sumFormula = (count) => (count * (count + 1)) / 2;
+        const baseCircleCount = CCAP_RING_GALLERY_CONFIG.circleCount;
+        const baseCircleImgCountUnit = CCAP_RING_GALLERY_CONFIG.circleImgCountUnit;
+        const circleCount = baseCircleCount;
+        const circleImgCountUnit = baseCircleImgCountUnit;
+
+        return {
+          circleCount,
+          circleImgCountUnit,
+          circleImgTotalCount: circleImgCountUnit * sumFormula(circleCount),
+          radius: this.useTouchScrollMode ? 4.9 : 6.4,
+          radiusOffset: this.useTouchScrollMode ? 1.65 : 2.3,
+          firstRingInset: this.useTouchScrollMode ? 0.35 : 0.65,
+          secondRingInset: this.useTouchScrollMode ? 0.5 : 0.8,
+          scale: this.useTouchScrollMode ? 0.58 : 0.8,
+          cameraZ: this.useTouchScrollMode ? 13.2 : 16,
+          rotationMultiplier: this.useTouchScrollMode ? 0.65 : 1
+        };
+      }
+
       handleResize() {
         if (!this.container) return;
 
         this.updateInteractionMode();
+        this.gallerySpec = this.getGallerySpec();
 
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
-        const pixelRatio = typeof getOptimalDPR === 'function' ? getOptimalDPR() : Math.min(window.devicePixelRatio || 1, 2);
-        const renderWidth = Math.max(1, Math.floor(width * pixelRatio));
-        const renderHeight = Math.max(1, Math.floor(height * pixelRatio));
+        const pixelRatio = this.useTouchScrollMode
+          ? 1
+          : (typeof getOptimalDPR === 'function' ? getOptimalDPR() : Math.min(window.devicePixelRatio || 1, 2));
+        const renderWidth = this.useTouchScrollMode ? 1 : Math.max(1, Math.floor(width * pixelRatio));
+        const renderHeight = this.useTouchScrollMode ? 1 : Math.max(1, Math.floor(height * pixelRatio));
 
         this.renderer.setPixelRatio(pixelRatio);
         this.renderer.setSize(width, height, false);
@@ -9388,6 +9472,7 @@
         this.postMaterial.uniforms.iResolution.value.set(renderWidth, renderHeight);
 
         this.camera.aspect = width / Math.max(height, 1);
+        this.camera.position.z = this.gallerySpec.cameraZ;
         this.camera.updateProjectionMatrix();
       }
 
@@ -9399,12 +9484,14 @@
       }
 
       handlePointerMove(event) {
+        if (this.useTouchScrollMode || event.pointerType !== "mouse") return;
+
         const rect = this.container ? this.container.getBoundingClientRect() : null;
         if (rect) {
           this.mouse.set(event.clientX - rect.left, rect.height - (event.clientY - rect.top));
         }
 
-        if (!this.isDragging || event.pointerType !== "mouse") return;
+        if (!this.isDragging) return;
 
         const deltaX = event.clientX - this.lastPointer.x;
         const deltaY = event.clientY - this.lastPointer.y;
@@ -9419,12 +9506,12 @@
 
       createTextureUrlList(sourceList = []) {
         const {
-          circleImgTotalCount,
           placeholderImageUrls
         } = CCAP_RING_GALLERY_CONFIG;
+        const gallerySpec = this.gallerySpec || this.getGallerySpec();
         const activeSourceList = sourceList.length > 0 ? sourceList : placeholderImageUrls;
 
-        return Array.from({ length: circleImgTotalCount }, (_, index) => {
+        return Array.from({ length: gallerySpec.circleImgTotalCount }, (_, index) => {
           return activeSourceList[index % activeSourceList.length];
         });
       }
@@ -9446,15 +9533,15 @@
           autoImageStartIndex,
           autoImageCount,
           autoImageZeroPad,
-          autoImageExtension,
-          circleImgTotalCount
+          autoImageExtension
         } = CCAP_RING_GALLERY_CONFIG;
+        const gallerySpec = this.gallerySpec || this.getGallerySpec();
         const buildAutoUrl = (index) => {
           const fileNumber = String(autoImageStartIndex + index).padStart(autoImageZeroPad, "0");
           return `${autoImageFolder}/${autoImageBaseName}${fileNumber}${autoImageExtension}`;
         };
         const safeAutoImageCount = Number.isFinite(autoImageCount)
-          ? Math.max(0, Math.min(circleImgTotalCount, Math.floor(autoImageCount)))
+          ? Math.max(0, Math.min(gallerySpec.circleImgTotalCount, Math.floor(autoImageCount)))
           : 0;
 
         if (safeAutoImageCount > 0) {
@@ -9541,12 +9628,16 @@
       buildGallery(textures) {
         const sumFormula = (count) => (count * (count + 1)) / 2;
         const isOdd = (count) => count % 2 === 1;
-        const { circleCount, circleImgCountUnit } = CCAP_RING_GALLERY_CONFIG;
-        const radius = 6.4;
-        const radiusOffset = 2.3;
-        const firstRingInset = 0.65;
-        const secondRingInset = 0.8;
-        const scale = 0.8;
+        const gallerySpec = this.gallerySpec || this.getGallerySpec();
+        const {
+          circleCount,
+          circleImgCountUnit,
+          radius,
+          radiusOffset,
+          firstRingInset,
+          secondRingInset,
+          scale
+        } = gallerySpec;
         const baseMaterial = new THREE.MeshBasicMaterial({ transparent: true });
 
         this.isOddRing = isOdd;
@@ -9596,6 +9687,8 @@
         const titleTargets = ccapSection.querySelectorAll(".giant-title .reveal-inner, .sub-title .reveal-inner");
         const staticTextTargets = ccapSection.querySelectorAll(".top-nav .reveal-inner, .service-label .reveal-inner, .service-tags .reveal-inner, .footer-desc .reveal-inner");
         const mediaTargets = ccapSection.querySelectorAll(".media-box, .center-video-box");
+        const rotateSpeedStart = this.useTouchScrollMode ? 6 : 10;
+        const rotateSpeedEnd = this.useTouchScrollMode ? 0.7 : 1;
         const initialRect = ccapSection.getBoundingClientRect();
         const alreadyVisible = initialRect.top <= window.innerHeight * 0.95;
 
@@ -9680,7 +9773,7 @@
 
         enterTl
           .to(this.params, { transitionProgress: 1, duration: 1, ease: "power1.inOut" })
-          .fromTo(this.params, { enterProgress: 0, rotateSpeed: 10 }, { enterProgress: 1, rotateSpeed: 1, duration: 1.5, ease: "power1.inOut" }, "-=1")
+          .fromTo(this.params, { enterProgress: 0, rotateSpeed: rotateSpeedStart }, { enterProgress: 1, rotateSpeed: rotateSpeedEnd, duration: 1.5, ease: "power1.inOut" }, "-=1")
           .to(heroDom, { opacity: 1, duration: 1 }, "-=1");
 
         const exitTl = window.gsap.timeline({
@@ -9703,12 +9796,15 @@
           scrollDelta = window._lenis.velocity * 0.02;
         }
 
+        const rotationMultiplier = this.gallerySpec?.rotationMultiplier ?? 1;
+
         this.rings.forEach((ring, ringIndex) => {
           ring.rotation.z +=
             0.0025 *
             (this.isOddRing(ringIndex) ? -1 : 1) *
             (1 + Math.abs(scrollDelta * 10) + Math.abs(this.dragDelta)) *
-            this.params.rotateSpeed;
+            this.params.rotateSpeed *
+            rotationMultiplier;
         });
 
         this.dragDelta *= 0.9;
@@ -9718,6 +9814,14 @@
             -THREE.MathUtils.lerp(0, 100, 1 - this.params.enterProgress) +
             THREE.MathUtils.lerp(10, 0, this.params.enterProgress);
         });
+
+        // 🎯 手機跳過 post-processing(省 grain/RGB shift/vignette 的 fragment 成本)
+        //    但 ring 旋轉本身仍以原生 60fps 進行,看起來會順,不再有 12fps 跳格感
+        if (this.useTouchScrollMode) {
+          this.renderer.setRenderTarget(null);
+          this.renderer.render(this.scene, this.camera);
+          return;
+        }
 
         this.postMaterial.uniforms.iTime.value = this.clock.getElapsedTime();
         this.postMaterial.uniforms.iMouse.value.copy(this.mouse);
@@ -9732,22 +9836,23 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       const runSketchWhenNear = (target, callback) => {
+        const useTouchLead = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
         if (!target || !('IntersectionObserver' in window)) {
-          window.setTimeout(callback, 500);
+          window.setTimeout(callback, useTouchLead ? 120 : 500);
           return;
         }
 
         const rect = target.getBoundingClientRect();
-        const leadPx = 2200;
+        const leadPx = useTouchLead ? 900 : 2200;
         if (rect.top < window.innerHeight + leadPx && rect.bottom > -leadPx) {
-          window.setTimeout(callback, 250);
+          window.setTimeout(callback, useTouchLead ? 90 : 250);
           return;
         }
 
         const observer = new IntersectionObserver((entries) => {
           if (!entries.some(entry => entry.isIntersecting)) return;
           observer.disconnect();
-          window.setTimeout(callback, 120);
+          window.setTimeout(callback, useTouchLead ? 80 : 120);
         }, { rootMargin: `${leadPx}px 0px` });
         observer.observe(target);
       };
