@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -5943,7 +5943,7 @@
       const dpr = window.devicePixelRatio || 1;
       const mem = navigator.deviceMemory || 8;
       if (mem <= 4) return 1;
-      if (window.innerWidth <= 768) return Math.min(dpr, 1.5);
+      if (window.innerWidth <= 768) return Math.min(dpr, 1.25);
       return Math.min(dpr, 2);
     }
 
@@ -5967,7 +5967,7 @@
 
         const initialRenderSize = this.getRenderSize();
 
-        this.renderer.setPixelRatio(window.devicePixelRatio || 1);
+        this.renderer.setPixelRatio(getOptimalDPR());
         this.renderer.setSize(initialRenderSize.width, initialRenderSize.height);
         this.container.appendChild(this.renderer.domElement);
 
@@ -6268,7 +6268,7 @@
 
       onResize() {
         const nextRenderSize = this.getRenderSize();
-        const nextDpr = window.devicePixelRatio || 1;
+        const nextDpr = getOptimalDPR();
         if (this.renderer.getPixelRatio && this.renderer.getPixelRatio() !== nextDpr) {
           this.renderer.setPixelRatio(nextDpr);
         }
@@ -9290,6 +9290,7 @@
         this.dragEnabled = true;
         this.isRendering = false;
         this.viewportObserver = null;
+        this.pointerEventsBound = false;
         this.lastPointer = { x: 0, y: 0 };
         this.mouse = new THREE.Vector2(0, 0);
         this.clock = new THREE.Clock();
@@ -9392,11 +9393,25 @@
       }
 
       bindEvents() {
-        window.addEventListener("resize", this.handleResize);
-        this.container.addEventListener("pointerdown", this.handlePointerDown);
-        window.addEventListener("pointermove", this.handlePointerMove);
-        window.addEventListener("pointerup", this.handlePointerUp);
-        window.addEventListener("pointercancel", this.handlePointerUp);
+        window.addEventListener("resize", this.handleResize, { passive: true });
+        this.syncPointerEvents();
+      }
+
+      syncPointerEvents() {
+        const shouldBindPointer = !this.useTouchScrollMode;
+        if (shouldBindPointer === this.pointerEventsBound) return;
+
+        const method = shouldBindPointer ? "addEventListener" : "removeEventListener";
+        this.container[method]("pointerdown", this.handlePointerDown);
+        window[method]("pointermove", this.handlePointerMove);
+        window[method]("pointerup", this.handlePointerUp);
+        window[method]("pointercancel", this.handlePointerUp);
+        this.pointerEventsBound = shouldBindPointer;
+
+        if (!shouldBindPointer) {
+          this.isDragging = false;
+          this.dragDelta = 0;
+        }
       }
 
       updateInteractionMode() {
@@ -9425,7 +9440,9 @@
           secondRingInset: this.useTouchScrollMode ? 0.5 : 0.8,
           scale: this.useTouchScrollMode ? 0.58 : 0.8,
           cameraZ: this.useTouchScrollMode ? 13.2 : 16,
-          rotationMultiplier: this.useTouchScrollMode ? 0.65 : 1
+          rotationMultiplier: this.useTouchScrollMode ? 0.65 : 1,
+          entryDepth: this.useTouchScrollMode ? 84 : 100,
+          entryOffset: 10
         };
       }
 
@@ -9433,6 +9450,7 @@
         if (!this.container) return;
 
         this.updateInteractionMode();
+        this.syncPointerEvents();
         this.gallerySpec = this.getGallerySpec();
 
         const width = this.container.clientWidth || window.innerWidth;
@@ -9527,7 +9545,7 @@
 
         const discoveredUrls = [];
 
-        for (let index = 0; index < circleImgTotalCount; index += 1) {
+        for (let index = 0; index < gallerySpec.circleImgTotalCount; index += 1) {
           const candidateUrl = buildAutoUrl(index);
           const exists = await this.probeImageUrl(candidateUrl);
 
@@ -9786,10 +9804,13 @@
 
         this.dragDelta *= 0.9;
 
+        const entryDepth = this.gallerySpec?.entryDepth ?? 100;
+        const entryOffset = this.gallerySpec?.entryOffset ?? 10;
+
         this.lines.forEach((line) => {
           line.position.z =
-            -THREE.MathUtils.lerp(0, 100, 1 - this.params.enterProgress) +
-            THREE.MathUtils.lerp(10, 0, this.params.enterProgress);
+            -THREE.MathUtils.lerp(0, entryDepth, 1 - this.params.enterProgress) +
+            THREE.MathUtils.lerp(entryOffset, 0, this.params.enterProgress);
         });
 
         // 🎯 手機跟桌機都跑完整 post-processing pipeline,GPU driver 走同一條最佳化過的快路
