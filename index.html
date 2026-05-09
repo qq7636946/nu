@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -2333,26 +2333,7 @@
       #core-capabilities,
       .ring-gallery-sticky,
       #sketch {
-        height: 100svh;
-        min-height: 100svh;
         touch-action: pan-y;
-      }
-
-      #core-capabilities main {
-        min-height: 100svh;
-      }
-
-      .ring-gallery-sticky::before,
-      .ring-gallery-sticky::after {
-        height: clamp(56px, 10svh, 112px);
-      }
-
-      .ccap-side-fade {
-        width: clamp(28px, 8vw, 64px);
-      }
-
-      #sketch canvas {
-        opacity: .62;
       }
     }
 
@@ -9251,20 +9232,20 @@
         customImageUrls: [
           // Optional manual override.
           // You can use fewer than 72 images; the gallery will loop them automatically.
-          // "images/core-capabilities/ring/01.webp",
-          // "images/core-capabilities/ring/02.webp",
-          // "images/core-capabilities/ring/03.webp",
+          // "images/core-capabilities/ring/01.jpg",
+          // "images/core-capabilities/ring/02.jpg",
+          // "images/core-capabilities/ring/03.jpg",
         ],
         // Automatic folder scan uses contiguous names like:
-        // images/core-capabilities/ring/01.webp
-        // images/core-capabilities/ring/02.webp
-        // images/core-capabilities/ring/03.webp
+        // images/core-capabilities/ring/01.jpg
+        // images/core-capabilities/ring/02.jpg
+        // images/core-capabilities/ring/03.jpg
         autoImageFolder: "images/core-capabilities/ring",
         autoImageBaseName: "",
         autoImageStartIndex: 1,
         autoImageCount: 25,
         autoImageZeroPad: 2,
-        autoImageExtension: ".webp",
+        autoImageExtension: ".jpg",
         placeholderImageUrls: Array.from({ length: circleImgTotalCount }, (_, index) => {
           return `https://picsum.photos/id/${index + 1}/320/400`;
         })
@@ -9274,7 +9255,6 @@
     class Sketch {
       constructor(selector) {
         this.container = document.querySelector(selector);
-        this.useTouchScrollMode = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
         this.config = {
           bgColor: "#000000"
         };
@@ -9290,11 +9270,9 @@
         this.dragEnabled = true;
         this.isRendering = false;
         this.viewportObserver = null;
-        this.pointerEventsBound = false;
         this.lastPointer = { x: 0, y: 0 };
         this.mouse = new THREE.Vector2(0, 0);
         this.clock = new THREE.Clock();
-        this.gallerySpec = null;
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(this.config.bgColor);
@@ -9302,7 +9280,7 @@
         this.camera = new THREE.PerspectiveCamera(75, 1, 0.1, 100);
         this.camera.position.set(0, 0, 16);
 
-        this.renderer = new THREE.WebGLRenderer({ antialias: !this.useTouchScrollMode, alpha: true });
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.renderer.setClearColor(new THREE.Color(this.config.bgColor), 1);
         this.renderer.domElement.style.width = "100%";
         this.renderer.domElement.style.height = "100%";
@@ -9352,8 +9330,6 @@
         this.container.innerHTML = "";
         this.container.appendChild(this.renderer.domElement);
         this.updateInteractionMode();
-        this.gallerySpec = this.getGallerySpec();
-        this.camera.position.z = this.gallerySpec.cameraZ;
 
         this.handleResize();
         this.bindEvents();
@@ -9393,70 +9369,28 @@
       }
 
       bindEvents() {
-        window.addEventListener("resize", this.handleResize, { passive: true });
-        this.syncPointerEvents();
-      }
-
-      syncPointerEvents() {
-        const shouldBindPointer = !this.useTouchScrollMode;
-        if (shouldBindPointer === this.pointerEventsBound) return;
-
-        const method = shouldBindPointer ? "addEventListener" : "removeEventListener";
-        this.container[method]("pointerdown", this.handlePointerDown);
-        window[method]("pointermove", this.handlePointerMove);
-        window[method]("pointerup", this.handlePointerUp);
-        window[method]("pointercancel", this.handlePointerUp);
-        this.pointerEventsBound = shouldBindPointer;
-
-        if (!shouldBindPointer) {
-          this.isDragging = false;
-          this.dragDelta = 0;
-        }
+        window.addEventListener("resize", this.handleResize);
+        this.container.addEventListener("pointerdown", this.handlePointerDown);
+        window.addEventListener("pointermove", this.handlePointerMove);
+        window.addEventListener("pointerup", this.handlePointerUp);
+        window.addEventListener("pointercancel", this.handlePointerUp);
       }
 
       updateInteractionMode() {
         const useTouchScrollMode = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
-        this.useTouchScrollMode = useTouchScrollMode;
         this.dragEnabled = !useTouchScrollMode;
         if (this.container) {
           this.container.style.touchAction = useTouchScrollMode ? "pan-y" : "none";
         }
       }
 
-      getGallerySpec() {
-        const sumFormula = (count) => (count * (count + 1)) / 2;
-        const baseCircleCount = CCAP_RING_GALLERY_CONFIG.circleCount;
-        const baseCircleImgCountUnit = CCAP_RING_GALLERY_CONFIG.circleImgCountUnit;
-        const circleCount = baseCircleCount;
-        const circleImgCountUnit = baseCircleImgCountUnit;
-
-        return {
-          circleCount,
-          circleImgCountUnit,
-          circleImgTotalCount: circleImgCountUnit * sumFormula(circleCount),
-          radius: this.useTouchScrollMode ? 4.9 : 6.4,
-          radiusOffset: this.useTouchScrollMode ? 1.65 : 2.3,
-          firstRingInset: this.useTouchScrollMode ? 0.35 : 0.65,
-          secondRingInset: this.useTouchScrollMode ? 0.5 : 0.8,
-          scale: this.useTouchScrollMode ? 0.58 : 0.8,
-          cameraZ: this.useTouchScrollMode ? 13.2 : 16,
-          rotationMultiplier: this.useTouchScrollMode ? 0.65 : 1,
-          entryDepth: this.useTouchScrollMode ? 84 : 100,
-          entryOffset: 10
-        };
-      }
-
       handleResize() {
         if (!this.container) return;
 
         this.updateInteractionMode();
-        this.syncPointerEvents();
-        this.gallerySpec = this.getGallerySpec();
 
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
-        // 🎯 手機跟桌機都用完整尺寸 renderTarget,讓完整 post-processing pipeline 跑同一條 GPU 路徑
-        //    省效能交給 getOptimalDPR() cap pixelRatio(手機 DPR=1 已經減 75% fragment 工作量)
         const pixelRatio = typeof getOptimalDPR === 'function' ? getOptimalDPR() : Math.min(window.devicePixelRatio || 1, 2);
         const renderWidth = Math.max(1, Math.floor(width * pixelRatio));
         const renderHeight = Math.max(1, Math.floor(height * pixelRatio));
@@ -9467,7 +9401,6 @@
         this.postMaterial.uniforms.iResolution.value.set(renderWidth, renderHeight);
 
         this.camera.aspect = width / Math.max(height, 1);
-        this.camera.position.z = this.gallerySpec.cameraZ;
         this.camera.updateProjectionMatrix();
       }
 
@@ -9479,14 +9412,12 @@
       }
 
       handlePointerMove(event) {
-        if (this.useTouchScrollMode || event.pointerType !== "mouse") return;
-
         const rect = this.container ? this.container.getBoundingClientRect() : null;
         if (rect) {
           this.mouse.set(event.clientX - rect.left, rect.height - (event.clientY - rect.top));
         }
 
-        if (!this.isDragging) return;
+        if (!this.isDragging || event.pointerType !== "mouse") return;
 
         const deltaX = event.clientX - this.lastPointer.x;
         const deltaY = event.clientY - this.lastPointer.y;
@@ -9501,12 +9432,12 @@
 
       createTextureUrlList(sourceList = []) {
         const {
+          circleImgTotalCount,
           placeholderImageUrls
         } = CCAP_RING_GALLERY_CONFIG;
-        const gallerySpec = this.gallerySpec || this.getGallerySpec();
         const activeSourceList = sourceList.length > 0 ? sourceList : placeholderImageUrls;
 
-        return Array.from({ length: gallerySpec.circleImgTotalCount }, (_, index) => {
+        return Array.from({ length: circleImgTotalCount }, (_, index) => {
           return activeSourceList[index % activeSourceList.length];
         });
       }
@@ -9528,15 +9459,15 @@
           autoImageStartIndex,
           autoImageCount,
           autoImageZeroPad,
-          autoImageExtension
+          autoImageExtension,
+          circleImgTotalCount
         } = CCAP_RING_GALLERY_CONFIG;
-        const gallerySpec = this.gallerySpec || this.getGallerySpec();
         const buildAutoUrl = (index) => {
           const fileNumber = String(autoImageStartIndex + index).padStart(autoImageZeroPad, "0");
           return `${autoImageFolder}/${autoImageBaseName}${fileNumber}${autoImageExtension}`;
         };
         const safeAutoImageCount = Number.isFinite(autoImageCount)
-          ? Math.max(0, Math.min(gallerySpec.circleImgTotalCount, Math.floor(autoImageCount)))
+          ? Math.max(0, Math.min(circleImgTotalCount, Math.floor(autoImageCount)))
           : 0;
 
         if (safeAutoImageCount > 0) {
@@ -9545,7 +9476,7 @@
 
         const discoveredUrls = [];
 
-        for (let index = 0; index < gallerySpec.circleImgTotalCount; index += 1) {
+        for (let index = 0; index < circleImgTotalCount; index += 1) {
           const candidateUrl = buildAutoUrl(index);
           const exists = await this.probeImageUrl(candidateUrl);
 
@@ -9623,16 +9554,12 @@
       buildGallery(textures) {
         const sumFormula = (count) => (count * (count + 1)) / 2;
         const isOdd = (count) => count % 2 === 1;
-        const gallerySpec = this.gallerySpec || this.getGallerySpec();
-        const {
-          circleCount,
-          circleImgCountUnit,
-          radius,
-          radiusOffset,
-          firstRingInset,
-          secondRingInset,
-          scale
-        } = gallerySpec;
+        const { circleCount, circleImgCountUnit } = CCAP_RING_GALLERY_CONFIG;
+        const radius = 6.4;
+        const radiusOffset = 2.3;
+        const firstRingInset = 0.65;
+        const secondRingInset = 0.8;
+        const scale = 0.8;
         const baseMaterial = new THREE.MeshBasicMaterial({ transparent: true });
 
         this.isOddRing = isOdd;
@@ -9682,8 +9609,6 @@
         const titleTargets = ccapSection.querySelectorAll(".giant-title .reveal-inner, .sub-title .reveal-inner");
         const staticTextTargets = ccapSection.querySelectorAll(".top-nav .reveal-inner, .service-label .reveal-inner, .service-tags .reveal-inner, .footer-desc .reveal-inner");
         const mediaTargets = ccapSection.querySelectorAll(".media-box, .center-video-box");
-        const rotateSpeedStart = this.useTouchScrollMode ? 6 : 10;
-        const rotateSpeedEnd = this.useTouchScrollMode ? 0.7 : 1;
         const initialRect = ccapSection.getBoundingClientRect();
         const alreadyVisible = initialRect.top <= window.innerHeight * 0.95;
 
@@ -9768,7 +9693,7 @@
 
         enterTl
           .to(this.params, { transitionProgress: 1, duration: 1, ease: "power1.inOut" })
-          .fromTo(this.params, { enterProgress: 0, rotateSpeed: rotateSpeedStart }, { enterProgress: 1, rotateSpeed: rotateSpeedEnd, duration: 1.5, ease: "power1.inOut" }, "-=1")
+          .fromTo(this.params, { enterProgress: 0, rotateSpeed: 10 }, { enterProgress: 1, rotateSpeed: 1, duration: 1.5, ease: "power1.inOut" }, "-=1")
           .to(heroDom, { opacity: 1, duration: 1 }, "-=1");
 
         const exitTl = window.gsap.timeline({
@@ -9791,30 +9716,22 @@
           scrollDelta = window._lenis.velocity * 0.02;
         }
 
-        const rotationMultiplier = this.gallerySpec?.rotationMultiplier ?? 1;
-
         this.rings.forEach((ring, ringIndex) => {
           ring.rotation.z +=
             0.0025 *
             (this.isOddRing(ringIndex) ? -1 : 1) *
             (1 + Math.abs(scrollDelta * 10) + Math.abs(this.dragDelta)) *
-            this.params.rotateSpeed *
-            rotationMultiplier;
+            this.params.rotateSpeed;
         });
 
         this.dragDelta *= 0.9;
 
-        const entryDepth = this.gallerySpec?.entryDepth ?? 100;
-        const entryOffset = this.gallerySpec?.entryOffset ?? 10;
-
         this.lines.forEach((line) => {
           line.position.z =
-            -THREE.MathUtils.lerp(0, entryDepth, 1 - this.params.enterProgress) +
-            THREE.MathUtils.lerp(entryOffset, 0, this.params.enterProgress);
+            -THREE.MathUtils.lerp(0, 100, 1 - this.params.enterProgress) +
+            THREE.MathUtils.lerp(10, 0, this.params.enterProgress);
         });
 
-        // 🎯 手機跟桌機都跑完整 post-processing pipeline,GPU driver 走同一條最佳化過的快路
-        //    之前讓手機跳過 post-processing 反而造成 framebuffer state 切換成本,改回統一 pipeline 順很多
         this.postMaterial.uniforms.iTime.value = this.clock.getElapsedTime();
         this.postMaterial.uniforms.iMouse.value.copy(this.mouse);
         this.postMaterial.uniforms.uTransitionProgress.value = this.params.transitionProgress;
@@ -9828,23 +9745,22 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       const runSketchWhenNear = (target, callback) => {
-        const useTouchLead = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
         if (!target || !('IntersectionObserver' in window)) {
-          window.setTimeout(callback, useTouchLead ? 120 : 500);
+          window.setTimeout(callback, 500);
           return;
         }
 
         const rect = target.getBoundingClientRect();
         const leadPx = 2200;
         if (rect.top < window.innerHeight + leadPx && rect.bottom > -leadPx) {
-          window.setTimeout(callback, useTouchLead ? 90 : 250);
+          window.setTimeout(callback, 250);
           return;
         }
 
         const observer = new IntersectionObserver((entries) => {
           if (!entries.some(entry => entry.isIntersecting)) return;
           observer.disconnect();
-          window.setTimeout(callback, useTouchLead ? 80 : 120);
+          window.setTimeout(callback, 120);
         }, { rootMargin: `${leadPx}px 0px` });
         observer.observe(target);
       };
@@ -9990,7 +9906,7 @@
           onUpdate: (self) => {
             const e = _ease(self.progress);
             gsap.set(ccapOverlay, { opacity: e * 0.74 });
-            gsap.set(ccapMain, { scale: 1 - e * 0.046, y: -e * 24, force3D: true });
+            gsap.set(ccapMain, { scale: 1 - e * 0.046, y: -e * 24 });
           }
         });
       }
