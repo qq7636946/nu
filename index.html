@@ -56,28 +56,37 @@
   <!-- LCP boosters: brand logo -->
   <link rel="preload" as="image" href="images/pc_logo.svg" fetchpriority="high">
 
-  <!-- LCP boosters: hero slide-0 video poster (避免 banner 影片載入時的黑屏) -->
-  <link rel="preload" as="image" href="images/home/slider_video01.jpg" fetchpriority="high">
+  <!-- LCP boosters: hero slide-0 video — 趁 loader 動畫期間就把影片下載到瀏覽器快取,
+       loader 結束後 WebGLManager 創 vid.src 時直接 hit cache,不用再等網路。
+       NOTE: <link rel="preload" as="video"> 不在 WHATWG 規範白名單內(會被忽略 + 噴警告),
+       改用 hidden <video preload="auto"> 觸發跟正式 <video> 元素一樣的 Range request,
+       確保 HTTP cache 能被後面的 WebGLManager 真正命中。 -->
   <script>
     (function () {
-      try {
-        var useMobileHeroVideo = window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
-        var heroVideoUrl = useMobileHeroVideo ? 'images/home/slider_video01_s.mp4' : 'images/home/slider_video01.mp4';
-        var heroVideo = document.createElement('video');
-        heroVideo.src = heroVideoUrl;
-        heroVideo.muted = true;
-        heroVideo.loop = true;
-        heroVideo.playsInline = true;
-        heroVideo.preload = 'auto';
-        heroVideo.disableRemotePlayback = true;
-        heroVideo.setAttribute('muted', '');
-        heroVideo.setAttribute('playsinline', '');
-        heroVideo.setAttribute('webkit-playsinline', '');
-        window.__nudotHeroVideoWarmup = { url: heroVideoUrl, video: heroVideo };
-        heroVideo.load();
-        var playPromise = heroVideo.play();
-        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function () { });
-      } catch (error) { }
+      var src = (window.matchMedia && window.matchMedia('(min-width: 768px)').matches)
+        ? 'images/home/slider_video01.mp4'
+        : 'images/home/slider_video01_s.mp4';
+      var v = document.createElement('video');
+      v.src = src;
+      v.preload = 'auto';
+      v.muted = true;
+      v.playsInline = true;
+      v.setAttribute('aria-hidden', 'true');
+      v.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:-9999px';
+      // <body> 還沒就先掛在 documentElement;DOMContentLoaded 後再搬到 body 確保正常清理
+      (document.body || document.documentElement).appendChild(v);
+      v.load(); // 顯式觸發載入,確保 Range request 進 HTTP cache
+      window._heroVideoPrewarm = v;
+      // WebGLManager init 後 5 秒移除預熱元素,釋放 decode buffer
+      // (此時真正的 hero <video> 已經接手且自己有完整 cache 命中)
+      window.setTimeout(function () {
+        if (v && v.parentNode) {
+          v.removeAttribute('src');
+          try { v.load(); } catch (_) { }
+          v.parentNode.removeChild(v);
+        }
+        window._heroVideoPrewarm = null;
+      }, 8000);
     })();
   </script>
 
@@ -123,7 +132,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer fetchpriority="high"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer fetchpriority="high"></script>
   <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js" defer fetchpriority="high"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer fetchpriority="low"></script>
+  <!-- three.js 是 hero WebGL 必須依賴,放 high 讓它跟 GSAP 同級下載,避免 hero 等它 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer fetchpriority="high"></script>
   <script src="js/Flip.min.js" defer fetchpriority="low"></script>
   <script src="js/ScrambleTextPlugin.min.js" defer fetchpriority="low"></script>
   <script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.min.js" defer fetchpriority="low"></script>
@@ -4822,6 +4832,8 @@
               <div id="dw-black-overlay"
                 style="position:absolute;inset:0;background:#000;z-index:9;pointer-events:none;opacity:0;transition:opacity 0.05s;">
               </div>
+              <!-- bg.mp4 在 dark-wrapper(首屏下方),不該跟 hero 影片搶頻寬;
+                   改用 IntersectionObserver 路徑(移除 data-lazy-priority="high") -->
               <video autoplay muted loop playsinline preload="none" disableRemotePlayback data-lazy-video
                 style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.45;">
                 <source data-src="images/bg.mp4" type="video/mp4">
@@ -5957,10 +5969,9 @@
     // WebGL Ultra-Premium Manager
     // =========================================================
     class WebGLManager {
-      constructor(containerId, imageUrls, slides = []) {
+      constructor(containerId, imageUrls) {
         this.container = document.getElementById(containerId);
         this.imageUrls = imageUrls;
-        this.slides = slides;
         this.textures = [];
         this.scene = new THREE.Scene();
         this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -5974,7 +5985,7 @@
 
         const initialRenderSize = this.getRenderSize();
 
-        this.renderer.setPixelRatio(getOptimalDPR());
+        this.renderer.setPixelRatio(window.devicePixelRatio || 1);
         this.renderer.setSize(initialRenderSize.width, initialRenderSize.height);
         this.container.appendChild(this.renderer.domElement);
 
@@ -6167,64 +6178,21 @@
         }
       }
 
-      applyTextureImageResolution(texture, slot) {
-        if (!texture || !texture.image || !texture.image.width || !texture.image.height) return;
-        const uniformName = slot === 2 ? 'uImageResolution2' : 'uImageResolution';
-        this.material.uniforms[uniformName].value.set(texture.image.width, texture.image.height);
-      }
-
-      loadInitialVideoPoster(index, videoEl, videoTexture) {
-        if (index !== 0) return;
-
-        const thumbUrl = (this.slides[index] && this.slides[index].thumbUrl) || "";
-        if (!thumbUrl) {
-          this.material.uniforms.uTex1.value = videoTexture;
-          this.rememberTextureResolution(index, videoEl.videoWidth || 1920, videoEl.videoHeight || 1080);
-          this.applyTextureResolution(index, videoTexture, 2);
-          return;
-        }
-
-        this.textureLoader.load(
-          thumbUrl,
-          (thumbTexture) => {
-            if (videoEl.readyState >= 2 || this.material.uniforms.uTex1.value === videoTexture) return;
-            thumbTexture.generateMipmaps = true;
-            thumbTexture.minFilter = THREE.LinearMipmapLinearFilter;
-            this.material.uniforms.uTex1.value = thumbTexture;
-            this.applyTextureImageResolution(thumbTexture, 1);
-            this.applyTextureImageResolution(thumbTexture, 2);
-          },
-          undefined,
-          () => {
-            if (videoEl.readyState >= 2 || this.material.uniforms.uTex1.value === videoTexture) return;
-            this.material.uniforms.uTex1.value = videoTexture;
-            this.rememberTextureResolution(index, videoEl.videoWidth || 1920, videoEl.videoHeight || 1080);
-            this.applyTextureResolution(index, videoTexture, 2);
-          }
-        );
-      }
-
       loadTextureAt(index) {
-        if (this.texturePromises[index]) return this.texturePromises[index];
         if (this.textures[index]) return Promise.resolve(this.textures[index]);
+        if (this.texturePromises[index]) return this.texturePromises[index];
 
         const url = this.imageUrls[index];
         if (!url) return Promise.resolve(null);
 
         if (/\.(mp4|webm|ogg)$/i.test(url)) {
           this.texturePromises[index] = new Promise((resolve) => {
-            const warmup = index === 0 && window.__nudotHeroVideoWarmup && window.__nudotHeroVideoWarmup.url === url
-              ? window.__nudotHeroVideoWarmup.video
-              : null;
-            const vid = warmup || document.createElement('video');
-            if (!warmup) vid.src = url;
+            const vid = document.createElement('video');
+            vid.src = url;
             vid.loop = true;
             vid.muted = true;
             vid.playsInline = true;
             vid.preload = 'auto';
-            vid.setAttribute('muted', '');
-            vid.setAttribute('playsinline', '');
-            vid.setAttribute('webkit-playsinline', '');
             this.videoEls[index] = vid;
             const texture = new THREE.VideoTexture(vid);
             texture.minFilter = THREE.LinearFilter;
@@ -6235,30 +6203,15 @@
             };
             vid.addEventListener('loadedmetadata', rememberVideoResolution, { once: true });
             if (index === 0) {
-              this.loadInitialVideoPoster(index, vid, texture);
-            }
-            let didResolveTexture = false;
-            const resolveTexture = () => {
-              if (didResolveTexture) return;
-              didResolveTexture = true;
+              this.material.uniforms.uTex1.value = texture;
               rememberVideoResolution();
-              if (index === 0) {
-                this.material.uniforms.uTex1.value = texture;
-                this.applyTextureResolution(index, texture, 1);
-                // 初始時 uTex2 還沒綁紋理,把 slot2 也補上同一比例,避免第一次切換瞬間的壓扁
-                this.applyTextureResolution(index, texture, 2);
-              }
-              resolve(texture);
-            };
-            const rejectTexture = () => {
-              if (didResolveTexture) return;
-              didResolveTexture = true;
-              resolve(null);
-            };
+              // 初始時 uTex2 還沒綁紋理,把 slot2 也補上同一比例,避免第一次切換瞬間的壓扁
+              this.applyTextureResolution(index, texture, 2);
+            }
+            const resolveTexture = () => resolve(texture);
             if (vid.readyState >= 2) resolveTexture();
             else vid.addEventListener('loadeddata', resolveTexture, { once: true });
-            vid.addEventListener('error', rejectTexture, { once: true });
-            if (vid.readyState === 0) vid.load();
+            vid.load();
             if (index === 0) this._safePlay(vid);
           });
           return this.texturePromises[index];
@@ -6333,7 +6286,7 @@
 
       onResize() {
         const nextRenderSize = this.getRenderSize();
-        const nextDpr = getOptimalDPR();
+        const nextDpr = window.devicePixelRatio || 1;
         if (this.renderer.getPixelRatio && this.renderer.getPixelRatio() !== nextDpr) {
           this.renderer.setPixelRatio(nextDpr);
         }
@@ -6524,7 +6477,7 @@
         const initialTitle = document.querySelector(".slide-title");
         if (initialTitle) initialTitle.textContent = heroSlides[0].title;
 
-        webglManager = new WebGLManager("webgl-container", imageUrls, heroSlides);
+        webglManager = new WebGLManager("webgl-container", imageUrls);
         const slideshow = new Slideshow(webglManager, slideCount);
 
         const thumbsContainer = document.querySelector(".slide-thumbs");
@@ -6621,25 +6574,13 @@
         }
 
         let autoLoopTimer = null;
-        let autoLoopStartToken = 0;
         function startAutoLoop() {
           stopAutoLoop();
-          const token = ++autoLoopStartToken;
-          const armAutoLoop = () => {
-            if (token !== autoLoopStartToken) return;
-            autoLoopTimer = setInterval(() => {
-              if (!isAnimating && !isHeroRenderSleeping()) slideshow.next();
-            }, 5000);
-          };
-          const activeTextureReady = webglManager?.preloadTexture(slideshow.current);
-          if (activeTextureReady && typeof activeTextureReady.then === 'function') {
-            activeTextureReady.then(armAutoLoop, armAutoLoop);
-          } else {
-            armAutoLoop();
-          }
+          autoLoopTimer = setInterval(() => {
+            if (!isAnimating && !isHeroRenderSleeping()) slideshow.next();
+          }, 5000);
         }
         function stopAutoLoop() {
-          autoLoopStartToken++;
           if (autoLoopTimer) { clearInterval(autoLoopTimer); autoLoopTimer = null; }
         }
         startAutoLoop();
@@ -6710,8 +6651,9 @@
           autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out'
         }, 0.25);
 
-      // Start the hero video while the loader is still covering the page, so the
-      // first visible hero frame can be the actual video instead of a long poster hold.
+      // 🎯 影片獨立預熱:不再等 loader,DOMContentLoaded 一觸發就 init hero
+      //    loader 期間 WebGL canvas 被 loader 視覺蓋住,影片在背景靜靜解碼+播放;
+      //    loader 淡出時影片可能已經播到中段(這是刻意行為,loader 跑自己、影片跑自己)
       initHeroSlideshow();
 
       const cube = document.getElementById('cube');
