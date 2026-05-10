@@ -56,6 +56,31 @@
   <!-- LCP boosters: brand logo -->
   <link rel="preload" as="image" href="images/pc_logo.svg" fetchpriority="high">
 
+  <!-- LCP boosters: hero slide-0 video poster (避免 banner 影片載入時的黑屏) -->
+  <link rel="preload" as="image" href="images/home/slider_video01.jpg" fetchpriority="high">
+  <script>
+    (function () {
+      try {
+        var useMobileHeroVideo = window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
+        var heroVideoUrl = useMobileHeroVideo ? 'images/home/slider_video01_s.mp4' : 'images/home/slider_video01.mp4';
+        var heroVideo = document.createElement('video');
+        heroVideo.src = heroVideoUrl;
+        heroVideo.muted = true;
+        heroVideo.loop = true;
+        heroVideo.playsInline = true;
+        heroVideo.preload = 'auto';
+        heroVideo.disableRemotePlayback = true;
+        heroVideo.setAttribute('muted', '');
+        heroVideo.setAttribute('playsinline', '');
+        heroVideo.setAttribute('webkit-playsinline', '');
+        window.__nudotHeroVideoWarmup = { url: heroVideoUrl, video: heroVideo };
+        heroVideo.load();
+        var playPromise = heroVideo.play();
+        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function () { });
+      } catch (error) { }
+    })();
+  </script>
+
   <!-- Non-blocking: Adobe Fonts -->
   <link rel="preload" as="style" href="https://use.typekit.net/upd0woi.css">
   <link rel="stylesheet" href="https://use.typekit.net/upd0woi.css" media="print" onload="this.media='all'">
@@ -6188,12 +6213,18 @@
 
         if (/\.(mp4|webm|ogg)$/i.test(url)) {
           this.texturePromises[index] = new Promise((resolve) => {
-            const vid = document.createElement('video');
-            vid.src = url;
+            const warmup = index === 0 && window.__nudotHeroVideoWarmup && window.__nudotHeroVideoWarmup.url === url
+              ? window.__nudotHeroVideoWarmup.video
+              : null;
+            const vid = warmup || document.createElement('video');
+            if (!warmup) vid.src = url;
             vid.loop = true;
             vid.muted = true;
             vid.playsInline = true;
             vid.preload = 'auto';
+            vid.setAttribute('muted', '');
+            vid.setAttribute('playsinline', '');
+            vid.setAttribute('webkit-playsinline', '');
             this.videoEls[index] = vid;
             const texture = new THREE.VideoTexture(vid);
             texture.minFilter = THREE.LinearFilter;
@@ -6227,7 +6258,7 @@
             if (vid.readyState >= 2) resolveTexture();
             else vid.addEventListener('loadeddata', resolveTexture, { once: true });
             vid.addEventListener('error', rejectTexture, { once: true });
-            vid.load();
+            if (vid.readyState === 0) vid.load();
             if (index === 0) this._safePlay(vid);
           });
           return this.texturePromises[index];
@@ -6679,11 +6710,9 @@
           autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out'
         }, 0.25);
 
-      if (window._nudotLoaderDismissed === true || !document.getElementById('nudot-loader')) {
-        initHeroSlideshow();
-      } else {
-        document.addEventListener('nudot:loader-dismissed', initHeroSlideshow, { once: true });
-      }
+      // Start the hero video while the loader is still covering the page, so the
+      // first visible hero frame can be the actual video instead of a long poster hold.
+      initHeroSlideshow();
 
       const cube = document.getElementById('cube');
       const sceneWrapper = document.getElementById('sceneWrapper');
