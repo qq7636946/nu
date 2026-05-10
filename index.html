@@ -4797,7 +4797,7 @@
               <div id="dw-black-overlay"
                 style="position:absolute;inset:0;background:#000;z-index:9;pointer-events:none;opacity:0;transition:opacity 0.05s;">
               </div>
-              <video autoplay muted loop playsinline preload="none" disableRemotePlayback data-lazy-video data-lazy-priority="high"
+              <video autoplay muted loop playsinline preload="none" disableRemotePlayback data-lazy-video
                 style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.45;">
                 <source data-src="images/bg.mp4" type="video/mp4">
               </video>
@@ -5932,9 +5932,10 @@
     // WebGL Ultra-Premium Manager
     // =========================================================
     class WebGLManager {
-      constructor(containerId, imageUrls) {
+      constructor(containerId, imageUrls, slides = []) {
         this.container = document.getElementById(containerId);
         this.imageUrls = imageUrls;
+        this.slides = slides;
         this.textures = [];
         this.scene = new THREE.Scene();
         this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -5948,7 +5949,7 @@
 
         const initialRenderSize = this.getRenderSize();
 
-        this.renderer.setPixelRatio(window.devicePixelRatio || 1);
+        this.renderer.setPixelRatio(getOptimalDPR());
         this.renderer.setSize(initialRenderSize.width, initialRenderSize.height);
         this.container.appendChild(this.renderer.domElement);
 
@@ -6141,9 +6142,46 @@
         }
       }
 
+      applyTextureImageResolution(texture, slot) {
+        if (!texture || !texture.image || !texture.image.width || !texture.image.height) return;
+        const uniformName = slot === 2 ? 'uImageResolution2' : 'uImageResolution';
+        this.material.uniforms[uniformName].value.set(texture.image.width, texture.image.height);
+      }
+
+      loadInitialVideoPoster(index, videoEl, videoTexture) {
+        if (index !== 0) return;
+
+        const thumbUrl = (this.slides[index] && this.slides[index].thumbUrl) || "";
+        if (!thumbUrl) {
+          this.material.uniforms.uTex1.value = videoTexture;
+          this.rememberTextureResolution(index, videoEl.videoWidth || 1920, videoEl.videoHeight || 1080);
+          this.applyTextureResolution(index, videoTexture, 2);
+          return;
+        }
+
+        this.textureLoader.load(
+          thumbUrl,
+          (thumbTexture) => {
+            if (videoEl.readyState >= 2 || this.material.uniforms.uTex1.value === videoTexture) return;
+            thumbTexture.generateMipmaps = true;
+            thumbTexture.minFilter = THREE.LinearMipmapLinearFilter;
+            this.material.uniforms.uTex1.value = thumbTexture;
+            this.applyTextureImageResolution(thumbTexture, 1);
+            this.applyTextureImageResolution(thumbTexture, 2);
+          },
+          undefined,
+          () => {
+            if (videoEl.readyState >= 2 || this.material.uniforms.uTex1.value === videoTexture) return;
+            this.material.uniforms.uTex1.value = videoTexture;
+            this.rememberTextureResolution(index, videoEl.videoWidth || 1920, videoEl.videoHeight || 1080);
+            this.applyTextureResolution(index, videoTexture, 2);
+          }
+        );
+      }
+
       loadTextureAt(index) {
-        if (this.textures[index]) return Promise.resolve(this.textures[index]);
         if (this.texturePromises[index]) return this.texturePromises[index];
+        if (this.textures[index]) return Promise.resolve(this.textures[index]);
 
         const url = this.imageUrls[index];
         if (!url) return Promise.resolve(null);
@@ -6166,14 +6204,29 @@
             };
             vid.addEventListener('loadedmetadata', rememberVideoResolution, { once: true });
             if (index === 0) {
-              this.material.uniforms.uTex1.value = texture;
-              rememberVideoResolution();
-              // 初始時 uTex2 還沒綁紋理,把 slot2 也補上同一比例,避免第一次切換瞬間的壓扁
-              this.applyTextureResolution(index, texture, 2);
+              this.loadInitialVideoPoster(index, vid, texture);
             }
-            const resolveTexture = () => resolve(texture);
+            let didResolveTexture = false;
+            const resolveTexture = () => {
+              if (didResolveTexture) return;
+              didResolveTexture = true;
+              rememberVideoResolution();
+              if (index === 0) {
+                this.material.uniforms.uTex1.value = texture;
+                this.applyTextureResolution(index, texture, 1);
+                // 初始時 uTex2 還沒綁紋理,把 slot2 也補上同一比例,避免第一次切換瞬間的壓扁
+                this.applyTextureResolution(index, texture, 2);
+              }
+              resolve(texture);
+            };
+            const rejectTexture = () => {
+              if (didResolveTexture) return;
+              didResolveTexture = true;
+              resolve(null);
+            };
             if (vid.readyState >= 2) resolveTexture();
             else vid.addEventListener('loadeddata', resolveTexture, { once: true });
+            vid.addEventListener('error', rejectTexture, { once: true });
             vid.load();
             if (index === 0) this._safePlay(vid);
           });
@@ -6249,7 +6302,7 @@
 
       onResize() {
         const nextRenderSize = this.getRenderSize();
-        const nextDpr = window.devicePixelRatio || 1;
+        const nextDpr = getOptimalDPR();
         if (this.renderer.getPixelRatio && this.renderer.getPixelRatio() !== nextDpr) {
           this.renderer.setPixelRatio(nextDpr);
         }
@@ -6440,7 +6493,7 @@
         const initialTitle = document.querySelector(".slide-title");
         if (initialTitle) initialTitle.textContent = heroSlides[0].title;
 
-        webglManager = new WebGLManager("webgl-container", imageUrls);
+        webglManager = new WebGLManager("webgl-container", imageUrls, heroSlides);
         const slideshow = new Slideshow(webglManager, slideCount);
 
         const thumbsContainer = document.querySelector(".slide-thumbs");
@@ -6537,13 +6590,25 @@
         }
 
         let autoLoopTimer = null;
+        let autoLoopStartToken = 0;
         function startAutoLoop() {
           stopAutoLoop();
-          autoLoopTimer = setInterval(() => {
-            if (!isAnimating && !isHeroRenderSleeping()) slideshow.next();
-          }, 5000);
+          const token = ++autoLoopStartToken;
+          const armAutoLoop = () => {
+            if (token !== autoLoopStartToken) return;
+            autoLoopTimer = setInterval(() => {
+              if (!isAnimating && !isHeroRenderSleeping()) slideshow.next();
+            }, 5000);
+          };
+          const activeTextureReady = webglManager?.preloadTexture(slideshow.current);
+          if (activeTextureReady && typeof activeTextureReady.then === 'function') {
+            activeTextureReady.then(armAutoLoop, armAutoLoop);
+          } else {
+            armAutoLoop();
+          }
         }
         function stopAutoLoop() {
+          autoLoopStartToken++;
           if (autoLoopTimer) { clearInterval(autoLoopTimer); autoLoopTimer = null; }
         }
         startAutoLoop();
