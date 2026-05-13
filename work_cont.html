@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="lenis">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>NUDOT | Core-Site Case</title>
+
+  <script>
+    (function () {
+      try {
+        var raw = sessionStorage.getItem('nudot:page-transition');
+        if (!raw) return;
+        var payload = JSON.parse(raw);
+        if (payload && payload.at && Date.now() - payload.at < 12000) {
+          document.documentElement.classList.add('has-pending-page-transition');
+        }
+      } catch (error) { }
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://use.typekit.net" crossorigin>
+  <link rel="stylesheet" href="https://use.typekit.net/upd0woi.css">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single:wght@100..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Zalando+Sans+SemiExpanded:ital,wght@0,200..900;1,200..900&display=swap">
+  <link rel="stylesheet" href="cursor-shared.css">
+  <link rel="stylesheet" href="nav-menu-shared.css">
+  <link rel="stylesheet" href="page-transitions.css">
+  <link rel="icon" href="images/fav.png" type="image/png">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.min.js" defer></script>
+  <script src="transitions.js" defer></script>
+  <script src="cursor-shared.js" defer></script>
+
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --wc-bg: #050505;
+      --wc-text: #f5f5f5;
+      --wc-muted: rgba(245, 245, 245, 0.52);
+      --wc-faint: rgba(245, 245, 245, 0.16);
+      --wc-line: rgba(245, 245, 245, 0.14);
+      --wc-display: "Zalando Sans SemiExpanded", "DM Sans", sans-serif;
+      --wc-body: "DM Sans", "Helvetica Neue", Arial, sans-serif;
+      --wc-accent: "Bitcount Grid Single", "DM Sans", sans-serif;
+      --wc-pad: clamp(18px, 2.8vw, 54px);
+    }
+
+    html {
+      background: var(--wc-bg);
+      color: var(--wc-text);
+      scroll-behavior: auto;
+      overflow-x: hidden;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #050505;
+      color: var(--wc-text);
+      font-family: var(--wc-body);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img,
+    video {
+      display: block;
+      width: 100%;
+    }
+
+    .wc-page {
+      position: relative;
+      z-index: 1;
+      background: #050505;
+      overflow: hidden;
+    }
+
+    .wc-fixed-brand {
+      position: fixed;
+      top: 28px;
+      left: var(--wc-pad);
+      z-index: 9999;
+      color: #fff;
+      font-family: var(--wc-display);
+      font-size: clamp(1.2rem, 2.3vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.06em;
+      line-height: 0.8;
+      mix-blend-mode: difference;
+      pointer-events: auto;
+    }
+
+    .wc-hero {
+      position: relative;
+      width: 100%;
+      height: 100svh;
+      min-height: 620px;
+      overflow: hidden;
+      background: #111;
+      isolation: isolate;
+    }
+
+    .wc-hero__media {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      background: #0b0b0b;
+    }
+
+    .wc-hero__media img,
+    .wc-hero__media video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(0.82) brightness(0.76) contrast(1.08);
+      transform: scale(1.04);
+      will-change: transform;
+    }
+
+    .wc-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.26) 0%, rgba(0, 0, 0, 0.02) 40%, rgba(0, 0, 0, 0.38) 100%),
+        radial-gradient(circle at 45% 42%, transparent 0%, rgba(0, 0, 0, 0.2) 72%);
+    }
+
+    .wc-hero__content {
+      position: absolute;
+      inset: auto var(--wc-pad) var(--wc-pad);
+      z-index: 3;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+      gap: clamp(28px, 5vw, 90px);
+      align-items: end;
+      mix-blend-mode: difference;
+    }
+
+    .wc-kicker {
+      margin: 0 0 12px;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .wc-title {
+      margin: 0;
+      font-family: var(--wc-display);
+      font-size: clamp(4.4rem, 13.5vw, 15rem);
+      font-weight: 650;
+      line-height: 0.78;
+      letter-spacing: -0.07em;
+      text-transform: uppercase;
+    }
+
+    .wc-hero__summary {
+      margin: 0;
+      max-width: 420px;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: clamp(0.86rem, 1vw, 1rem);
+      line-height: 1.7;
+      letter-spacing: 0.03em;
+    }
+
+    .wc-scroll-note {
+      position: absolute;
+      right: var(--wc-pad);
+      top: 50%;
+      z-index: 3;
+      color: rgba(255, 255, 255, 0.66);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      writing-mode: vertical-rl;
+      mix-blend-mode: difference;
+    }
+
+    .wc-intro {
+      position: relative;
+      display: grid;
+      grid-template-columns: 0.32fr 1fr;
+      gap: clamp(34px, 8vw, 150px);
+      min-height: 82vh;
+      padding: clamp(92px, 12vw, 190px) var(--wc-pad);
+      background:
+        radial-gradient(circle at 68% 12%, rgba(255, 255, 255, 0.06), transparent 32rem),
+        #151515;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .wc-intro::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.16;
+      background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+      background-size: 90px 90px;
+      mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 72%, transparent);
+    }
+
+    .wc-intro__label {
+      position: relative;
+      z-index: 1;
+      color: rgba(255, 255, 255, 0.42);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .wc-intro__copy {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+    }
+
+    .wc-intro__copy h2 {
+      max-width: 1000px;
+      margin: 0 0 clamp(34px, 4vw, 70px);
+      font-family: var(--wc-display);
+      font-size: clamp(2rem, 3.8vw, 5.4rem);
+      font-weight: 650;
+      line-height: 1.04;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+    }
+
+    .wc-intro__columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(28px, 4vw, 74px);
+      color: rgba(255, 255, 255, 0.54);
+      font-size: clamp(0.92rem, 1.05vw, 1.18rem);
+      line-height: 1.75;
+      letter-spacing: 0.02em;
+    }
+
+    .wc-intro__columns p {
+      margin: 0;
+    }
+
+    .wc-intro__english {
+      margin-top: clamp(44px, 6vw, 104px);
+    }
+
+    .wc-intro__english h3 {
+      margin: 0 0 24px;
+      font-family: var(--wc-display);
+      font-size: clamp(1.5rem, 2.5vw, 3.6rem);
+      font-weight: 500;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      text-transform: uppercase;
+    }
+
+    .wc-intro__facts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      margin-top: clamp(54px, 7vw, 120px);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .wc-fact {
+      min-height: 110px;
+      padding: 18px;
+      background: #151515;
+    }
+
+    .wc-fact span {
+      display: block;
+      margin-bottom: 12px;
+      color: rgba(255, 255, 255, 0.34);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .wc-fact strong {
+      color: rgba(255, 255, 255, 0.88);
+      font-size: clamp(1rem, 1.2vw, 1.35rem);
+      font-weight: 600;
+      line-height: 1.28;
+    }
+
+    .wc-media-stack {
+      background: #e4e4e0;
+    }
+
+    .wc-media-section {
+      position: relative;
+      width: 100%;
+      min-height: 100svh;
+      overflow: hidden;
+      background: #e4e4e0;
+      color: #050505;
+    }
+
+    .wc-media-section.is-dark {
+      background: #050505;
+      color: #fff;
+    }
+
+    .wc-media-section img,
+    .wc-media-section video {
+      width: 100%;
+      height: 100%;
+      min-height: 100svh;
+      object-fit: cover;
+      will-change: transform;
+    }
+
+    .wc-media-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100svh;
+    }
+
+    .wc-media-tile {
+      position: relative;
+      min-height: 100svh;
+      overflow: hidden;
+      background: #d7d7d3;
+    }
+
+    .wc-media-tile img,
+    .wc-media-tile video {
+      width: 100%;
+      height: 100%;
+      min-height: 100svh;
+      object-fit: cover;
+    }
+
+    .wc-caption {
+      position: absolute;
+      left: var(--wc-pad);
+      bottom: var(--wc-pad);
+      z-index: 2;
+      max-width: 520px;
+      color: currentColor;
+      mix-blend-mode: difference;
+    }
+
+    .wc-caption span {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .wc-caption strong {
+      display: block;
+      font-family: var(--wc-display);
+      font-size: clamp(2rem, 5vw, 6.8rem);
+      font-weight: 650;
+      line-height: 0.9;
+      letter-spacing: -0.06em;
+      text-transform: uppercase;
+    }
+
+    .wc-text-band {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: clamp(34px, 8vw, 140px);
+      min-height: 58vh;
+      padding: clamp(70px, 10vw, 160px) var(--wc-pad);
+      background: #0b0b0b;
+      color: #fff;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .wc-text-band h2 {
+      margin: 0;
+      font-family: var(--wc-display);
+      font-size: clamp(2.4rem, 6.5vw, 9rem);
+      font-weight: 650;
+      line-height: 0.85;
+      letter-spacing: -0.06em;
+      text-transform: uppercase;
+    }
+
+    .wc-text-band p {
+      max-width: 740px;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.58);
+      font-size: clamp(0.95rem, 1.15vw, 1.25rem);
+      line-height: 1.8;
+      letter-spacing: 0.02em;
+    }
+
+    .wc-footer {
+      display: grid;
+      place-items: center;
+      min-height: 88vh;
+      padding: var(--wc-pad);
+      background: #050505;
+      color: #fff;
+      text-align: center;
+    }
+
+    .wc-footer__inner {
+      width: min(100%, 1180px);
+    }
+
+    .wc-back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 78px;
+      min-height: 36px;
+      margin-bottom: clamp(50px, 8vw, 130px);
+      border: 1px solid rgba(255, 255, 255, 0.58);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    .wc-back:hover,
+    .wc-back:focus-visible {
+      background: #fff;
+      color: #000;
+      outline: none;
+    }
+
+    .wc-footer__brand {
+      margin: 0;
+      font-family: var(--wc-display);
+      font-size: clamp(5rem, 20vw, 22rem);
+      font-weight: 650;
+      line-height: 0.76;
+      letter-spacing: -0.065em;
+      text-transform: uppercase;
+    }
+
+    .wc-footer__meta {
+      margin-top: 26px;
+      color: rgba(255, 255, 255, 0.46);
+      font-size: 11px;
+      line-height: 1.8;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .wc-noise {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      width: 100vw;
+      height: 100vh;
+      opacity: 0.04;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    [data-reveal] {
+      opacity: 0;
+      transform: translateY(34px);
+      filter: blur(10px);
+      will-change: transform, opacity, filter;
+    }
+
+    [data-reveal].is-visible {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+      transition:
+        opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (max-width: 900px) {
+      .wc-fixed-brand {
+        top: 24px;
+      }
+
+      .wc-hero {
+        min-height: 100svh;
+      }
+
+      .wc-hero__content,
+      .wc-intro,
+      .wc-text-band {
+        grid-template-columns: 1fr;
+      }
+
+      .wc-hero__summary {
+        max-width: 640px;
+      }
+
+      .wc-intro {
+        padding-top: 96px;
+      }
+
+      .wc-intro__columns,
+      .wc-intro__facts,
+      .wc-media-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .wc-media-tile,
+      .wc-media-tile img,
+      .wc-media-tile video {
+        min-height: 72svh;
+      }
+
+      .wc-caption {
+        max-width: calc(100% - var(--wc-pad) * 2);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .wc-hero__content {
+        bottom: calc(var(--wc-pad) + 10px);
+      }
+
+      .wc-title {
+        font-size: 20vw;
+      }
+
+      .wc-intro__copy h2 {
+        font-size: 10vw;
+      }
+
+      .wc-intro__columns {
+        font-size: 0.9rem;
+      }
+
+      .wc-media-section,
+      .wc-media-section img,
+      .wc-media-section video {
+        min-height: 74svh;
+      }
+    }
+  </style>
+</head>
+
+<body class="shared-nav-page page-work-cont">
+  <div class="page-transition-shell js-page-transition-shell" aria-hidden="true">
+    <div class="page-transition-curtain js-page-transition-curtain"></div>
+    <div class="page-transition-frame js-page-transition-frame">
+      <div class="page-transition-loader js-page-transition-loader"></div>
+      <div class="page-transition-counter js-page-transition-counter">[ <span
+          class="js-page-transition-counter-num">00</span> ]</div>
+      <div class="page-transition-panel js-page-transition-panel">
+        <div class="page-transition-meta is-top-left">NUDOT</div>
+        <div class="page-transition-meta is-top-right js-page-transition-meta-to">work_cont.html</div>
+        <div class="page-transition-copy">
+          <div class="page-transition-eyebrow js-page-transition-eyebrow">NUDOT CREATIVE STUDIO</div>
+          <div class="page-transition-title js-page-transition-title">WORK DETAIL</div>
+          <div class="page-transition-subtitle js-page-transition-subtitle">Full-screen case study layout for selected
+            creative work.</div>
+        </div>
+        <div class="page-transition-meta is-bottom-left">Digital / Motion / Interface</div>
+        <div class="page-transition-meta is-bottom-right">2026</div>
+      </div>
+    </div>
+  </div>
+
+  <div data-barba="wrapper">
+    <div data-barba="container" data-barba-namespace="work-cont">
+      <a class="wc-fixed-brand" href="index.html#nav" data-transition-label="Home">NUDOT</a>
+
+      <div id="nav_scroll_container" aria-label="Primary navigation">
+        <nav id="nav_scroll">
+          <a class="ns-icon" href="index.html#site-footer" data-cursor="CONTACT" aria-label="Contact">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+          </a>
+          <a class="ns-logo" href="index.html#nav" data-cursor="HOME" aria-label="NUDOT home">
+            <img src="images/pc_logo.svg" alt="NUDOT 核點創意" width="45" height="35" loading="lazy" decoding="async">
+          </a>
+          <button class="ns-icon ns-hamburger" id="nav-scroll-menu-btn" data-cursor="OPEN" aria-label="Open menu"
+            aria-expanded="false" aria-controls="nav-scroll-dropdown">
+            <svg class="ns-ham-svg" viewBox="0 0 24 24">
+              <line class="ns-ham-l1" x1="5" y1="9" x2="19" y2="9"></line>
+              <line class="ns-ham-l2" x1="5" y1="15" x2="19" y2="15"></line>
+            </svg>
+          </button>
+        </nav>
+        <div class="ns-dropdown" id="nav-scroll-dropdown" aria-hidden="true">
+          <div class="ns-dropdown__inner" id="nav-scroll-dropdown-content">
+            <div class="ns-menu-stage">
+              <div class="ns-menu-rows">
+                <a class="ns-showcase-row ns-dropdown__item" href="index.html#nav" data-transition-label="Home">
+                  <span class="ns-showcase-row__index">01</span>
+                  <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
+                    <img src="images/about/tesla.webp" alt="" width="128" height="64" loading="lazy" decoding="async">
+                  </span>
+                  <span class="ns-showcase-row__title">
+                    <span class="ns-showcase-row__title-track">
+                      <span class="ns-showcase-row__title-layer is-primary">HOME</span>
+                      <span class="ns-showcase-row__title-layer is-accent" aria-hidden="true">HOME</span>
+                    </span>
+                  </span>
+                  <span class="ns-showcase-row__thumb is-right" aria-hidden="true">
+                    <img src="images/about/chanel.webp" alt="" width="256" height="160" loading="lazy" decoding="async">
+                  </span>
+                </a>
+
+                <a class="ns-showcase-row ns-dropdown__item" href="index.html#section-2-content"
+                  data-transition-label="About">
+                  <span class="ns-showcase-row__index">02</span>
+                  <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
+                    <img src="images/about/apple.webp" alt="" width="160" height="64" loading="lazy" decoding="async">
+                  </span>
+                  <span class="ns-showcase-row__title">
+                    <span class="ns-showcase-row__title-track">
+                      <span class="ns-showcase-row__title-layer is-primary">ABOUT</span>
+                      <span class="ns-showcase-row__title-layer is-accent" aria-hidden="true">ABOUT</span>
+                    </span>
+                  </span>
+                  <span class="ns-showcase-row__thumb is-right" aria-hidden="true">
+                    <img src="images/about/BMW.webp" alt="" width="896" height="1344" loading="lazy" decoding="async">
+                  </span>
+                </a>
+
+                <a class="ns-showcase-row ns-dropdown__item" href="work.html#project-top" data-transition-label="Work">
+                  <span class="ns-showcase-row__index">03</span>
+                  <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
+                    <img src="images/about/nike.webp" alt="" width="1232" height="928" loading="lazy" decoding="async">
+                  </span>
+                  <span class="ns-showcase-row__title">
+                    <span class="ns-showcase-row__title-track">
+                      <span class="ns-showcase-row__title-layer is-primary">WORK</span>
+                      <span class="ns-showcase-row__title-layer is-accent" aria-hidden="true">WORK</span>
+                    </span>
+                  </span>
+                  <span class="ns-showcase-row__thumb is-right" aria-hidden="true">
+                    <img src="images/about/hermes.webp" alt="" width="256" height="26" loading="lazy" decoding="async">
+                  </span>
+                </a>
+
+                <a class="ns-showcase-row ns-dropdown__item" href="labs/labs1.html" data-transition-label="Labs">
+                  <span class="ns-showcase-row__index">04</span>
+                  <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
+                    <img src="images/about/prada.webp" alt="" width="208" height="160" loading="lazy" decoding="async">
+                  </span>
+                  <span class="ns-showcase-row__title">
+                    <span class="ns-showcase-row__title-track">
+                      <span class="ns-showcase-row__title-layer is-primary">LABS</span>
+                      <span class="ns-showcase-row__title-layer is-accent" aria-hidden="true">LABS</span>
+                    </span>
+                  </span>
+                  <span class="ns-showcase-row__thumb is-right" aria-hidden="true">
+                    <img src="images/about/porsche.webp" alt="" width="896" height="1344" loading="lazy"
+                      decoding="async">
+                  </span>
+                </a>
+
+                <a class="ns-showcase-row ns-dropdown__item" href="index.html#site-footer"
+                  data-transition-label="Contact">
+                  <span class="ns-showcase-row__index">05</span>
+                  <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
+                    <img src="images/about/audi.webp" alt="" width="896" height="1344" loading="lazy" decoding="async">
+                  </span>
+                  <span class="ns-showcase-row__title">
+                    <span class="ns-showcase-row__title-track">
+                      <span class="ns-showcase-row__title-layer is-primary">CONTACT</span>
+                      <span class="ns-showcase-row__title-layer is-accent" aria-hidden="true">CONTACT</span>
+                    </span>
+                  </span>
+                  <span class="ns-showcase-row__thumb is-right" aria-hidden="true">
+                    <img src="images/about/polestar.webp" alt="" width="1030" height="1030" loading="lazy"
+                      decoding="async">
+                  </span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main class="wc-page" id="hero">
+        <section class="wc-hero" aria-label="Core-Site hero">
+          <div class="wc-hero__media">
+            <img class="js-parallax-media" src="images/work/1.jpg" alt="NUDOT core-site full screen hero visual"
+              width="2560" height="1920" fetchpriority="high" decoding="async">
+          </div>
+          <div class="wc-hero__content" data-reveal>
+            <div>
+              <p class="wc-kicker">Digital Case / 2026</p>
+              <h1 class="wc-title">Core-Site</h1>
+            </div>
+            <p class="wc-hero__summary">A full-screen brand website concept built around cinematic image sequencing,
+              restrained typography and a focused digital narrative.</p>
+          </div>
+          <div class="wc-scroll-note">Scroll</div>
+        </section>
+
+        <section class="wc-intro" aria-label="Introduction">
+          <div class="wc-intro__label" data-reveal>Introduction</div>
+          <div class="wc-intro__copy" data-reveal>
+            <h2>以品牌核心與數位動態結合，打造沉浸式的高階網站體驗</h2>
+            <div class="wc-intro__columns">
+              <p>NUDOT 以核心策略作為視覺落點，將品牌識別、互動介面與動態敘事整合為一個可被記住的網站體驗。此頁以滿版影像為主軸，讓每一次滾動都像進入下一段品牌場景。</p>
+              <p>從第一屏的強烈視覺記憶，到後續的大面積圖像與影片段落，版面刻意減少裝飾與卡片框線，保留黑底、留白、節奏與高反差排版，使品牌內容更集中、更銳利。</p>
+            </div>
+
+            <div class="wc-intro__english">
+              <h3>Transforming Digital Presence With Visual Precision</h3>
+              <div class="wc-intro__columns">
+                <p>Core-Site is designed as a focused brand gateway, combining interface structure, motion behavior and
+                  editorial image direction into one immersive scroll sequence.</p>
+                <p>The layout keeps the experience full-screen and media-led. Each section is intentionally direct:
+                  one image, one rhythm, one clear brand impression at a time.</p>
+              </div>
+            </div>
+
+            <div class="wc-intro__facts">
+              <div class="wc-fact">
+                <span>Role</span>
+                <strong>Art Direction<br>System Design</strong>
+              </div>
+              <div class="wc-fact">
+                <span>Duration</span>
+                <strong>14-Day<br>Prototype</strong>
+              </div>
+              <div class="wc-fact">
+                <span>Sector</span>
+                <strong>Brand Website<br>Motion UI</strong>
+              </div>
+              <div class="wc-fact">
+                <span>Output</span>
+                <strong>Visual System<br>Case Page</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="wc-media-stack" aria-label="Full-screen project media">
+          <section class="wc-media-section">
+            <img class="js-parallax-media" src="images/work/41.jpg" alt="Full screen website mockup" width="2752"
+              height="1536" loading="lazy" decoding="async">
+            <div class="wc-caption" data-reveal>
+              <span>Interface</span>
+              <strong>Website<br>Hero System</strong>
+            </div>
+          </section>
+
+          <section class="wc-media-section is-dark">
+            <video class="js-parallax-media" autoplay muted loop playsinline preload="metadata" poster="images/work/bg.jpg">
+              <source src="images/work/wavebg.mp4" type="video/mp4">
+            </video>
+            <div class="wc-caption" data-reveal>
+              <span>Motion</span>
+              <strong>Fluid<br>Interaction</strong>
+            </div>
+          </section>
+
+          <section class="wc-media-grid">
+            <div class="wc-media-tile">
+              <img class="js-parallax-media" src="images/work/6.jpg" alt="Mobile concept visual" width="3000"
+                height="2000" loading="lazy" decoding="async">
+            </div>
+            <div class="wc-media-tile">
+              <img class="js-parallax-media" src="images/work/3.jpg" alt="Brand image composition" width="1280"
+                height="960" loading="lazy" decoding="async">
+            </div>
+          </section>
+
+          <section class="wc-text-band" data-reveal>
+            <h2>Visual<br>System</h2>
+            <p>網站細節以「沉浸但不干擾」為原則：大圖滿版承接情緒，文字保持克制，互動與視差只用來加強觀看節奏。整體保留品牌的高級感與可閱讀性，不讓特效蓋過內容本身。</p>
+          </section>
+
+          <section class="wc-media-section">
+            <img class="js-parallax-media" src="images/work/2.jpg" alt="Large brand detail screen" width="1280"
+              height="853" loading="lazy" decoding="async">
+            <div class="wc-caption" data-reveal>
+              <span>Campaign</span>
+              <strong>Image<br>Direction</strong>
+            </div>
+          </section>
+
+          <section class="wc-media-grid">
+            <div class="wc-media-tile">
+              <img class="js-parallax-media" src="images/work/7.jpg" alt="Project image variation" width="2560"
+                height="1920" loading="lazy" decoding="async">
+            </div>
+            <div class="wc-media-tile">
+              <img class="js-parallax-media" src="images/work/8.jpg" alt="Project image variation" width="2560"
+                height="1920" loading="lazy" decoding="async">
+            </div>
+          </section>
+
+          <section class="wc-media-section is-dark">
+            <img class="js-parallax-media" src="images/work/9.jpg" alt="Final full screen project visual" width="2560"
+              height="1920" loading="lazy" decoding="async">
+            <div class="wc-caption" data-reveal>
+              <span>Final</span>
+              <strong>Core<br>Experience</strong>
+            </div>
+          </section>
+        </div>
+
+        <footer class="wc-footer">
+          <div class="wc-footer__inner" data-reveal>
+            <a class="wc-back" href="work.html#project-top" data-cursor="BACK" data-transition-label="Work">Back</a>
+            <p class="wc-footer__brand">NUDOT.</p>
+            <div class="wc-footer__meta">
+              NUDOT Creative Studio / Brand Strategy / Digital Interface<br>
+              { nuclear.xlab@gmail.com }
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <canvas id="film-grain-canvas" class="wc-noise" aria-hidden="true"></canvas>
+  <div id="cursor-dot" aria-hidden="true"></div>
+  <div id="cursor-ring" aria-hidden="true" data-cursor-label="EXPLORE" data-cursor-side="right"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      function ready(callback) {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', callback, { once: true });
+          return;
+        }
+        callback();
+      }
+
+      ready(function () {
+        initLenis();
+        initReveal();
+        initMotion();
+        initNoise();
+      });
+
+      function initLenis() {
+        if (!window.Lenis || window.matchMedia('(hover: none), (pointer: coarse)').matches) return;
+        if (window._lenis) return;
+
+        var lenis = new window.Lenis({
+          lerp: 0.09,
+          smoothWheel: true,
+          wheelMultiplier: 1,
+          syncTouch: false
+        });
+
+        window._lenis = lenis;
+
+        if (window.ScrollTrigger) {
+          lenis.on('scroll', window.ScrollTrigger.update);
+        }
+
+        if (window.gsap) {
+          window.gsap.ticker.add(function (time) {
+            lenis.raf(time * 1000);
+          });
+          window.gsap.ticker.lagSmoothing(0);
+        } else {
+          function raf(time) {
+            lenis.raf(time);
+            window.requestAnimationFrame(raf);
+          }
+          window.requestAnimationFrame(raf);
+        }
+      }
+
+      function initReveal() {
+        var items = Array.prototype.slice.call(document.querySelectorAll('[data-reveal]'));
+        if (!items.length) return;
+
+        if (!('IntersectionObserver' in window)) {
+          items.forEach(function (item) { item.classList.add('is-visible'); });
+          return;
+        }
+
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          });
+        }, { rootMargin: '0px 0px -10% 0px', threshold: 0.06 });
+
+        items.forEach(function (item, index) {
+          item.style.transitionDelay = Math.min(index * 0.025, 0.16) + 's';
+          observer.observe(item);
+        });
+      }
+
+      function initMotion() {
+        if (!window.gsap || !window.ScrollTrigger || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          return;
+        }
+
+        window.gsap.registerPlugin(window.ScrollTrigger);
+
+        window.gsap.utils.toArray('.js-parallax-media').forEach(function (media) {
+          window.gsap.fromTo(media,
+            { yPercent: -3, scale: 1.04 },
+            {
+              yPercent: 3,
+              scale: 1.08,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: media.closest('.wc-media-section, .wc-media-tile, .wc-hero') || media,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 1.15
+              }
+            }
+          );
+        });
+
+        window.addEventListener('load', function () {
+          window.ScrollTrigger.refresh();
+        }, { once: true });
+      }
+
+      function initNoise() {
+        var canvas = document.getElementById('film-grain-canvas');
+        if (!canvas || !canvas.getContext || window.innerWidth <= 900) return;
+
+        var ctx = canvas.getContext('2d');
+        var frames = [];
+        var frame = 0;
+        var raf = 0;
+        var timer = 0;
+
+        function createFrame(width, height) {
+          var image = ctx.createImageData(width, height);
+          var buffer = new Uint32Array(image.data.buffer);
+          for (var i = 0; i < buffer.length; i += 1) {
+            if (Math.random() < 0.5) buffer[i] = 0xffffffff;
+          }
+          return image;
+        }
+
+        function setup() {
+          window.clearTimeout(timer);
+          if (raf) window.cancelAnimationFrame(raf);
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          frames = [];
+          for (var i = 0; i < 8; i += 1) {
+            frames.push(createFrame(canvas.width, canvas.height));
+          }
+          loop();
+        }
+
+        function loop() {
+          if (document.hidden || !frames.length) return;
+          frame = frame === frames.length - 1 ? 0 : frame + 1;
+          ctx.putImageData(frames[frame], 0, 0);
+          timer = window.setTimeout(function () {
+            raf = window.requestAnimationFrame(loop);
+          }, 1000 / 20);
+        }
+
+        window.addEventListener('resize', function () {
+          window.clearTimeout(timer);
+          timer = window.setTimeout(setup, 180);
+        }, { passive: true });
+
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden) loop();
+        });
+
+        setup();
+      }
+    })();
+  </script>
+</body>
+
+</html>

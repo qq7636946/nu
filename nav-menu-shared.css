@@ -188,7 +188,7 @@ body.shared-nav-page .ns-dropdown {
   width: 100%;
   padding: 0;
   background: transparent;
-  overflow: auto;
+  overflow: hidden;
   opacity: 0;
   transform: translateY(24px);
   pointer-events: none;
@@ -204,6 +204,7 @@ body.shared-nav-page .ns-dropdown::-webkit-scrollbar {
 }
 
 body.shared-nav-page #nav_scroll_container.is-menu-open .ns-dropdown {
+  overflow: auto;
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
