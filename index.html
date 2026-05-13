@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -63,7 +63,8 @@
        確保 HTTP cache 能被後面的 WebGLManager 真正命中。 -->
   <script>
     (function () {
-      var src = (window.matchMedia && window.matchMedia('(min-width: 768px)').matches)
+      var isDesktop = !!(window.matchMedia && window.matchMedia('(min-width: 768px)').matches);
+      var src = isDesktop
         ? 'images/home/slider_video01.mp4'
         : 'images/home/slider_video01_s.mp4';
       var v = document.createElement('video');
@@ -76,7 +77,10 @@
       v.setAttribute('muted', '');
       v.setAttribute('playsinline', '');
       v.setAttribute('webkit-playsinline', '');
-      v.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:-9999px';
+      // 手機版直接給 autoplay 屬性，確保 iOS Safari / Android Chrome 無需使用者互動即可播放
+      if (!isDesktop) { v.autoplay = true; v.setAttribute('autoplay', ''); }
+      // 放在 viewport 內讓 browser 給高優先級（非 Idle），避免被降速
+      v.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;z-index:-1';
       // <body> 還沒就先掛在 documentElement;DOMContentLoaded 後再搬到 body 確保正常清理
       (document.body || document.documentElement).appendChild(v);
       v.load(); // 顯式觸發載入,確保 Range request 進 HTTP cache
@@ -4683,8 +4687,15 @@
               window.addEventListener('scroll', activateOnScroll, { passive: true });
               requestAnimationFrame(activateOnScroll);
 
-              // 不自動預熱 scroll media。Lighthouse/首屏不該下載下方影片；
-              // 使用者滾動、觸控、鍵盤往下時，上面的監聽器會立刻 hydrate。
+              // 自動預熱：loader 消失後 5s（讓 hero 影片先吃頻寬），才自動 activate。
+              // 使用者若在那之前滾動／觸控／滾輪，上面的監聽器會立刻啟動。
+              var autoActivateDelay = 5000;
+              var autoActivateTimer = setTimeout(function () {
+                document.dispatchEvent(new Event('nudot:activate-scroll-media'));
+              }, autoActivateDelay);
+              document.addEventListener('nudot:activate-scroll-media', function () {
+                clearTimeout(autoActivateTimer);
+              }, { once: true });
             }
 
             if (deferredVideos.length && 'IntersectionObserver' in window) {
@@ -5704,7 +5715,7 @@
                 <div class="media-track">
                   <div class="center-divider">
                     <div class="center-video-box">
-                      <video autoplay loop muted playsinline preload="none" disableRemotePlayback data-lazy-video>
+                      <video autoplay loop muted playsinline preload="auto" disableRemotePlayback data-lazy-video data-lazy-priority="high">
                         <source data-src="images/work/star.mp4" type="video/mp4">
                       </video>
                     </div>
@@ -6066,6 +6077,7 @@
           uniform sampler2D uTex2;
           uniform float uProgress;
           uniform float uDirection;
+          uniform float uTexReady;
           uniform vec2 uResolution;
           uniform vec2 uImageResolution;   // tex1's intrinsic resolution
           uniform vec2 uImageResolution2;  // tex2's intrinsic resolution
@@ -6146,6 +6158,8 @@
                 1.0
             );
 
+            // 影片紋理未就緒時輸出透明，讓底層 poster 顯示
+            if (uTexReady < 0.5) { gl_FragColor = vec4(0.0); return; }
             gl_FragColor = mix(t1, t2, smoothstep(0.0, 1.0, p));
           }
         `;
@@ -6158,6 +6172,7 @@
             uTex2: { value: null },
             uProgress: { value: 0 },
             uDirection: { value: 1 },
+            uTexReady: { value: 0 },
             uResolution: { value: new THREE.Vector2(initialRenderSize.width, initialRenderSize.height) },
             uImageResolution: { value: new THREE.Vector2(1920, 1080) },   // for uTex1
             uImageResolution2: { value: new THREE.Vector2(1920, 1080) },  // for uTex2
@@ -6229,6 +6244,11 @@
             vid.setAttribute('muted', '');
             vid.setAttribute('playsinline', '');
             vid.setAttribute('webkit-playsinline', '');
+            // 手機版直接設 autoplay，確保 iOS / Android 能在無使用者互動下播放
+            if (window.matchMedia ? window.matchMedia('(max-width: 767px)').matches : window.innerWidth <= 767) {
+              vid.autoplay = true;
+              vid.setAttribute('autoplay', '');
+            }
             this.videoEls[index] = vid;
             const texture = new THREE.VideoTexture(vid);
             texture.minFilter = THREE.LinearFilter;
@@ -6245,6 +6265,7 @@
               rememberVideoResolution();
               if (index === 0) {
                 this.material.uniforms.uTex1.value = texture;
+                this.material.uniforms.uTexReady.value = 1;
                 this.applyTextureResolution(index, texture, 1);
                 // 初始時 uTex2 還沒綁紋理,把 slot2 也補上同一比例,避免第一次切換瞬間的壓扁
                 this.applyTextureResolution(index, texture, 2);
@@ -9862,28 +9883,18 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      const runSketchWhenNear = (target, callback) => {
-        if (!target || !('IntersectionObserver' in window)) {
-          window.setTimeout(callback, 500);
-          return;
-        }
-
-        const leadPx = 2200;
-        const observer = new IntersectionObserver((entries) => {
-          if (!entries.some(entry => entry.isIntersecting)) return;
-          observer.disconnect();
-          window.setTimeout(callback, 120);
-        }, { rootMargin: `${leadPx}px 0px` });
-        observer.observe(target);
-      };
-
-      runSketchWhenNear(document.getElementById('core-capabilities'), () => {
+      // 直接在 idle 時初始化，不等滾到附近再載，消除進場黑畫面
+      const initSketch = () => {
         const sketchRoot = document.querySelector("#core-capabilities #sketch");
         if (!sketchRoot) return;
-
         const sketch = new Sketch("#core-capabilities #sketch");
         sketch.create();
-      });
+      };
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(initSketch, { timeout: 1200 });
+      } else {
+        window.setTimeout(initSketch, 400);
+      }
     });
   </script>
 
