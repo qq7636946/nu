@@ -194,24 +194,24 @@
 
     state.entryCleanupTimer = window.setTimeout(function () {
       finalizeEntryTransition(refs);
-    }, 1800);
+    }, 1500);
 
     gsap.timeline({
-      delay: 0.05,
-      defaults: { ease: 'expo.inOut' },
+      delay: 0.04,
+      defaults: { ease: 'expo.out' },
       onComplete: function () {
         finalizeEntryTransition(refs);
       }
     })
       .to(refs.curtain, {
         '--pt-bottom': '102%',
-        duration: 0.9,
+        duration: 0.76,
       }, 0)
       .to(refs.curtain, {
         '--pt-top': '-102%',
-        duration: 0.9,
+        duration: 0.76,
       }, 0.06)
-      .to(refs.curtain, { autoAlpha: 0, duration: 0.18, ease: 'power2.out' }, 0.82);
+      .to(refs.curtain, { autoAlpha: 0, duration: 0.22, ease: 'power2.out' }, 0.68);
   }
 
   function armEntryFailSafe(payload) {
@@ -274,12 +274,12 @@
 
     var fallbackTimer = window.setTimeout(function () {
       window.location.href = destination.href;
-    }, 1500);
+    }, 1000);
 
     resetReveal(refs);
 
     gsap.timeline({
-      defaults: { ease: 'expo.inOut' },
+      defaults: { ease: 'power4.inOut' },
       onComplete: function () {
         window.clearTimeout(fallbackTimer);
         window.location.href = destination.href;
@@ -287,13 +287,15 @@
     })
       .to(refs.curtain, {
         '--pt-top': '0%',
-        duration: 0.82,
+        duration: 0.5,
       }, 0)
       .to(refs.curtain, {
         '--pt-bottom': '0%',
-        duration: 0.82,
-      }, 0.06);
+        duration: 0.5,
+      }, 0.04);
   }
+
+  window._nudotNavigate = navigateWithTransition;
 
   function initLinkRouting() {
     document.addEventListener('click', function (event) {
@@ -318,12 +320,6 @@
         closeSharedMenu(false);
         scrollToTarget(target);
         return;
-      }
-
-      // 平板/手機：nav dropdown 內的連結直接跳頁，不播放過場特效
-      if (isSimpleTouchNavMode() && link.closest('#nav-scroll-dropdown')) {
-        closeSharedMenu(true);
-        return; // 讓瀏覽器原生導航
       }
 
       event.preventDefault();
@@ -642,6 +638,7 @@
       row.addEventListener('focus', function () { previewRow(row); });
       row.addEventListener('blur', function () { clearPreviewRow(row); });
     });
+
   }
 
   function initIndexSyncedSharedNav() {

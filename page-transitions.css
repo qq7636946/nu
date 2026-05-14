@@ -12,7 +12,7 @@ html.is-page-transitioning body {
 .page-transition-shell {
   position: fixed;
   inset: 0;
-  z-index: 200000;
+  z-index: 300000;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
@@ -42,7 +42,7 @@ html.has-pending-page-transition .page-transition-shell {
   position: absolute;
   left: 0;
   width: 100%;
-  height: 56vh;
+  height: 60vh;
   background: var(--pt-bg);
   border-radius: 0;
   box-shadow: none;
@@ -100,7 +100,7 @@ html.has-pending-page-transition .page-transition-panel {
 @media (max-width: 767px) {
   .page-transition-curtain::before,
   .page-transition-curtain::after {
-    height: 54vh;
+    height: 58vh;
     border-radius: 0;
   }
 }
