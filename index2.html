@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -56,6 +56,53 @@
   <!-- LCP boosters: brand logo -->
   <link rel="preload" as="image" href="images/pc_logo.svg" fetchpriority="high">
 
+  <!-- LCP boosters: hero slide-0 video — 趁 loader 動畫期間就把影片下載到瀏覽器快取,
+       loader 結束後 WebGLManager 創 vid.src 時直接 hit cache,不用再等網路。
+       NOTE: <link rel="preload" as="video"> 不在 WHATWG 規範白名單內(會被忽略 + 噴警告),
+       改用 hidden <video preload="auto"> 觸發跟正式 <video> 元素一樣的 Range request,
+       確保 HTTP cache 能被後面的 WebGLManager 真正命中。 -->
+  <script>
+    (function () {
+      var isDesktop = !!(window.matchMedia && window.matchMedia('(min-width: 768px)').matches);
+      var src = isDesktop
+        ? 'images/home/slider_video01.mp4'
+        : 'images/home/slider_video01_s.mp4';
+      var v = document.createElement('video');
+      v.src = src;
+      v.preload = 'auto';
+      v.muted = true;
+      v.playsInline = true;
+      v.loop = true;
+      v.setAttribute('aria-hidden', 'true');
+      v.setAttribute('muted', '');
+      v.setAttribute('playsinline', '');
+      v.setAttribute('webkit-playsinline', '');
+      // 手機版直接給 autoplay 屬性，確保 iOS Safari / Android Chrome 無需使用者互動即可播放
+      if (!isDesktop) { v.autoplay = true; v.setAttribute('autoplay', ''); }
+      // 放在 viewport 內讓 browser 給高優先級（非 Idle），避免被降速
+      v.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;z-index:-1';
+      // <body> 還沒就先掛在 documentElement;DOMContentLoaded 後再搬到 body 確保正常清理
+      (document.body || document.documentElement).appendChild(v);
+      v.load(); // 顯式觸發載入,確保 Range request 進 HTTP cache
+      window._heroVideoPrewarm = v;
+      window._heroVideoPrewarmSrc = src;
+      window._heroVideoPrewarmClaimed = false;
+      var playPromise = v.play();
+      if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function () { });
+      // WebGLManager 會接管這支 video；若未接管才清掉，避免誤殺正在使用的 hero video。
+      window.setTimeout(function () {
+        if (window._heroVideoPrewarmClaimed) return;
+        if (v && v.parentNode) {
+          v.removeAttribute('src');
+          try { v.load(); } catch (_) { }
+          v.parentNode.removeChild(v);
+        }
+        window._heroVideoPrewarm = null;
+        window._heroVideoPrewarmSrc = '';
+      }, 8000);
+    })();
+  </script>
+
   <!-- Non-blocking: Adobe Fonts -->
   <link rel="preload" as="style" href="https://use.typekit.net/upd0woi.css">
   <link rel="stylesheet" href="https://use.typekit.net/upd0woi.css" media="print" onload="this.media='all'">
@@ -98,7 +145,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer fetchpriority="high"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer fetchpriority="high"></script>
   <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js" defer fetchpriority="high"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer fetchpriority="low"></script>
+  <!-- three.js 是 hero WebGL 必須依賴,放 high 讓它跟 GSAP 同級下載,避免 hero 等它 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer fetchpriority="high"></script>
+  <script src="js/Flip.min.js" defer fetchpriority="low"></script>
+  <script src="js/ScrambleTextPlugin.min.js" defer fetchpriority="low"></script>
   <script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.min.js" defer fetchpriority="low"></script>
   <script src="transitions.js" defer fetchpriority="low"></script>
   <style>
@@ -2844,13 +2894,14 @@
       top: 0;
       left: 0;
       height: 1.5px;
-      width: 0%;
+      width: 100%;
       background: rgba(255, 255, 255, 0.85);
       box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
       z-index: 99997;
       pointer-events: none;
       transform-origin: left;
-      will-change: width;
+      transform: scaleX(0);
+      will-change: transform;
     }
 
     /* ── NAV wrapper ── */
@@ -4360,7 +4411,7 @@
                 <a class="ns-showcase-row ns-dropdown__item" href="index.html#nav" data-transition-label="Home">
                   <span class="ns-showcase-row__index">01</span>
                   <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
-                    <img src="images/about/tesla.webp" alt="" width="128" height="64" loading="lazy" decoding="async">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/tesla.webp" alt="" width="128" height="64" loading="lazy" decoding="async">
                   </span>
                   <span class="ns-showcase-row__title">
                     <span class="ns-showcase-row__title-track">
@@ -4369,7 +4420,7 @@
                     </span>
                   </span>
                   <span class="ns-showcase-row__thumb is-right" aria-hidden="true">
-                    <img src="images/about/chanel.webp" alt="" width="256" height="160" loading="lazy" decoding="async">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/chanel.webp" alt="" width="256" height="160" loading="lazy" decoding="async">
                   </span>
                 </a>
 
@@ -4377,7 +4428,7 @@
                   data-transition-label="About">
                   <span class="ns-showcase-row__index">02</span>
                   <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
-                    <img src="images/about/apple.webp" alt="" width="160" height="64" loading="lazy" decoding="async">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/apple.webp" alt="" width="160" height="64" loading="lazy" decoding="async">
                   </span>
                   <span class="ns-showcase-row__title">
                     <span class="ns-showcase-row__title-track">
@@ -4386,14 +4437,14 @@
                     </span>
                   </span>
                   <span class="ns-showcase-row__thumb is-right" aria-hidden="true">
-                    <img src="images/about/BMW.webp" alt="" width="896" height="1344" loading="lazy" decoding="async">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/BMW.webp" alt="" width="896" height="1344" loading="lazy" decoding="async">
                   </span>
                 </a>
 
                 <a class="ns-showcase-row ns-dropdown__item" href="work.html#project-top" data-transition-label="Work">
                   <span class="ns-showcase-row__index">03</span>
                   <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
-                    <img src="images/about/nike.webp" alt="" width="1232" height="928" loading="lazy" decoding="async">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/nike.webp" alt="" width="1232" height="928" loading="lazy" decoding="async">
                   </span>
                   <span class="ns-showcase-row__title">
                     <span class="ns-showcase-row__title-track">
@@ -4402,14 +4453,14 @@
                     </span>
                   </span>
                   <span class="ns-showcase-row__thumb is-right" aria-hidden="true">
-                    <img src="images/about/hermes.webp" alt="" width="256" height="26" loading="lazy" decoding="async">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/hermes.webp" alt="" width="256" height="26" loading="lazy" decoding="async">
                   </span>
                 </a>
 
                 <a class="ns-showcase-row ns-dropdown__item" href="labs/labs1.html" data-transition-label="Labs">
                   <span class="ns-showcase-row__index">04</span>
                   <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
-                    <img src="images/about/prada.webp" alt="" width="208" height="160" loading="lazy" decoding="async">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/prada.webp" alt="" width="208" height="160" loading="lazy" decoding="async">
                   </span>
                   <span class="ns-showcase-row__title">
                     <span class="ns-showcase-row__title-track">
@@ -4418,7 +4469,7 @@
                     </span>
                   </span>
                   <span class="ns-showcase-row__thumb is-right" aria-hidden="true">
-                    <img src="images/about/porsche.webp" alt="" width="896" height="1344" loading="lazy"
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/porsche.webp" alt="" width="896" height="1344" loading="lazy"
                       decoding="async">
                   </span>
                 </a>
@@ -4427,7 +4478,7 @@
                   data-transition-label="Contact">
                   <span class="ns-showcase-row__index">05</span>
                   <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
-                    <img src="images/about/audi.webp" alt="" width="896" height="1344" loading="lazy" decoding="async">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/audi.webp" alt="" width="896" height="1344" loading="lazy" decoding="async">
                   </span>
                   <span class="ns-showcase-row__title">
                     <span class="ns-showcase-row__title-track">
@@ -4436,7 +4487,7 @@
                     </span>
                   </span>
                   <span class="ns-showcase-row__thumb is-right" aria-hidden="true">
-                    <img src="images/about/polestar.webp" alt="" width="1030" height="1030" loading="lazy"
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/polestar.webp" alt="" width="1030" height="1030" loading="lazy"
                       decoding="async">
                   </span>
                 </a>
@@ -4461,15 +4512,8 @@
       <script>
         // Anchor hero reveal to page-load time using performance.now()
         // DOMContentLoaded fires AFTER all defer scripts → _heroTl is guaranteed to exist
-        var _coarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
-        var _pendingPageTransition = document.documentElement.classList.contains('has-pending-page-transition');
-        var _reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var _loaderTarget = _reducedMotion
-          ? 0
-          : (_pendingPageTransition ? 520 : (_coarsePointer ? 900 : 1250)); // ms from navigation start
-        var _loaderDismissTarget = _reducedMotion
-          ? 0
-          : (_pendingPageTransition ? 760 : (_coarsePointer ? 1180 : 1560)); // release click shield shortly after loader exit
+        var _loaderTarget = 2700; // ms from navigation start
+        var _loaderDismissTarget = 3200; // release click shield shortly after loader exit
 
         function dismissNudotLoader() {
           var el = document.getElementById('nudot-loader');
@@ -4513,8 +4557,29 @@
       </script>
       <script>
         (function () {
+          // 🎯 走訪 ancestor 確認元素真的會被渲染。被 display:none 蓋住的影片
+          //    (例如桌機看到的 .mobile-cube-section 內的 video)直接跳過,
+          //    避免桌機載入手機素材、手機載入桌機素材造成的重複頻寬浪費。
+          function isVideoRenderable(video) {
+            if (!video || !video.isConnected) return false;
+            try {
+              if (typeof video.checkVisibility === 'function') {
+                return video.checkVisibility({ checkOpacity: false, checkVisibilityCSS: true });
+              }
+              var node = video;
+              while (node && node !== document.body) {
+                var s = window.getComputedStyle(node);
+                if (s.display === 'none') return false;
+                node = node.parentElement;
+              }
+            } catch (_) { }
+            return true;
+          }
+
           function hydrateVideo(video) {
             if (!video || video.dataset.videoHydrated === 'true') return;
+            // 不會被渲染的影片(被 CSS 隱藏)直接跳過,留待之後 viewport 變化或主動觸發
+            if (!isVideoRenderable(video)) return;
             video.dataset.videoHydrated = 'true';
 
             video.querySelectorAll('source[data-src]').forEach(function (source) {
@@ -4541,7 +4606,8 @@
 
           function isPriorityVideo(video) {
             if (!video) return false;
-            return video.dataset.lazyPriority === 'high';
+            if (video.dataset.lazyPriority === 'high') return true;
+            return false;
           }
 
           document.addEventListener('DOMContentLoaded', function () {
@@ -4610,10 +4676,10 @@
                 activateScrollMedia();
               };
 
-              if (window.innerWidth <= 768) {
-                requestAnimationFrame(activateScrollMedia);
-              }
-
+              // 🎯 原本手機是 requestAnimationFrame 立刻 activate(等同沒 lazy),
+              //    桌機是 load+2.5s preheat — 兩者都會在 hero 影片還在下載時搶頻寬。
+              //    改成統一延後到 load + 5s,讓 hero 第一張影片優先吃滿頻寬;
+              //    若使用者在那之前先滾動 / 滑鼠滾輪 / 觸控,既有監聽器會立刻啟動。
               document.addEventListener('nudot:activate-scroll-media', activateScrollMedia, { once: true });
               window.addEventListener('wheel', activateScrollMedia, { passive: true, once: true });
               window.addEventListener('touchstart', activateScrollMedia, { passive: true, once: true });
@@ -4621,13 +4687,15 @@
               window.addEventListener('scroll', activateOnScroll, { passive: true });
               requestAnimationFrame(activateOnScroll);
 
-              if (window.innerWidth > 768) {
-                var preheatScrollMedia = function () {
-                  requestScrollMediaIdle(function () { activateScrollMedia(); }, { timeout: 2500 });
-                };
-                if (document.readyState === 'complete') preheatScrollMedia();
-                else window.addEventListener('load', preheatScrollMedia, { once: true });
-              }
+              // 自動預熱：loader 消失後 5s（讓 hero 影片先吃頻寬），才自動 activate。
+              // 使用者若在那之前滾動／觸控／滾輪，上面的監聽器會立刻啟動。
+              var autoActivateDelay = 5000;
+              var autoActivateTimer = setTimeout(function () {
+                document.dispatchEvent(new Event('nudot:activate-scroll-media'));
+              }, autoActivateDelay);
+              document.addEventListener('nudot:activate-scroll-media', function () {
+                clearTimeout(autoActivateTimer);
+              }, { once: true });
             }
 
             if (deferredVideos.length && 'IntersectionObserver' in window) {
@@ -4797,7 +4865,9 @@
               <div id="dw-black-overlay"
                 style="position:absolute;inset:0;background:#000;z-index:9;pointer-events:none;opacity:0;transition:opacity 0.05s;">
               </div>
-              <video autoplay muted loop playsinline preload="none" disableRemotePlayback data-lazy-video data-lazy-priority="high"
+              <!-- bg.mp4 在 dark-wrapper(首屏下方),不該跟 hero 影片搶頻寬;
+                   改用 IntersectionObserver 路徑(移除 data-lazy-priority="high") -->
+              <video autoplay muted loop playsinline preload="none" disableRemotePlayback data-lazy-video data-lazy-on-scroll="true"
                 style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.45;">
                 <source data-src="images/bg.mp4" type="video/mp4">
               </video>
@@ -5645,7 +5715,7 @@
                 <div class="media-track">
                   <div class="center-divider">
                     <div class="center-video-box">
-                      <video autoplay loop muted playsinline preload="none" disableRemotePlayback data-lazy-video>
+                      <video autoplay loop muted playsinline preload="auto" disableRemotePlayback data-lazy-video data-lazy-priority="high">
                         <source data-src="images/work/star.mp4" type="video/mp4">
                       </video>
                     </div>
@@ -5790,6 +5860,8 @@
     let mouseOverThumbnails = false;
     let lastHoveredThumbIndex = null;
     let heroSlides = [];
+    let heroSlideCount = 0;
+    let dragLinesCache = null;
     let webglManager = null;
 
     let isAnimating = false;
@@ -5848,7 +5920,7 @@
           const isVideo = /\.(mp4|webm|ogg)$/i.test(assetUrl);
           const thumbUrl = useMobileMedia
             ? (mobileThumb || mobileImage || desktopThumb || desktopImage || (!isVideo ? assetUrl : ""))
-            : (desktopThumb || desktopImage || (!isVideo ? assetUrl : ""));
+            : (desktopThumb || mobileThumb || mobileImage || desktopImage || (!isVideo ? assetUrl : ""));
 
           return {
             assetUrl,
@@ -5883,7 +5955,7 @@
     } catch (e) { }
 
     function updateDragLines(activeIndex, forceUpdate = false) {
-      const lines = document.querySelectorAll(".drag-line");
+      const lines = dragLinesCache || Array.from(document.querySelectorAll(".drag-line"));
       if (!lines.length) return;
 
       lines.forEach(line => {
@@ -5893,7 +5965,7 @@
 
       if (activeIndex === null) return;
 
-      const thumbWidth = 720 / document.querySelectorAll(".slide").length;
+      const thumbWidth = 720 / Math.max(heroSlideCount || heroSlides.length || 1, 1);
       const centerPosition = (activeIndex + 0.5) * thumbWidth;
       const lineWidth = 720 / lines.length;
 
@@ -5979,9 +6051,8 @@
           };
         }
 
-        const rect = this.container.getBoundingClientRect();
-        const width = Math.max(1, Math.round(rect.width || this.container.clientWidth || window.innerWidth));
-        const height = Math.max(1, Math.round(rect.height || this.container.clientHeight || window.innerHeight));
+        const width = Math.max(1, Math.round(this.container.clientWidth || window.innerWidth));
+        const height = Math.max(1, Math.round(this.container.clientHeight || window.innerHeight));
 
         return { width, height };
       }
@@ -6006,6 +6077,7 @@
           uniform sampler2D uTex2;
           uniform float uProgress;
           uniform float uDirection;
+          uniform float uTexReady;
           uniform vec2 uResolution;
           uniform vec2 uImageResolution;   // tex1's intrinsic resolution
           uniform vec2 uImageResolution2;  // tex2's intrinsic resolution
@@ -6086,6 +6158,8 @@
                 1.0
             );
 
+            // 影片紋理未就緒時輸出透明，讓底層 poster 顯示
+            if (uTexReady < 0.5) { gl_FragColor = vec4(0.0); return; }
             gl_FragColor = mix(t1, t2, smoothstep(0.0, 1.0, p));
           }
         `;
@@ -6098,6 +6172,7 @@
             uTex2: { value: null },
             uProgress: { value: 0 },
             uDirection: { value: 1 },
+            uTexReady: { value: 0 },
             uResolution: { value: new THREE.Vector2(initialRenderSize.width, initialRenderSize.height) },
             uImageResolution: { value: new THREE.Vector2(1920, 1080) },   // for uTex1
             uImageResolution2: { value: new THREE.Vector2(1920, 1080) },  // for uTex2
@@ -6142,20 +6217,38 @@
       }
 
       loadTextureAt(index) {
-        if (this.textures[index]) return Promise.resolve(this.textures[index]);
         if (this.texturePromises[index]) return this.texturePromises[index];
+        if (this.textures[index]) return Promise.resolve(this.textures[index]);
 
         const url = this.imageUrls[index];
         if (!url) return Promise.resolve(null);
 
         if (/\.(mp4|webm|ogg)$/i.test(url)) {
           this.texturePromises[index] = new Promise((resolve) => {
-            const vid = document.createElement('video');
-            vid.src = url;
+            const warmupVideo = index === 0
+              && window._heroVideoPrewarm
+              && window._heroVideoPrewarmSrc === url
+              ? window._heroVideoPrewarm
+              : null;
+            const vid = warmupVideo || document.createElement('video');
+            if (warmupVideo) {
+              window._heroVideoPrewarmClaimed = true;
+              if (vid.parentNode) vid.parentNode.removeChild(vid);
+            } else {
+              vid.src = url;
+            }
             vid.loop = true;
             vid.muted = true;
             vid.playsInline = true;
             vid.preload = 'auto';
+            vid.setAttribute('muted', '');
+            vid.setAttribute('playsinline', '');
+            vid.setAttribute('webkit-playsinline', '');
+            // 手機版直接設 autoplay，確保 iOS / Android 能在無使用者互動下播放
+            if (window.matchMedia ? window.matchMedia('(max-width: 767px)').matches : window.innerWidth <= 767) {
+              vid.autoplay = true;
+              vid.setAttribute('autoplay', '');
+            }
             this.videoEls[index] = vid;
             const texture = new THREE.VideoTexture(vid);
             texture.minFilter = THREE.LinearFilter;
@@ -6165,16 +6258,29 @@
               this.rememberTextureResolution(index, vid.videoWidth || 1920, vid.videoHeight || 1080);
             };
             vid.addEventListener('loadedmetadata', rememberVideoResolution, { once: true });
-            if (index === 0) {
-              this.material.uniforms.uTex1.value = texture;
+            let didResolveTexture = false;
+            const resolveTexture = () => {
+              if (didResolveTexture) return;
+              didResolveTexture = true;
               rememberVideoResolution();
-              // 初始時 uTex2 還沒綁紋理,把 slot2 也補上同一比例,避免第一次切換瞬間的壓扁
-              this.applyTextureResolution(index, texture, 2);
-            }
-            const resolveTexture = () => resolve(texture);
+              if (index === 0) {
+                this.material.uniforms.uTex1.value = texture;
+                this.material.uniforms.uTexReady.value = 1;
+                this.applyTextureResolution(index, texture, 1);
+                // 初始時 uTex2 還沒綁紋理,把 slot2 也補上同一比例,避免第一次切換瞬間的壓扁
+                this.applyTextureResolution(index, texture, 2);
+              }
+              resolve(texture);
+            };
+            const resolveEmptyTexture = () => {
+              if (didResolveTexture) return;
+              didResolveTexture = true;
+              resolve(null);
+            };
             if (vid.readyState >= 2) resolveTexture();
             else vid.addEventListener('loadeddata', resolveTexture, { once: true });
-            vid.load();
+            vid.addEventListener('error', resolveEmptyTexture, { once: true });
+            if (!warmupVideo && vid.readyState === 0) vid.load();
             if (index === 0) this._safePlay(vid);
           });
           return this.texturePromises[index];
@@ -6436,6 +6542,7 @@
 
         if (!slideCount) return;
         heroSlideshowInitialized = true;
+        heroSlideCount = slideCount;
 
         const initialTitle = document.querySelector(".slide-title");
         if (initialTitle) initialTitle.textContent = heroSlides[0].title;
@@ -6488,10 +6595,12 @@
           const linesContainer = document.createElement("div");
           linesContainer.className = "lines-container";
           dragIndicator.appendChild(linesContainer);
+          dragLinesCache = [];
           for (let i = 0; i < 60; i++) {
             const line = document.createElement("div");
             line.className = "drag-line";
             linesContainer.appendChild(line);
+            dragLinesCache.push(line);
           }
         }
 
@@ -6537,13 +6646,29 @@
         }
 
         let autoLoopTimer = null;
+        let autoLoopStartToken = 0;
         function startAutoLoop() {
           stopAutoLoop();
-          autoLoopTimer = setInterval(() => {
-            if (!isAnimating && !isHeroRenderSleeping()) slideshow.next();
-          }, 5000);
+          const token = ++autoLoopStartToken;
+          const armAutoLoop = () => {
+            if (token !== autoLoopStartToken) return;
+            autoLoopTimer = setInterval(() => {
+              if (!isAnimating && !isHeroRenderSleeping()) slideshow.next();
+            }, 5000);
+          };
+          const loaderReady = (window._nudotLoaderDismissed === true || !document.getElementById('nudot-loader'))
+            ? Promise.resolve()
+            : new Promise((resolve) => {
+              document.addEventListener('nudot:loader-dismissed', resolve, { once: true });
+            });
+          const activeTextureReady = webglManager?.preloadTexture(slideshow.current);
+          const textureReady = activeTextureReady && typeof activeTextureReady.then === 'function'
+            ? activeTextureReady
+            : Promise.resolve();
+          Promise.allSettled([loaderReady, textureReady]).then(armAutoLoop);
         }
         function stopAutoLoop() {
+          autoLoopStartToken++;
           if (autoLoopTimer) { clearInterval(autoLoopTimer); autoLoopTimer = null; }
         }
         startAutoLoop();
@@ -6614,11 +6739,10 @@
           autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out'
         }, 0.25);
 
-      if (window._nudotLoaderDismissed === true || !document.getElementById('nudot-loader')) {
-        initHeroSlideshow();
-      } else {
-        document.addEventListener('nudot:loader-dismissed', initHeroSlideshow, { once: true });
-      }
+      // 🎯 影片獨立預熱:不再等 loader,DOMContentLoaded 一觸發就 init hero
+      //    loader 期間 WebGL canvas 被 loader 視覺蓋住,影片在背景靜靜解碼+播放;
+      //    loader 淡出時影片可能已經播到中段(這是刻意行為,loader 跑自己、影片跑自己)
+      initHeroSlideshow();
 
       const cube = document.getElementById('cube');
       const sceneWrapper = document.getElementById('sceneWrapper');
@@ -6655,110 +6779,16 @@
         gsap.to(fixedLogoEl, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', delay: 2.8 });
       }
 
-      function createQuickSetter(el, prop, unit, precision = 1000) {
-        if (!el) return () => { };
-        const setter = gsap.quickSetter(el, prop, unit);
-        let initialized = false;
-        let lastValue = null;
-        return (value) => {
-          const nextValue = typeof value === 'number' && precision > 0
-            ? Math.round(value * precision) / precision
-            : value;
-          if (initialized && nextValue === lastValue) return;
-          initialized = true;
-          lastValue = nextValue;
-          setter(nextValue);
-        };
-      }
-
-      function createStyleSetter(el, prop, format) {
-        if (!el) return () => { };
-        let initialized = false;
-        let lastValue = null;
-        return (value) => {
-          const nextValue = format ? format(value) : value;
-          if (initialized && nextValue === lastValue) return;
-          initialized = true;
-          lastValue = nextValue;
-          el.style[prop] = nextValue;
-        };
-      }
-
-      function createCssVarSetter(el, name, suffix = '') {
-        if (!el) return () => { };
-        let initialized = false;
-        let lastValue = null;
-        return (value) => {
-          const nextValue = `${value}${suffix}`;
-          if (initialized && nextValue === lastValue) return;
-          initialized = true;
-          lastValue = nextValue;
-          el.style.setProperty(name, nextValue);
-        };
-      }
-
-      const setUiNavOpacity = createQuickSetter(uiNav, 'opacity');
-      const setUiNavY = createQuickSetter(uiNav, 'y', 'px', 100);
-      const setUiScrollOpacity = createQuickSetter(uiScroll, 'opacity');
-      const setUiGlow1Opacity = createQuickSetter(uiGlow1, 'opacity');
-      const setUiGlow1Scale = createQuickSetter(uiGlow1, 'scale', null, 1000);
-      const setUiGlow1Visibility = createStyleSetter(uiGlow1, 'visibility');
-      const setUiGlow2Opacity = createQuickSetter(uiGlow2, 'opacity');
-      const setUiGlow2Scale = createQuickSetter(uiGlow2, 'scale', null, 1000);
-      const setUiGlow2Visibility = createStyleSetter(uiGlow2, 'visibility');
-      const setIntroPanelOpacity = createQuickSetter(introPanel, 'opacity');
-      const setIntroPanelVisibility = createStyleSetter(introPanel, 'visibility');
-      const setIntroTopHeaderOpacity = createQuickSetter(introTopHeader, 'opacity');
-      const setIntroTopTitleY = createQuickSetter(introTopTitle, 'yPercent', null, 100);
-      const setIntroBottomLetterOpacity = createQuickSetter(introBottomLetter, 'opacity');
-      const setIntroBottomTitleY = createQuickSetter(introBottomTitle, 'yPercent', null, 100);
-      const setTitleSubtitleY = createQuickSetter(titleSubtitle, 'yPercent', null, 100);
-      const setTitleLine1Y = createQuickSetter(titleLine1, 'yPercent', null, 100);
-      const setTitleLine2Y = createQuickSetter(titleLine2, 'yPercent', null, 100);
-      const setTitleMarqueeY = createQuickSetter(titleMarquee, 'yPercent', null, 100);
-      const setTitleDescY = createQuickSetter(titleDesc, 'yPercent', null, 100);
-      const setNewSubtitleY = createQuickSetter(newSubtitle, 'yPercent', null, 100);
-      const setNewLine1Y = createQuickSetter(newLine1, 'yPercent', null, 100);
-      const setNewLine2Y = createQuickSetter(newLine2, 'yPercent', null, 100);
-      const setNewDescY = createQuickSetter(newDesc, 'yPercent', null, 100);
-      const setNewTextGroupOpacity = createQuickSetter(newTextGroup, 'opacity');
-      const setDwBlackOverlayOpacity = createQuickSetter(dwBlackOverlay, 'opacity');
-      const setSection2Opacity = createQuickSetter(section2, 'opacity');
-      const setImgOverlayOpacity = createQuickSetter(imgOverlay, 'opacity');
-      const setFaceFrontBoxShadow = createStyleSetter(faceFront, 'boxShadow');
-      const setFaceFrontBorder = createStyleSetter(faceFront, 'border');
-      const setSceneSize = createCssVarSetter(scene, '--scene-size', 'px');
-      const setSceneDepth = createCssVarSetter(scene, '--scene-depth', 'px');
-      const setCubeRotationX = createQuickSetter(cube, 'rotationX', 'deg', 100);
-      const setCubeRotationY = createQuickSetter(cube, 'rotationY', 'deg', 100);
-      const setSceneWrapperScale = createQuickSetter(sceneWrapper, 'scale', null, 1000);
-      const setSceneWrapperTop = createStyleSetter(sceneWrapper, 'top', (value) => `${value}%`);
-      let lastSection2ZIndex = null;
-      let lastSection2PointerEvents = null;
-
-      function setSection2State(opacity, zIndex, pointerEvents = 'none') {
-        if (!section2) return;
-        setSection2Opacity(opacity);
-        if (lastSection2ZIndex !== zIndex) {
-          lastSection2ZIndex = zIndex;
-          section2.style.zIndex = String(zIndex);
-        }
-        if (lastSection2PointerEvents !== pointerEvents) {
-          lastSection2PointerEvents = pointerEvents;
-          section2.style.pointerEvents = pointerEvents;
-        }
-      }
-
       function resetReveal() {
-        setTitleSubtitleY(130);
-        setTitleLine1Y(130);
-        setTitleLine2Y(130);
-        setTitleMarqueeY(130);
-        setTitleDescY(130);
-        setNewSubtitleY(130);
-        setNewLine1Y(130);
-        setNewLine2Y(130);
-        setNewDescY(130);
+        gsap.set(titleSubtitle, { yPercent: 130 });
+        gsap.set(titleLine1, { yPercent: 130 });
+        gsap.set(titleLine2, { yPercent: 130 });
+        gsap.set(titleMarquee, { yPercent: 130 });
+        gsap.set(titleDesc, { yPercent: 130 });
+        gsap.set(newSubtitle, { yPercent: 130 });
+        gsap.set(newLine1, { yPercent: 130 });
+        gsap.set(newLine2, { yPercent: 130 });
+        gsap.set(newDesc, { yPercent: 130 });
       }
       resetReveal();
 
@@ -6783,6 +6813,7 @@
         let _ranges = null;
         let _lastFocused = -1; // 加入快取，避免重複操作 DOM
         let _wrapperH = 0; // 🎯 效能優化:快取 offsetHeight,避免每幀 layout 讀取
+        let _initialized = false;
 
         const lqx = leftTexts.map(t => gsap.quickTo(t, 'x', { duration: 0.6, ease: 'power4.out' }));
         const rqx = rightTexts.map(t => gsap.quickTo(t, 'x', { duration: 0.6, ease: 'power4.out' }));
@@ -6808,19 +6839,23 @@
           return Math.max(0, Math.min(total - 1, index));
         }
 
-        (function init() {
+        function ensureInit() {
+          if (_initialized) return;
           _ranges = calcRanges();
           _wrapperH = wrapper.offsetHeight; // 🎯 初始化時讀取一次
           leftTexts.forEach((t, i) => gsap.set(t, { x: waveX(i, 0, _ranges.l) }));
           rightTexts.forEach((t, i) => gsap.set(t, { x: -waveX(i, 0, _ranges.r) }));
-        })();
+          _initialized = true;
+        }
         window.addEventListener('resize', () => {
+          if (!_initialized) return;
           _ranges = calcRanges();
           _wrapperH = wrapper.offsetHeight; // 🎯 resize 時更新快取
         }, { passive: true });
 
         return {
           update(progress) {
+            ensureInit();
             if (!_ranges) _ranges = calcRanges();
             if (!_wrapperH) _wrapperH = wrapper.offsetHeight;
 
@@ -7113,10 +7148,10 @@
         mobileHeroStaticReady = true;
         if (darkWrapperMask) darkWrapperMask.style.height = '';
         if (darkWrapper) darkWrapper.style.clipPath = 'none';
-        setDwBlackOverlayOpacity(0);
+        if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 0 });
         if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
-        setSection2State(0, 18, 'none');
-        setNewTextGroupOpacity(0);
+        if (section2) gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 18 });
+        if (newTextGroup) gsap.set(newTextGroup, { opacity: 0 });
         if (sceneWrapper) {
           gsap.set(sceneWrapper, { xPercent: -50, yPercent: -50, scale: 1, top: '50%', opacity: 1 });
         }
@@ -7214,17 +7249,12 @@
         const uiEntrance = Math.max(0, Math.min((pr_Reveal - 0.60) / 0.40, 1));
         const uiEase = easeInOutCubic(uiEntrance);
 
-        setUiNavOpacity(uiEase);
-        setUiNavY((1 - uiEase) * -25);
-        setUiScrollOpacity(uiEase * 0.7);
+        if (uiNav) gsap.set(uiNav, { opacity: uiEase, y: (1 - uiEase) * -25 });
+        if (uiScroll) gsap.set(uiScroll, { opacity: uiEase * 0.7 });
 
         // 🎯 封印光暈：當透明度為 0 時直接拔除可視性，釋放 GPU
-        setUiGlow1Opacity(uiEase);
-        setUiGlow1Scale(0.4 + uiEase * 0.6);
-        setUiGlow1Visibility(uiEase > 0 ? 'visible' : 'hidden');
-        setUiGlow2Opacity(uiEase * 0.8);
-        setUiGlow2Scale(0.4 + uiEase * 0.6);
-        setUiGlow2Visibility(uiEase > 0 ? 'visible' : 'hidden');
+        if (uiGlow1) gsap.set(uiGlow1, { opacity: uiEase, scale: 0.4 + uiEase * 0.6, visibility: uiEase > 0 ? 'visible' : 'hidden' });
+        if (uiGlow2) gsap.set(uiGlow2, { opacity: uiEase * 0.8, scale: 0.4 + uiEase * 0.6, visibility: uiEase > 0 ? 'visible' : 'hidden' });
 
         {
           const waveRp = progress <= p_Reveal
@@ -7233,8 +7263,7 @@
 
           if (progress <= p_TextOut) {
             // 🎯 封印面板：不顯示時徹底隱藏
-            setIntroPanelOpacity(waveRp > 0 ? 1 : 0);
-            setIntroPanelVisibility(waveRp > 0 ? 'visible' : 'hidden');
+            gsap.set(introPanel, { opacity: waveRp > 0 ? 1 : 0, visibility: waveRp > 0 ? 'visible' : 'hidden' });
 
             if (waveRp > 0) {
               if (revealGL) revealGL.render(waveRp);
@@ -7245,24 +7274,23 @@
               const ndOut = easeInOutCubic(Math.max(0, (panelT - 0.84) / 0.16));
               const ndOpacity = Math.max(0, ndIn * (1 - ndOut));
 
-              setIntroTopHeaderOpacity(ndOpacity);
-              setIntroTopTitleY((1 - ndIn) * 110);
-              setIntroBottomLetterOpacity(ndOpacity);
-              setIntroBottomTitleY((1 - ndIn) * -110);
+              if (introTopHeader) gsap.set(introTopHeader, { opacity: ndOpacity });
+              if (introTopTitle) gsap.set(introTopTitle, { yPercent: (1 - ndIn) * 110 });
+              if (introBottomLetter) gsap.set(introBottomLetter, { opacity: ndOpacity });
+              if (introBottomTitle) gsap.set(introBottomTitle, { yPercent: (1 - ndIn) * -110 });
 
               const outT = easeInOutCubic(Math.max(0, (panelT - 0.83) / 0.17));
-              if (outT > 0) setIntroPanelOpacity(Math.max(0, 1 - outT));
+              if (outT > 0) gsap.set(introPanel, { opacity: Math.max(0, 1 - outT) });
 
               _ipWave.update(panelT);
             }
           } else {
             // 完全重置並隱藏
-            setIntroPanelOpacity(0);
-            setIntroPanelVisibility('hidden');
-            setIntroTopHeaderOpacity(0);
-            setIntroTopTitleY(110);
-            setIntroBottomLetterOpacity(0);
-            setIntroBottomTitleY(-110);
+            gsap.set(introPanel, { opacity: 0, visibility: 'hidden' });
+            if (introTopHeader) gsap.set(introTopHeader, { opacity: 0 });
+            if (introTopTitle) gsap.set(introTopTitle, { yPercent: 110 });
+            if (introBottomLetter) gsap.set(introBottomLetter, { opacity: 0 });
+            if (introBottomTitle) gsap.set(introBottomTitle, { yPercent: -110 });
           }
         }
 
@@ -7276,17 +7304,17 @@
           const revealPr = Math.max(0, Math.min((progress - p_TextOut) / revealTotal, 1));
 
           // 🎯 取代字串串接，啟動 GSAP 高速變形
-          setTitleSubtitleY((1 - easeInOutCubic(Math.max(0, Math.min(revealPr / 0.40, 1)))) * 130);
-          setTitleLine1Y((1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.08) / 0.42, 1)))) * 130);
-          setTitleLine2Y((1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.18) / 0.42, 1)))) * 130);
-          setTitleMarqueeY((1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.08) / 0.42, 1)))) * 130);
-          setTitleDescY((1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.32) / 0.42, 1)))) * 130);
+          gsap.set(titleSubtitle, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min(revealPr / 0.40, 1)))) * 130 });
+          gsap.set(titleLine1, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.08) / 0.42, 1)))) * 130 });
+          gsap.set(titleLine2, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.18) / 0.42, 1)))) * 130 });
+          gsap.set(titleMarquee, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.08) / 0.42, 1)))) * 130 });
+          gsap.set(titleDesc, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((revealPr - 0.32) / 0.42, 1)))) * 130 });
 
-          setNewTextGroupOpacity(0);
-          setNewSubtitleY(130);
-          setNewLine1Y(130);
-          setNewLine2Y(130);
-          setNewDescY(130);
+          gsap.set(newTextGroup, { opacity: 0 });
+          gsap.set(newSubtitle, { yPercent: 130 });
+          gsap.set(newLine1, { yPercent: 130 });
+          gsap.set(newLine2, { yPercent: 130 });
+          gsap.set(newDesc, { yPercent: 130 });
 
           if (progress <= p_Tumble) {
             let pr = (progress - p_TextOut) / (p_Tumble - p_TextOut);
@@ -7296,10 +7324,9 @@
             currentX = -15 * (1 - ease);
             currentY = baseRotY * (1 - ease) + targetY_Phase1 * ease;
 
-            setSection2State(1, 18, 'none');
-            setImgOverlayOpacity(0);
-            setFaceFrontBoxShadow('inset 0 0 40px rgba(0,0,0,1)');
-            setFaceFrontBorder('1px solid rgba(255,255,255,0.05)');
+            gsap.set(section2, { opacity: 1, pointerEvents: 'none', zIndex: 18 });
+            gsap.set(imgOverlay, { opacity: 0 });
+            gsap.set(faceFront, { boxShadow: 'inset 0 0 40px rgba(0,0,0,1)', border: '1px solid rgba(255,255,255,0.05)' });
 
           } else if (progress <= p_Spin) {
             let pr = (progress - p_Tumble) / (p_Spin - p_Tumble);
@@ -7309,10 +7336,9 @@
             currentX = 0;
             currentY = targetY_Phase1 + 360 * ease;
 
-            setSection2State(1, 18, 'none');
-            setImgOverlayOpacity(0);
-            setFaceFrontBoxShadow('inset 0 0 40px rgba(0,0,0,1)');
-            setFaceFrontBorder('1px solid rgba(255,255,255,0.05)');
+            gsap.set(section2, { opacity: 1, pointerEvents: 'none', zIndex: 18 });
+            gsap.set(imgOverlay, { opacity: 0 });
+            gsap.set(faceFront, { boxShadow: 'inset 0 0 40px rgba(0,0,0,1)', border: '1px solid rgba(255,255,255,0.05)' });
 
           } else {
             let pr = (progress - p_Spin) / (p_Zoom - p_Spin);
@@ -7328,26 +7354,28 @@
             const titleExitPr = Math.max(0, Math.min(ease, 1));
             const titleExitEase = easeInOutCubic(titleExitPr);
 
-            setSection2State(Math.max(0, 1 - titleExitEase), 18, 'none');
-            setImgOverlayOpacity(0);
-            setFaceFrontBoxShadow(`inset 0 0 ${40 * (1 - ease)}px rgba(0,0,0,1)`);
-            setFaceFrontBorder(`1px solid rgba(255,255,255,${0.05 * (1 - ease)})`);
+            gsap.set(section2, { opacity: Math.max(0, 1 - titleExitEase), pointerEvents: 'none', zIndex: 18 });
+            gsap.set(imgOverlay, { opacity: ease * 0 });
+            gsap.set(faceFront, {
+              boxShadow: `inset 0 0 ${40 * (1 - ease)}px rgba(0,0,0,1)`,
+              border: `1px solid rgba(255,255,255,${0.05 * (1 - ease)})`
+            });
 
-            setDwBlackOverlayOpacity(ease);
+            if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: ease });
             if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
 
-            setTitleDescY(-easeInOutCubic(Math.min(titleExitPr, 1)) * 130);
-            setTitleLine2Y(-easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.10) / 0.90, 1))) * 130);
-            setTitleLine1Y(-easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.20) / 0.80, 1))) * 130);
-            setTitleMarqueeY(-easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.10) / 0.90, 1))) * 130);
-            setTitleSubtitleY(-easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.30) / 0.70, 1))) * 130);
+            gsap.set(titleDesc, { yPercent: -easeInOutCubic(Math.min(titleExitPr, 1)) * 130 });
+            gsap.set(titleLine2, { yPercent: -easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.10) / 0.90, 1))) * 130 });
+            gsap.set(titleLine1, { yPercent: -easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.20) / 0.80, 1))) * 130 });
+            gsap.set(titleMarquee, { yPercent: -easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.10) / 0.90, 1))) * 130 });
+            gsap.set(titleSubtitle, { yPercent: -easeInOutCubic(Math.max(0, Math.min((titleExitPr - 0.30) / 0.70, 1))) * 130 });
 
-            setNewTextGroupOpacity(titleExitPr > 0 ? 1 : 0);
+            gsap.set(newTextGroup, { opacity: titleExitPr > 0 ? 1 : 0 });
             const enterPr = Math.max(0, Math.min(titleExitPr / 0.70, 1));
-            setNewSubtitleY((1 - easeInOutCubic(Math.min(enterPr / 0.60, 1))) * 130);
-            setNewLine1Y((1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.10) / 0.60, 1)))) * 130);
-            setNewLine2Y((1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.20) / 0.60, 1)))) * 130);
-            setNewDescY((1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.35) / 0.55, 1)))) * 130);
+            gsap.set(newSubtitle, { yPercent: (1 - easeInOutCubic(Math.min(enterPr / 0.60, 1))) * 130 });
+            gsap.set(newLine1, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.10) / 0.60, 1)))) * 130 });
+            gsap.set(newLine2, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.20) / 0.60, 1)))) * 130 });
+            gsap.set(newDesc, { yPercent: (1 - easeInOutCubic(Math.max(0, Math.min((enterPr - 0.35) / 0.55, 1)))) * 130 });
           }
 
         } else if (progress > p_Zoom) {
@@ -7357,44 +7385,51 @@
           currentX = 0;
           currentY = targetY_Phase1 + 360;
 
-          setSection2State(0, 18, 'none');
-          setImgOverlayOpacity(0);
+          gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 18 });
+          gsap.set(imgOverlay, { opacity: 0 });
 
-          setDwBlackOverlayOpacity(1);
+          if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 1 });
           if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
 
-          setNewTextGroupOpacity(1);
-          setTitleDescY(-130);
-          setTitleLine2Y(-130);
-          setTitleLine1Y(-130);
-          setTitleMarqueeY(-130);
-          setTitleSubtitleY(-130);
+          gsap.set(newTextGroup, { opacity: 1 });
+          gsap.set([titleDesc, titleLine2, titleLine1, titleMarquee, titleSubtitle], { yPercent: -130 });
         } else {
           currentScale = 0.0001;
 
-          setSection2State(0, 22, 'none');
-          setImgOverlayOpacity(0);
+          gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 22 });
+          gsap.set(imgOverlay, { opacity: 0 });
 
-          setDwBlackOverlayOpacity(0);
+          if (dwBlackOverlay) gsap.set(dwBlackOverlay, { opacity: 0 });
           if (stmLogoEl) stmLogoEl.classList.remove('is-visible');
-          setNewTextGroupOpacity(0);
+          gsap.set(newTextGroup, { opacity: 0 });
 
           resetReveal();
         }
 
-        setSceneSize(currentSceneSize);
-        setSceneDepth(currentSceneSize / 2);
-        setCubeRotationX(currentX);
-        setCubeRotationY(currentY);
-        setSceneWrapperScale(currentScale);
-        setSceneWrapperTop(currentTop);
+        gsap.set(scene, {
+          '--scene-size': `${currentSceneSize}px`,
+          '--scene-depth': `${currentSceneSize / 2}px`
+        });
+
+        gsap.set(cube, {
+          rotationX: currentX,
+          rotationY: currentY,
+          rotationZ: 0
+        });
+
+        gsap.set(sceneWrapper, {
+          xPercent: -50,
+          yPercent: -50,
+          scale: currentScale,
+          top: `${currentTop}%`
+        });
 
         if (stmLogoEl && progress <= p_TextOut) {
           stmLogoEl.classList.remove('is-visible');
         }
       });
 
-      gsap.registerPlugin(ScrollTrigger);
+      gsap.registerPlugin(ScrollTrigger, Flip, ScrambleTextPlugin);
 
       // 🎯 ScrollTrigger 全域效能設定:
       //   - limitCallbacks: 限制 callback 頻率,避免快速滑動時 CPU 爆炸
@@ -7403,77 +7438,6 @@
         limitCallbacks: true,
         ignoreMobileResize: true,
       });
-
-      window.__nudotQueueScrollTriggerRefresh = window.__nudotQueueScrollTriggerRefresh || (function () {
-        let rafId = 0;
-        let timerId = 0;
-        const flush = () => {
-          if (rafId) return;
-          rafId = requestAnimationFrame(() => {
-            rafId = 0;
-            if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
-          });
-        };
-        return function queueScrollTriggerRefresh(delay = 0) {
-          if (delay > 0) {
-            clearTimeout(timerId);
-            timerId = setTimeout(() => {
-              timerId = 0;
-              flush();
-            }, delay);
-            return;
-          }
-          flush();
-        };
-      })();
-
-      const loadScriptOnce = window.__nudotLoadScriptOnce || (window.__nudotLoadScriptOnce = (function () {
-        const cache = new Map();
-        return function loadScriptOnce(src) {
-          if (!src) return Promise.resolve();
-          if (cache.has(src)) return cache.get(src);
-          const promise = new Promise((resolve, reject) => {
-            const existing = document.querySelector(`script[data-dynamic-src="${src}"]`);
-            if (existing) {
-              if (existing.dataset.loaded === 'true') {
-                resolve();
-                return;
-              }
-              existing.addEventListener('load', () => resolve(), { once: true });
-              existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
-              return;
-            }
-
-            const script = document.createElement('script');
-            script.src = src;
-            script.defer = true;
-            script.async = false;
-            script.dataset.dynamicSrc = src;
-            script.addEventListener('load', () => {
-              script.dataset.loaded = 'true';
-              resolve();
-            }, { once: true });
-            script.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
-            document.head.appendChild(script);
-          });
-          cache.set(src, promise);
-          return promise;
-        };
-      })());
-
-      let stmPluginsPromise = null;
-      function ensureStmPlugins() {
-        if (stmPluginsPromise) return stmPluginsPromise;
-        stmPluginsPromise = Promise.all([
-          loadScriptOnce('js/Flip.min.js'),
-          loadScriptOnce('js/ScrambleTextPlugin.min.js')
-        ]).then(() => {
-          if (window.gsap && window.Flip && window.ScrambleTextPlugin) {
-            window.gsap.registerPlugin(window.Flip, window.ScrambleTextPlugin);
-          }
-        });
-        return stmPluginsPromise;
-      }
 
       // 🎯 延遲非關鍵動畫初始化，讓主執行緒優先完成 paint
       var _ric = typeof requestIdleCallback === 'function' ? requestIdleCallback : function (cb) { setTimeout(cb, 200); };
@@ -7491,13 +7455,6 @@
           return;
         }
 
-        const leadPx = parseFloat(rootMargin) || 0;
-        const rect = target.getBoundingClientRect();
-        if (rect.top < window.innerHeight + leadPx && rect.bottom > -leadPx) {
-          _ric(run);
-          return;
-        }
-
         const observer = new IntersectionObserver((entries) => {
           if (!entries.some(entry => entry.isIntersecting)) return;
           observer.disconnect();
@@ -7507,8 +7464,7 @@
       }
 
       runWhenNear(document.getElementById('stm-section'), function () {
-        _ric(async function () {
-        await ensureStmPlugins();
+        _ric(function () {
         (function initSTM() {
           const stmSection = document.getElementById('stm-section');
           if (!stmSection) return;
@@ -7809,7 +7765,7 @@
           }
         });
         // 建完所有 pg-item triggers 後再做一次 refresh，確保位置精準
-        if (typeof ScrollTrigger !== 'undefined') window.__nudotQueueScrollTriggerRefresh();
+        if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
         }, 0);
       }, '2200px 0px');
 
@@ -7827,9 +7783,9 @@
       const _useNativeTouchScroll = window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
       // 🎯 無論是否使用 Lenis，都要在資源就緒後重新校準 ScrollTrigger
-      window.addEventListener('load', () => window.__nudotQueueScrollTriggerRefresh(), { once: true });
+      window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
       if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => window.__nudotQueueScrollTriggerRefresh()).catch(() => { });
+        document.fonts.ready.then(() => ScrollTrigger.refresh()).catch(() => { });
       }
 
       if (typeof Lenis !== 'undefined' && !_useNativeTouchScroll) {
@@ -8046,6 +8002,14 @@
           return { track, primary, accent, indexEl };
         }
 
+        function hydrateNavShowcaseImages(scope = navScrollDropdown) {
+          if (!scope) return;
+          scope.querySelectorAll('img[data-nav-src]').forEach((img) => {
+            img.src = img.dataset.navSrc;
+            img.removeAttribute('data-nav-src');
+          });
+        }
+
         function setNavShowcaseThumbsHidden(row = null) {
           if (typeof gsap === 'undefined') return;
           const { thumbs, images } = getNavShowcaseThumbTargets(row);
@@ -8184,6 +8148,7 @@
         function showNavScrollPreview(row) {
           if (!row || typeof gsap === 'undefined') return;
           if (isSimpleTouchNavMode() || !isNavScrollMenuOpen) return;
+          hydrateNavShowcaseImages(row);
 
           if (navScrollHoverCloseTimer) {
             clearTimeout(navScrollHoverCloseTimer);
@@ -8253,16 +8218,11 @@
 
         function initNavScrollMenu() {
           if (!navScrollContainer || !navScrollDropdown || !navScrollDropdownContent || typeof gsap === 'undefined') return;
-          const canUseHoverPreview = !isSimpleTouchNavMode();
 
           setNavScrollShellState('closed');
           syncNavScrollMenuCursorLabel();
-          if (canUseHoverPreview) {
-            initNavShowcaseHoverTimelines();
-            resetNavShowcaseHoverState();
-          } else {
-            setActiveNavShowcaseRow(null);
-          }
+          initNavShowcaseHoverTimelines();
+          resetNavShowcaseHoverState();
           stopNavScrollCloseTimeline();
 
           if (isMobileHomeNav()) {
@@ -8337,6 +8297,7 @@
         function openNavScrollMenu() {
           if (!navScrollMenuTl || isNavScrollMenuOpen || navScrollMenuAnimating) return;
           stopNavScrollCloseTimeline();
+          hydrateNavShowcaseImages();
           isNavScrollMenuOpen = true;
           navScrollMenuAnimating = true;
           navScrollMenuTl.timeScale(1);
@@ -8431,33 +8392,31 @@
           });
         });
 
-        if (!isSimpleTouchNavMode()) {
-          navShowcaseRows.forEach((row) => {
-            row.addEventListener('pointerenter', () => {
-              showNavScrollPreview(row);
-            });
-            row.addEventListener('focus', () => {
-              showNavScrollPreview(row);
-            });
-            row.addEventListener('pointerleave', () => {
-              scheduleHideNavScrollPreview(row);
-            });
-            row.addEventListener('blur', () => {
-              scheduleHideNavScrollPreview(row);
-            });
+        navShowcaseRows.forEach((row) => {
+          row.addEventListener('pointerenter', () => {
+            showNavScrollPreview(row);
           });
+          row.addEventListener('focus', () => {
+            showNavScrollPreview(row);
+          });
+          row.addEventListener('pointerleave', () => {
+            scheduleHideNavScrollPreview(row);
+          });
+          row.addEventListener('blur', () => {
+            scheduleHideNavScrollPreview(row);
+          });
+        });
 
-          navScrollDropdown?.addEventListener('pointerenter', () => {
-            if (navScrollHoverCloseTimer) {
-              clearTimeout(navScrollHoverCloseTimer);
-              navScrollHoverCloseTimer = null;
-            }
-          });
+        navScrollDropdown?.addEventListener('pointerenter', () => {
+          if (navScrollHoverCloseTimer) {
+            clearTimeout(navScrollHoverCloseTimer);
+            navScrollHoverCloseTimer = null;
+          }
+        });
 
-          navScrollDropdown?.addEventListener('pointerleave', () => {
-            hideNavScrollPreview();
-          });
-        }
+        navScrollDropdown?.addEventListener('pointerleave', () => {
+          hideNavScrollPreview();
+        });
 
         document.addEventListener('click', (event) => {
           if (!isNavScrollMenuOpen || !navScrollContainer) return;
@@ -8582,7 +8541,7 @@
           progressRaf = 0;
           currentWidth += (targetWidth - currentWidth) * 0.12;
           if (Math.abs(currentWidth - _lastWrittenWidth) > 0.05) {
-            progressBar.style.width = currentWidth + '%';
+            progressBar.style.transform = 'scaleX(' + (currentWidth / 100) + ')';
             _lastWrittenWidth = currentWidth;
           }
           if (Math.abs(targetWidth - currentWidth) > 0.05) requestProgressTick();
@@ -9110,14 +9069,15 @@
           const firstClone = track.templateSet.cloneNode(true);
           track.inner.appendChild(firstClone);
 
-          const setWidth = firstClone.getBoundingClientRect().width || firstClone.scrollWidth || 0;
-          const outerWidth = outer ? outer.getBoundingClientRect().width : window.innerWidth;
+          const setWidth = firstClone.scrollWidth || Math.ceil(firstClone.getBoundingClientRect().width) || 0;
+          const outerWidth = outer ? outer.clientWidth : window.innerWidth;
           track.setWidth = setWidth;
 
           if (!setWidth) return;
 
           const minTrackWidth = outerWidth + setWidth * 2;
-          while (track.inner.scrollWidth < minTrackWidth) {
+          const cloneCount = Math.max(2, Math.ceil(minTrackWidth / setWidth));
+          for (let i = 1; i < cloneCount; i++) {
             track.inner.appendChild(track.templateSet.cloneNode(true));
           }
           track.xPos = ((track.xPos % setWidth) + setWidth) % setWidth;
@@ -9923,34 +9883,18 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      const runSketchWhenNear = (target, callback) => {
-        if (!target || !('IntersectionObserver' in window)) {
-          window.setTimeout(callback, 500);
-          return;
-        }
-
-        const rect = target.getBoundingClientRect();
-        const leadPx = 2200;
-        if (rect.top < window.innerHeight + leadPx && rect.bottom > -leadPx) {
-          window.setTimeout(callback, 250);
-          return;
-        }
-
-        const observer = new IntersectionObserver((entries) => {
-          if (!entries.some(entry => entry.isIntersecting)) return;
-          observer.disconnect();
-          window.setTimeout(callback, 120);
-        }, { rootMargin: `${leadPx}px 0px` });
-        observer.observe(target);
-      };
-
-      runSketchWhenNear(document.getElementById('core-capabilities'), () => {
+      // 直接在 idle 時初始化，不等滾到附近再載，消除進場黑畫面
+      const initSketch = () => {
         const sketchRoot = document.querySelector("#core-capabilities #sketch");
         if (!sketchRoot) return;
-
         const sketch = new Sketch("#core-capabilities #sketch");
         sketch.create();
-      });
+      };
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(initSketch, { timeout: 1200 });
+      } else {
+        window.setTimeout(initSketch, 400);
+      }
     });
   </script>
 
@@ -10001,24 +9945,14 @@
       // pin spacer 插入後，後面的 pg-gallery trigger 位置會跑掉，必須 refresh
       // 立即 refresh 一次，再延遲等 _ric 內的 pg-gallery triggers 全部建完後再 refresh 一次
       ScrollTrigger.refresh();
-      setTimeout(() => {
-        if (typeof window.__nudotQueueScrollTriggerRefresh === 'function') {
-          window.__nudotQueueScrollTriggerRefresh();
-        } else if (typeof ScrollTrigger !== 'undefined') {
-          ScrollTrigger.refresh();
-        }
-      }, 800);
+      setTimeout(() => { if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh(); }, 800);
 
       let _dxmResizeTO = 0;
       window.addEventListener('resize', () => {
         dxmMaxScroll = getMaxScroll();
         clearTimeout(_dxmResizeTO);
         _dxmResizeTO = setTimeout(() => {
-          if (typeof window.__nudotQueueScrollTriggerRefresh === 'function') {
-            window.__nudotQueueScrollTriggerRefresh();
-          } else if (typeof ScrollTrigger !== 'undefined') {
-            ScrollTrigger.refresh();
-          }
+          if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
         }, 200);
       }, { passive: true });
 
@@ -10109,12 +10043,6 @@
       }
 
       const leadPx = 2200;
-      const transitionRect = transitionTarget.getBoundingClientRect();
-      if (transitionRect.top < window.innerHeight + leadPx && transitionRect.bottom > -leadPx) {
-        initSectionTransitions();
-        return;
-      }
-
       const transitionObserver = new IntersectionObserver((entries) => {
         if (!entries.some(entry => entry.isIntersecting)) return;
         transitionObserver.disconnect();

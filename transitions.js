@@ -31,7 +31,7 @@
     } catch (error) {
       try {
         window.sessionStorage.removeItem(TRANSITION_KEY);
-      } catch (ignored) {}
+      } catch (ignored) { }
       return null;
     }
   }
@@ -41,7 +41,7 @@
     if (!payload) return null;
     try {
       window.sessionStorage.removeItem(TRANSITION_KEY);
-    } catch (ignored) {}
+    } catch (ignored) { }
     return payload;
   }
 
@@ -64,7 +64,7 @@
     if (!lenis || typeof lenis.stop !== 'function') return;
     try {
       lenis.stop();
-    } catch (error) {}
+    } catch (error) { }
   }
 
   function scrollToTarget(target) {
@@ -74,7 +74,7 @@
       try {
         lenis.scrollTo(target, { duration: 1.15, offset: -24 });
         return;
-      } catch (error) {}
+      } catch (error) { }
     }
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -259,7 +259,7 @@
         label: label || '',
         at: Date.now()
       }));
-    } catch (error) {}
+    } catch (error) { }
 
     stopLenis();
     document.documentElement.classList.add('is-page-transitioning');
@@ -318,6 +318,12 @@
         closeSharedMenu(false);
         scrollToTarget(target);
         return;
+      }
+
+      // 平板/手機：nav dropdown 內的連結直接跳頁，不播放過場特效
+      if (isSimpleTouchNavMode() && link.closest('#nav-scroll-dropdown')) {
+        closeSharedMenu(true);
+        return; // 讓瀏覽器原生導航
       }
 
       event.preventDefault();
@@ -474,7 +480,7 @@
   }
 
   function isSimpleTouchNavMode() {
-    return window.innerWidth <= 1024;
+    return window.innerWidth <= 1280;
   }
 
   function previewRow(row) {
