@@ -274,12 +274,12 @@
 
     var fallbackTimer = window.setTimeout(function () {
       window.location.href = destination.href;
-    }, 1000);
+    }, 600);
 
     resetReveal(refs);
 
     gsap.timeline({
-      defaults: { ease: 'power4.inOut' },
+      defaults: { ease: 'power3.in' },
       onComplete: function () {
         window.clearTimeout(fallbackTimer);
         window.location.href = destination.href;
@@ -287,12 +287,12 @@
     })
       .to(refs.curtain, {
         '--pt-top': '0%',
-        duration: 0.5,
+        duration: 0.3,
       }, 0)
       .to(refs.curtain, {
         '--pt-bottom': '0%',
-        duration: 0.5,
-      }, 0.04);
+        duration: 0.3,
+      }, 0.03);
   }
 
   window._nudotNavigate = navigateWithTransition;
