@@ -777,59 +777,100 @@
     document.documentElement.setAttribute('data-barba-mode', 'reload-safe');
   }
 
-  // 處理瀏覽器 bfcache 還原（上一頁/下一頁）— 清除所有卡住的 transition 狀態
-  window.addEventListener('pageshow', function (e) {
-    if (!e.persisted) return;
-
-    // 1. 重置離頁旗標，否則所有點擊會被攔截
+  // 處理瀏覽器 bfcache 還原（上下一頁）— 完整重置 Lenis / ScrollTrigger / 轉場 / 選單狀態
+  // 解決卷軸卡死：離開頁面時呼叫過 stopLenis()，bfcache 還原時 Lenis 仍停著，必須主動重啟
+  function restoreFromBfcache() {
+    // 1. 重置轉場狀態 + 清掉所有殘留 CSS class
     state.leaving = false;
-
-    // 2. 清除過場 CSS class（包含 is-page-transitioning、has-pending-page-transition）
-    document.documentElement.classList.remove('has-pending-page-transition', 'is-page-transitioning');
-
-    // 3. 清掉 sessionStorage payload，避免 reload 後重播過場動畫
+    if (state.entryCleanupTimer) {
+      window.clearTimeout(state.entryCleanupTimer);
+      state.entryCleanupTimer = null;
+    }
+    if (state.entryFailSafeTimer) {
+      window.clearTimeout(state.entryFailSafeTimer);
+      state.entryFailSafeTimer = null;
+    }
+    document.documentElement.classList.remove(
+      'has-pending-page-transition',
+      'is-page-transitioning',
+      'is-menu-link-transition'
+    );
     try { window.sessionStorage.removeItem(TRANSITION_KEY); } catch (ignored) { }
 
-    // 4. 強制收起過場 overlay
+    // 2. 收掉轉場 shell（curtain / shell 完全清乾淨）
     var refs = getShellRefs();
     finalizeEntryTransition(refs);
 
-    // 5. 重置選單狀態 —
-    //    closeSharedMenu(true) 清除 nav-menu-open（overflow:hidden）、
-    //    is-menu-open、is-menu-animating、懸掛 setTimeout 等。
-    //    另外再明確移除 inert / pointer-events 殘留，以防 initIndexSyncedSharedNav
-    //    在離頁前設定了 inert 卻來不及還原。
-    closeSharedMenu(true);
-    var navContainer = document.getElementById('nav_scroll_container');
-    if (navContainer) {
-      navContainer.removeAttribute('inert');
-      navContainer.style.removeProperty('pointer-events');
-      navContainer.classList.remove('is-menu-animating', 'is-menu-phase-compact', 'is-menu-phase-line');
-    }
-
-    // 6. 重啟 Lenis 並同步內部位置到瀏覽器實際還原的卷軸位置
-    //    stopLenis() 在離頁前被呼叫；bfcache 還原後 Lenis 仍是 stopped。
-    //    lenis.scrollTo(currentY, { immediate, force }) 清除殘餘 velocity，
-    //    讓 Lenis 內部 target 與瀏覽器實際位置完全對齊。
+    // 3. 【關鍵】重啟 Lenis，並同步內部 scroll target 到瀏覽器還原的卷軸位置
+    //    若不做這一步,Lenis 會停留在停止狀態,滾輪完全沒反應 = 卷軸卡死
     var lenis = getLenis();
     if (lenis) {
-      if (typeof lenis.start === 'function') {
-        try { lenis.start(); } catch (ignored) { }
-      }
-      if (typeof lenis.scrollTo === 'function') {
-        try {
-          var currentY = window.scrollY || document.documentElement.scrollTop || 0;
+      try {
+        if (typeof lenis.start === 'function') lenis.start();
+        var currentY = window.scrollY || document.documentElement.scrollTop || 0;
+        if (typeof lenis.scrollTo === 'function') {
           lenis.scrollTo(currentY, { immediate: true, force: true });
-        } catch (ignored) { }
-      }
+        }
+      } catch (err) { /* ignore */ }
     }
 
-    // 7. 刷新 ScrollTrigger — bfcache 還原後卷軸位置可能跑掉，觸發點需要重新計算。
-    //    用 rAF 延一幀，確保 Lenis 已完成 start() 再 refresh。
+    // 4. 刷新 ScrollTrigger,讓觸發點對齊還原後的版面（避免 scroll 觸發位錯位）
     if (window.ScrollTrigger && typeof window.ScrollTrigger.refresh === 'function') {
-      window.requestAnimationFrame(function () {
-        try { window.ScrollTrigger.refresh(); } catch (ignored) { }
-      });
+      try { window.ScrollTrigger.refresh(); } catch (err) { /* ignore */ }
+    }
+
+    // 5. 強制重置共用導覽選單，避免離開時動畫卡在中途
+    var navContainer = document.getElementById('nav_scroll_container');
+    if (navContainer) {
+      killSharedMenuTimeline('openTl');
+      killSharedMenuTimeline('closeTl');
+      clearSharedMenuTimers();
+      sharedMenuState.animating = false;
+      sharedMenuState.open = false;
+      navContainer.classList.remove(
+        'is-menu-animating',
+        'is-menu-phase-compact',
+        'is-menu-phase-line',
+        'is-menu-open',
+        'ns-enter',
+        'ns-exit'
+      );
+      clearSharedMenuShellStyles(navContainer);
+      navContainer.removeAttribute('inert');
+      navContainer.style.removeProperty('pointer-events');
+      document.body.classList.remove('nav-menu-open');
+
+      var menuBtn = document.getElementById('nav-scroll-menu-btn');
+      var dropdown = document.getElementById('nav-scroll-dropdown');
+      if (menuBtn) {
+        menuBtn.setAttribute('aria-expanded', 'false');
+        menuBtn.setAttribute('aria-label', 'Open menu');
+        menuBtn.dataset.cursor = 'OPEN';
+      }
+      if (dropdown) dropdown.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    restoreFromBfcache();
+    // 二段保險:bfcache 還原後,部分瀏覽器(尤其 Safari)第一幀 Lenis raf 尚未掛上,
+    // 延後一輪 rAF 再呼叫一次,確保滾輪一定能動
+    window.requestAnimationFrame(function () {
+      var lenis = getLenis();
+      if (lenis && typeof lenis.start === 'function') {
+        try { lenis.start(); } catch (err) { /* ignore */ }
+      }
+    });
+  });
+
+  // 觸控設備（沒用 Lenis）時,bfcache 還原偶爾會殘留 has-pending-page-transition
+  // 配合上面 restoreFromBfcache 已處理；此處針對非 persisted 的 pageshow 做最後保險
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) return;
+    // 一般載入(非 bfcache):如果發現 transitions 狀態還掛著,代表上一次離開時動畫沒走完
+    if (document.documentElement.classList.contains('is-page-transitioning')) {
+      document.documentElement.classList.remove('is-page-transitioning');
     }
   });
 
