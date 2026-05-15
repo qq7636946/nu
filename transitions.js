@@ -780,11 +780,57 @@
   // 處理瀏覽器 bfcache 還原（上一頁/下一頁）— 清除所有卡住的 transition 狀態
   window.addEventListener('pageshow', function (e) {
     if (!e.persisted) return;
+
+    // 1. 重置離頁旗標，否則所有點擊會被攔截
     state.leaving = false;
+
+    // 2. 清除過場 CSS class（包含 is-page-transitioning、has-pending-page-transition）
     document.documentElement.classList.remove('has-pending-page-transition', 'is-page-transitioning');
+
+    // 3. 清掉 sessionStorage payload，避免 reload 後重播過場動畫
     try { window.sessionStorage.removeItem(TRANSITION_KEY); } catch (ignored) { }
+
+    // 4. 強制收起過場 overlay
     var refs = getShellRefs();
     finalizeEntryTransition(refs);
+
+    // 5. 重置選單狀態 —
+    //    closeSharedMenu(true) 清除 nav-menu-open（overflow:hidden）、
+    //    is-menu-open、is-menu-animating、懸掛 setTimeout 等。
+    //    另外再明確移除 inert / pointer-events 殘留，以防 initIndexSyncedSharedNav
+    //    在離頁前設定了 inert 卻來不及還原。
+    closeSharedMenu(true);
+    var navContainer = document.getElementById('nav_scroll_container');
+    if (navContainer) {
+      navContainer.removeAttribute('inert');
+      navContainer.style.removeProperty('pointer-events');
+      navContainer.classList.remove('is-menu-animating', 'is-menu-phase-compact', 'is-menu-phase-line');
+    }
+
+    // 6. 重啟 Lenis 並同步內部位置到瀏覽器實際還原的卷軸位置
+    //    stopLenis() 在離頁前被呼叫；bfcache 還原後 Lenis 仍是 stopped。
+    //    lenis.scrollTo(currentY, { immediate, force }) 清除殘餘 velocity，
+    //    讓 Lenis 內部 target 與瀏覽器實際位置完全對齊。
+    var lenis = getLenis();
+    if (lenis) {
+      if (typeof lenis.start === 'function') {
+        try { lenis.start(); } catch (ignored) { }
+      }
+      if (typeof lenis.scrollTo === 'function') {
+        try {
+          var currentY = window.scrollY || document.documentElement.scrollTop || 0;
+          lenis.scrollTo(currentY, { immediate: true, force: true });
+        } catch (ignored) { }
+      }
+    }
+
+    // 7. 刷新 ScrollTrigger — bfcache 還原後卷軸位置可能跑掉，觸發點需要重新計算。
+    //    用 rAF 延一幀，確保 Lenis 已完成 start() 再 refresh。
+    if (window.ScrollTrigger && typeof window.ScrollTrigger.refresh === 'function') {
+      window.requestAnimationFrame(function () {
+        try { window.ScrollTrigger.refresh(); } catch (ignored) { }
+      });
+    }
   });
 
   function boot() {
