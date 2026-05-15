@@ -777,6 +777,16 @@
     document.documentElement.setAttribute('data-barba-mode', 'reload-safe');
   }
 
+  // 處理瀏覽器 bfcache 還原（上一頁/下一頁）— 清除所有卡住的 transition 狀態
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    state.leaving = false;
+    document.documentElement.classList.remove('has-pending-page-transition', 'is-page-transitioning');
+    try { window.sessionStorage.removeItem(TRANSITION_KEY); } catch (ignored) { }
+    var refs = getShellRefs();
+    finalizeEntryTransition(refs);
+  });
+
   function boot() {
     var payload = consumePayload();
     initBarbaMarkers();
