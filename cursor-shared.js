@@ -18,7 +18,8 @@
         COLOR: '#ffffff'
       };
 
-      var activeBlocks = [];
+      var pool = [];
+      var poolIndex = 0;
       var activeBlockKeys = new Set();
       var prevX = null;
       var prevY = null;
@@ -34,11 +35,15 @@
           document.head.appendChild(styleElement);
         }
 
+        // 優化：使用 GPU 加速的 transform，並覆寫預設 CSS 動畫，改用 JS Web Animations API 達到最高效能
         styleElement.innerHTML = '.mouseTracker--01 {' +
           'width:' + settings.GRID_SIZE + 'px;' +
           'height:' + settings.GRID_SIZE + 'px;' +
           'background-color:' + settings.COLOR + ';' +
-          'animation-duration:' + settings.FADE_OUT_DURATION + 's;' +
+          'animation: none !important;' +
+          'opacity: 0;' +
+          'top: 0; left: 0;' +
+          'will-change: transform, opacity;' +
           '}';
       }
 
@@ -48,9 +53,19 @@
         gridCols = Math.ceil(width / settings.GRID_SIZE);
         gridRows = Math.ceil(height / settings.GRID_SIZE);
 
-        activeBlocks.forEach(function (el) { el.remove(); });
-        activeBlocks = [];
         activeBlockKeys.clear();
+
+        // DOM 物件池 (Object Pool) 模式：只在初始化時建立 50 個 div，之後重複利用，不再頻繁增刪 DOM
+        if (pool.length === 0) {
+          var fragment = document.createDocumentFragment();
+          for (var i = 0; i < settings.MAX_BLOCKS; i++) {
+            var el = document.createElement('div');
+            el.className = 'mouseTracker--01';
+            fragment.appendChild(el);
+            pool.push(el);
+          }
+          document.body.appendChild(fragment);
+        }
       }
 
       function getInterpolatedPoints(x1, y1, x2, y2) {
@@ -75,23 +90,39 @@
         var key = x + ',' + y;
         if (activeBlockKeys.has(key)) return;
 
-        if (activeBlocks.length >= settings.MAX_BLOCKS) {
-          var oldest = activeBlocks.shift();
-          if (oldest) {
-            activeBlockKeys.delete(oldest.dataset.pos);
-            oldest.remove();
-          }
+        // 從池中取出可重複使用的 DOM 節點
+        var element = pool[poolIndex];
+        poolIndex = (poolIndex + 1) % settings.MAX_BLOCKS;
+
+        // 清除舊的 Key (如果該節點還在跑舊的軌跡)
+        if (element.dataset.pos) {
+          activeBlockKeys.delete(element.dataset.pos);
         }
 
-        var element = document.createElement('div');
-        element.className = 'mouseTracker--01';
-        element.style.left = x + 'px';
-        element.style.top = y + 'px';
         element.dataset.pos = key;
-
-        document.body.appendChild(element);
-        activeBlocks.push(element);
         activeBlockKeys.add(key);
+
+        // 使用 GPU 加速的 transform3d 取代耗能的 top/left 重繪 (Reflow)
+        element.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+
+        // 如果之前有動畫，先取消
+        if (element._anim) {
+          element._anim.cancel();
+        }
+
+        // 原生 Web Animations API：直接對單一物件執行高效淡出，取代頻繁增刪 Class
+        element._anim = element.animate([
+          { opacity: 1 },
+          { opacity: 0 }
+        ], {
+          duration: settings.FADE_OUT_DURATION * 1000,
+          fill: 'forwards'
+        });
+
+        element._anim.onfinish = function() {
+          activeBlockKeys.delete(key);
+          element.dataset.pos = "";
+        };
       }
 
       function handleMouseMove(event) {
