@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -8709,8 +8709,9 @@
           COLOR: '#ffffff'
         };
 
-        let activeBlocks = [];
-        let activeBlockKeys = new Set();
+        const pool = [];
+        let poolIndex = 0;
+        const activeBlockKeys = new Set();
         let prevX = null;
         let prevY = null;
         let gridCols = 0;
@@ -8729,7 +8730,10 @@
                     width: ${settings.GRID_SIZE}px;
                     height: ${settings.GRID_SIZE}px;
                     background-color: ${settings.COLOR};
-                    animation-duration: ${settings.FADE_OUT_DURATION}s;
+                    animation: none !important;
+                    opacity: 0;
+                    top: 0; left: 0;
+                    will-change: transform, opacity;
                 }
             `;
         };
@@ -8740,9 +8744,18 @@
           gridCols = Math.ceil(width / settings.GRID_SIZE);
           gridRows = Math.ceil(height / settings.GRID_SIZE);
 
-          activeBlocks.forEach(el => el.remove());
-          activeBlocks = [];
           activeBlockKeys.clear();
+
+          if (pool.length === 0) {
+            const fragment = document.createDocumentFragment();
+            for (let i = 0; i < settings.MAX_BLOCKS; i++) {
+              const el = document.createElement('div');
+              el.className = 'mouseTracker--01';
+              fragment.appendChild(el);
+              pool.push(el);
+            }
+            document.body.appendChild(fragment);
+          }
         };
 
         const getInterpolatedPoints = (x1, y1, x2, y2) => {
@@ -8783,21 +8796,34 @@
           const key = `${x},${y}`;
           if (activeBlockKeys.has(key)) return;
 
-          if (activeBlocks.length >= settings.MAX_BLOCKS) {
-            const oldest = activeBlocks.shift();
-            if (oldest) activeBlockKeys.delete(oldest.dataset.pos);
-            oldest.remove();
+          const el = pool[poolIndex];
+          poolIndex = (poolIndex + 1) % settings.MAX_BLOCKS;
+
+          if (el.dataset.pos) {
+            activeBlockKeys.delete(el.dataset.pos);
           }
 
-          const el = document.createElement('div');
-          el.className = 'mouseTracker--01';
-          el.style.left = `${x}px`;
-          el.style.top = `${y}px`;
           el.dataset.pos = key;
-
-          document.body.appendChild(el);
-          activeBlocks.push(el);
           activeBlockKeys.add(key);
+
+          el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+
+          if (el._anim) {
+            el._anim.cancel();
+          }
+
+          el._anim = el.animate([
+            { opacity: 1 },
+            { opacity: 0 }
+          ], {
+            duration: settings.FADE_OUT_DURATION * 1000,
+            fill: 'forwards'
+          });
+
+          el._anim.onfinish = () => {
+            activeBlockKeys.delete(key);
+            el.dataset.pos = "";
+          };
         };
 
         updateDynamicStyles();
