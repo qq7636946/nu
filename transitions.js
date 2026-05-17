@@ -329,13 +329,23 @@
         document.documentElement.classList.add('is-menu-link-transition');
         closeSharedMenu(false, function () {
           document.documentElement.classList.remove('is-menu-link-transition');
+          navigateWithTransition(destination.href, transitionLabel);
         });
-        navigateWithTransition(destination.href, transitionLabel);
         return;
       }
 
-      closeSharedMenu(true);
-      navigateWithTransition(destination.href, transitionLabel);
+      var navContainerEl = document.getElementById('nav_scroll_container');
+      var menuIsOpen = !!(navContainerEl && navContainerEl.classList.contains('is-menu-open'));
+      if (menuIsOpen) {
+        document.documentElement.classList.add('is-menu-link-transition');
+        closeSharedMenu(false, function () {
+          document.documentElement.classList.remove('is-menu-link-transition');
+          navigateWithTransition(destination.href, transitionLabel);
+        });
+      } else {
+        closeSharedMenu(true);
+        navigateWithTransition(destination.href, transitionLabel);
+      }
     }, false);
   }
 
@@ -507,7 +517,7 @@
     var dropdown = document.getElementById('nav-scroll-dropdown');
     var items = Array.prototype.slice.call(document.querySelectorAll('#nav-scroll-dropdown .ns-dropdown__item'));
     var done = typeof onClosed === 'function' ? onClosed : null;
-    if (!container || !document.body.classList.contains('shared-nav-page')) {
+    if (!container) {
       if (done) done();
       return;
     }
@@ -864,14 +874,22 @@
     });
   });
 
+  function cleanupStalePageShowTransition() {
+    if (state.leaving) return;
+    var refs = getShellRefs();
+    var hasStaleTransition = document.documentElement.classList.contains('has-pending-page-transition')
+      || document.documentElement.classList.contains('is-page-transitioning')
+      || !!(refs.shell && refs.shell.classList.contains('is-active'));
+    if (!hasStaleTransition) return;
+    restoreFromBfcache();
+  }
+
   // 觸控設備（沒用 Lenis）時,bfcache 還原偶爾會殘留 has-pending-page-transition
   // 配合上面 restoreFromBfcache 已處理；此處針對非 persisted 的 pageshow 做最後保險
   window.addEventListener('pageshow', function (e) {
     if (e.persisted) return;
     // 一般載入(非 bfcache):如果發現 transitions 狀態還掛著,代表上一次離開時動畫沒走完
-    if (document.documentElement.classList.contains('is-page-transitioning')) {
-      document.documentElement.classList.remove('is-page-transitioning');
-    }
+    window.setTimeout(cleanupStalePageShowTransition, 1800);
   });
 
   function boot() {
