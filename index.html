@@ -6233,9 +6233,13 @@
             const vid = warmupVideo || document.createElement('video');
             if (warmupVideo) {
               window._heroVideoPrewarmClaimed = true;
-              if (vid.parentNode) vid.parentNode.removeChild(vid);
+              if (vid.parentNode !== this.container) {
+                this.container.appendChild(vid);
+              }
+              vid.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
             } else {
               vid.src = url;
+              this.container.appendChild(vid);
             }
             vid.loop = true;
             vid.muted = true;
