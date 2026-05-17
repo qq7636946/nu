@@ -84,21 +84,15 @@
       // <body> 還沒就先掛在 documentElement;DOMContentLoaded 後再搬到 body 確保正常清理
       (document.body || document.documentElement).appendChild(v);
       v.load(); // 顯式觸發載入,確保 Range request 進 HTTP cache
-      window._heroVideoPrewarm = v;
-      window._heroVideoPrewarmSrc = src;
-      window._heroVideoPrewarmClaimed = false;
       var playPromise = v.play();
       if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function () { });
-      // WebGLManager 會接管這支 video；若未接管才清掉，避免誤殺正在使用的 hero video。
+      // prewarm 只負責暖 HTTP cache，8 秒後清掉隱藏元素。
       window.setTimeout(function () {
-        if (window._heroVideoPrewarmClaimed) return;
         if (v && v.parentNode) {
           v.removeAttribute('src');
           try { v.load(); } catch (_) { }
           v.parentNode.removeChild(v);
         }
-        window._heroVideoPrewarm = null;
-        window._heroVideoPrewarmSrc = '';
       }, 8000);
     })();
   </script>
@@ -6225,22 +6219,8 @@
 
         if (/\.(mp4|webm|ogg)$/i.test(url)) {
           this.texturePromises[index] = new Promise((resolve) => {
-            const warmupVideo = index === 0
-              && window._heroVideoPrewarm
-              && window._heroVideoPrewarmSrc === url
-              ? window._heroVideoPrewarm
-              : null;
-            const vid = warmupVideo || document.createElement('video');
-            if (warmupVideo) {
-              window._heroVideoPrewarmClaimed = true;
-              if (vid.parentNode !== this.container) {
-                this.container.appendChild(vid);
-              }
-              vid.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
-            } else {
-              vid.src = url;
-              this.container.appendChild(vid);
-            }
+            const vid = document.createElement('video');
+            vid.src = url;
             vid.loop = true;
             vid.muted = true;
             vid.playsInline = true;
@@ -6249,10 +6229,12 @@
             vid.setAttribute('playsinline', '');
             vid.setAttribute('webkit-playsinline', '');
             // 手機版直接設 autoplay，確保 iOS / Android 能在無使用者互動下播放
-            if (window.matchMedia ? window.matchMedia('(max-width: 767px)').matches : window.innerWidth <= 767) {
+            if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
               vid.autoplay = true;
               vid.setAttribute('autoplay', '');
             }
+            this.container.appendChild(vid);
+            vid.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
             this.videoEls[index] = vid;
             const texture = new THREE.VideoTexture(vid);
             texture.minFilter = THREE.LinearFilter;
@@ -6284,7 +6266,7 @@
             if (vid.readyState >= 2) resolveTexture();
             else vid.addEventListener('loadeddata', resolveTexture, { once: true });
             vid.addEventListener('error', resolveEmptyTexture, { once: true });
-            if (!warmupVideo && vid.readyState === 0) vid.load();
+            if (vid.readyState === 0) vid.load();
             if (index === 0) this._safePlay(vid);
           });
           return this.texturePromises[index];
