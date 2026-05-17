@@ -144,7 +144,7 @@
   <script src="js/Flip.min.js" defer fetchpriority="low"></script>
   <script src="js/ScrambleTextPlugin.min.js" defer fetchpriority="low"></script>
   <script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.min.js" defer fetchpriority="low"></script>
-  <script src="transitions.js" defer fetchpriority="low"></script>
+  <script src="./transitions.js?v=20260517-4" defer fetchpriority="low"></script>
   <style>
     *,
     *::after,
@@ -8291,7 +8291,8 @@
         }
 
         function closeNavScrollMenu(options = {}) {
-          if (!navScrollMenuTl || (!isNavScrollMenuOpen && !navScrollMenuAnimating)) return;
+          const menuClassOpen = navScrollContainer?.classList.contains('is-menu-open');
+          if (!navScrollMenuTl || (!isNavScrollMenuOpen && !navScrollMenuAnimating && !menuClassOpen)) return;
           const immediate = options.immediate === true;
           const onAfterClose = typeof options.onAfterClose === 'function' ? options.onAfterClose : null;
           isNavScrollMenuOpen = false;
@@ -8377,12 +8378,16 @@
 
         navScrollLinks.forEach((link) => {
           link.addEventListener('click', (e) => {
-            if (!isNavScrollMenuOpen && !navScrollMenuAnimating) return;
+            const menuClassOpen = navScrollContainer?.classList.contains('is-menu-open');
+            if (!isNavScrollMenuOpen && !navScrollMenuAnimating && !menuClassOpen) return;
             e.preventDefault();
+            e.stopPropagation();
             const href = link.getAttribute('href');
             const label = link.dataset.transitionLabel || '';
+            document.documentElement.classList.add('is-menu-link-transition');
             closeNavScrollMenu({
               onAfterClose: () => {
+                document.documentElement.classList.remove('is-menu-link-transition');
                 if (!href) return;
                 const dest = new URL(href, window.location.href);
                 const isSamePage = isSameOriginSamePath(dest);
@@ -8396,9 +8401,9 @@
                     }
                   }
                 } else if (window._nudotNavigate) {
-                  window._nudotNavigate(href, label);
+                  window._nudotNavigate(dest.href, label);
                 } else {
-                  window.location.href = href;
+                  window.location.href = dest.href;
                 }
               }
             });
