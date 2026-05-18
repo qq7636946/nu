@@ -3830,6 +3830,9 @@
         border-color 0.4s ease,
         opacity 0.3s ease;
     }
+    
+    
+    
 
     .mouseTracker--01 {
       animation: mouseTracker_fadeOut 1s forwards;
@@ -3885,27 +3888,33 @@
 
     #cursor-ring.is-link::after,
     #cursor-ring.is-leaving::after {
-      content: attr(data-cursor-label);
-      position: absolute;
-      inset: 8px;
-      box-sizing: border-box;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #000;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 10px;
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: 0.01em;
-      text-align: center;
-      text-transform: uppercase;
-      white-space: normal;
-      overflow-wrap: anywhere;
-      pointer-events: none;
-      opacity: 0;
-      will-change: opacity;
+  content: attr(data-cursor-label);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 52px;
+  height: 52px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  will-change: opacity;
     }
+    
+   
 
     #cursor-ring.is-link::after {
       opacity: 1;
@@ -4468,7 +4477,7 @@
                   </span>
                 </a>
 
-                <a class="ns-showcase-row ns-dropdown__item" href="index.html"
+                <a class="ns-showcase-row ns-dropdown__item" href="contact.php"
                   data-transition-label="Contact">
                   <span class="ns-showcase-row__index">05</span>
                   <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
@@ -4751,7 +4760,7 @@
                       <a href="#section-2-content" data-transition-label="About">About</a>
                       <a href="work.html" data-transition-label="Work">Work</a>
                       <a href="labs/labs1.html" data-transition-label="Labs">Labs</a>
-                      <a href="#site-footer" data-transition-label="Contact">Contact</a>
+                      <a href="contact.php" data-transition-label="Contact">Contact</a>
                     </div>
                   </div>
                   <div class="grid-4 border-top-line">
