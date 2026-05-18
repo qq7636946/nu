@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -56,53 +56,6 @@
   <!-- LCP boosters: brand logo -->
   <link rel="preload" as="image" href="images/pc_logo.svg" fetchpriority="high">
 
-  <!-- LCP boosters: hero slide-0 video — 趁 loader 動畫期間就把影片下載到瀏覽器快取,
-       loader 結束後 WebGLManager 創 vid.src 時直接 hit cache,不用再等網路。
-       NOTE: <link rel="preload" as="video"> 不在 WHATWG 規範白名單內(會被忽略 + 噴警告),
-       改用 hidden <video preload="auto"> 觸發跟正式 <video> 元素一樣的 Range request,
-       確保 HTTP cache 能被後面的 WebGLManager 真正命中。 -->
-  <script>
-    (function () {
-      var isDesktop = !!(window.matchMedia && window.matchMedia('(min-width: 768px)').matches);
-      var src = isDesktop
-        ? 'images/home/slider_video01.mp4'
-        : 'images/home/slider_video01_s.mp4';
-      var v = document.createElement('video');
-      v.src = src;
-      v.preload = 'auto';
-      v.muted = true;
-      v.playsInline = true;
-      v.loop = true;
-      v.setAttribute('aria-hidden', 'true');
-      v.setAttribute('muted', '');
-      v.setAttribute('playsinline', '');
-      v.setAttribute('webkit-playsinline', '');
-      // 手機版直接給 autoplay 屬性，確保 iOS Safari / Android Chrome 無需使用者互動即可播放
-      if (!isDesktop) { v.autoplay = true; v.setAttribute('autoplay', ''); }
-      // 放在 viewport 內讓 browser 給高優先級（非 Idle），避免被降速
-      v.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;z-index:-1';
-      // <body> 還沒就先掛在 documentElement;DOMContentLoaded 後再搬到 body 確保正常清理
-      (document.body || document.documentElement).appendChild(v);
-      v.load(); // 顯式觸發載入,確保 Range request 進 HTTP cache
-      window._heroVideoPrewarm = v;
-      window._heroVideoPrewarmSrc = src;
-      window._heroVideoPrewarmClaimed = false;
-      var playPromise = v.play();
-      if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function () { });
-      // WebGLManager 會接管這支 video；若未接管才清掉，避免誤殺正在使用的 hero video。
-      window.setTimeout(function () {
-        if (window._heroVideoPrewarmClaimed) return;
-        if (v && v.parentNode) {
-          v.removeAttribute('src');
-          try { v.load(); } catch (_) { }
-          v.parentNode.removeChild(v);
-        }
-        window._heroVideoPrewarm = null;
-        window._heroVideoPrewarmSrc = '';
-      }, 8000);
-    })();
-  </script>
-
   <!-- Non-blocking: Adobe Fonts -->
   <link rel="preload" as="style" href="https://use.typekit.net/upd0woi.css">
   <link rel="stylesheet" href="https://use.typekit.net/upd0woi.css" media="print" onload="this.media='all'">
@@ -126,11 +79,11 @@
   <style>
     :root{--pt-bg:#000;--pt-top:-102%;--pt-bottom:102%}
     html.is-page-transitioning,html.is-page-transitioning body{cursor:progress}
-    .page-transition-shell{position:fixed;inset:0;z-index:200000;pointer-events:none;opacity:0;visibility:hidden}
+    .page-transition-shell{position:fixed;inset:0;z-index:300000;pointer-events:none;opacity:0;visibility:hidden}
     .page-transition-shell.is-active{opacity:1;visibility:visible}
     html.has-pending-page-transition .page-transition-shell{opacity:1;visibility:visible}
     .page-transition-curtain{position:absolute;inset:0;opacity:0;--pt-top:-102%;--pt-bottom:102%}
-    .page-transition-curtain::before,.page-transition-curtain::after{content:'';position:absolute;left:0;width:100%;height:56vh;background:var(--pt-bg);will-change:transform}
+    .page-transition-curtain::before,.page-transition-curtain::after{content:'';position:absolute;left:0;width:100%;height:60vh;background:var(--pt-bg);will-change:transform}
     .page-transition-curtain::before{top:0;transform:translateY(var(--pt-top))}
     .page-transition-curtain::after{bottom:0;transform:translateY(var(--pt-bottom))}
     html.has-pending-page-transition .page-transition-curtain{opacity:1;--pt-top:0%;--pt-bottom:0%}
@@ -138,7 +91,7 @@
     .page-transition-loader,html.has-pending-page-transition .page-transition-loader,
     .page-transition-counter,.page-transition-counter span,
     .page-transition-panel,html.has-pending-page-transition .page-transition-panel{display:none!important}
-    @media (max-width:767px){.page-transition-curtain::before,.page-transition-curtain::after{height:54vh}}
+    @media (max-width:767px){.page-transition-curtain::before,.page-transition-curtain::after{height:58vh}}
   </style>
 
   <!-- Deferred JS (non-render-blocking). Critical libs first, then auxiliaries. -->
@@ -150,7 +103,7 @@
   <script src="js/Flip.min.js" defer fetchpriority="low"></script>
   <script src="js/ScrambleTextPlugin.min.js" defer fetchpriority="low"></script>
   <script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.min.js" defer fetchpriority="low"></script>
-  <script src="transitions.js" defer fetchpriority="low"></script>
+  <script src="./transitions.js?v=20260517-4" defer fetchpriority="low"></script>
   <style>
     *,
     *::after,
@@ -524,6 +477,38 @@
 
     .grid-section .grid-4.border-top-line>div:nth-child(4) {
       text-align: right;
+    }
+
+    /* 品牌核心識別下方獨立影片方塊 (放在 hero-section 直接子層,跳脫 overlay-ui 的 mix-blend-mode) */
+    .brand-core-video-row {
+      position: absolute;
+      right: 3vw;
+      bottom: 22vh;
+      z-index: 600;
+      pointer-events: none;
+    }
+
+    .brand-core-video {
+      width: clamp(180px, 14vw, 240px);
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.4);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .brand-core-video video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* 手機板隱藏 */
+    @media (max-width: 767px) {
+      .brand-core-video-row {
+        display: none;
+      }
     }
 
     .cross-container {
@@ -3569,7 +3554,7 @@
       left: auto;
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 1280px) {
       .ns-showcase-row,
       .ns-showcase-row:hover,
       .ns-showcase-row:focus-visible,
@@ -4408,7 +4393,7 @@
           </div> -->
 
               <div class="ns-menu-rows">
-                <a class="ns-showcase-row ns-dropdown__item" href="index.html#nav" data-transition-label="Home">
+                <a class="ns-showcase-row ns-dropdown__item" href="index.html" data-transition-label="Home">
                   <span class="ns-showcase-row__index">01</span>
                   <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
                     <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/tesla.webp" alt="" width="128" height="64" loading="lazy" decoding="async">
@@ -4424,7 +4409,7 @@
                   </span>
                 </a>
 
-                <a class="ns-showcase-row ns-dropdown__item" href="index.html#section-2-content"
+                <a class="ns-showcase-row ns-dropdown__item" href="index.html"
                   data-transition-label="About">
                   <span class="ns-showcase-row__index">02</span>
                   <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
@@ -4441,7 +4426,7 @@
                   </span>
                 </a>
 
-                <a class="ns-showcase-row ns-dropdown__item" href="work.html#project-top" data-transition-label="Work">
+                <a class="ns-showcase-row ns-dropdown__item" href="work.html" data-transition-label="Work">
                   <span class="ns-showcase-row__index">03</span>
                   <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
                     <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-nav-src="images/about/nike.webp" alt="" width="1232" height="928" loading="lazy" decoding="async">
@@ -4474,7 +4459,7 @@
                   </span>
                 </a>
 
-                <a class="ns-showcase-row ns-dropdown__item" href="index.html#site-footer"
+                <a class="ns-showcase-row ns-dropdown__item" href="index.html"
                   data-transition-label="Contact">
                   <span class="ns-showcase-row__index">05</span>
                   <span class="ns-showcase-row__thumb is-left" aria-hidden="true">
@@ -4722,6 +4707,15 @@
           <div class="hero-section">
             <div id="webgl-container"></div>
 
+            <div class="brand-core-video-row" aria-hidden="true">
+              <div class="brand-core-video">
+                <video autoplay muted loop playsinline preload="metadata"
+                  disableRemotePlayback>
+                  <source src="images/home/slider_video01.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+
             <div class="overlay-ui">
               <div class="overlay-top">
                 <div class="top-header">
@@ -4755,7 +4749,7 @@
                   <div class="grid-4 hero-quick-links-row">
                     <div class="hero-quick-links" role="navigation" aria-label="Hero quick links">
                       <a href="#section-2-content" data-transition-label="About">About</a>
-                      <a href="work.html#project-top" data-transition-label="Work">Work</a>
+                      <a href="work.html" data-transition-label="Work">Work</a>
                       <a href="labs/labs1.html" data-transition-label="Labs">Labs</a>
                       <a href="#site-footer" data-transition-label="Contact">Contact</a>
                     </div>
@@ -4818,19 +4812,9 @@
 
             <div class="slides">
 
-                 <div class="slide">
-                <div class="slide__img" data-video="images/home/slider_video01.mp4"
-                  data-mobile-video="images/home/slider_video01_s.mp4"
-                  data-thumb="images/home/slider_video01.jpg" data-title="Immersive Film">
-                </div>
-              </div>
-
-              
-              <!-- 新增輪播時，只要複製一個 .slide，改 data-image 或 data-video，並補上 data-title。
-                   手機版可另外填 data-mobile-image / data-mobile-video / data-mobile-thumb；未填會沿用桌機素材。 -->
+              <!-- 新增輪播時,只要複製一個 .slide,改 data-image 並補上 data-title。
+                   手機版可另外填 data-mobile-image / data-mobile-thumb;未填會沿用桌機素材。 -->
               <div class="slide">
-                <!-- <div class="slide__img" data-video="images/home/banner05.mp4" data-thumb="images/home/banner05.jpg"
-              data-title="Brand Film"></div> -->
                 <div class="slide__img" data-image="images/home/banner0.webp" data-mobile-image="images/home/banner0_s.webp"
                   data-mobile-thumb="images/home/banner0_s.webp" data-title="Quantum Field"></div>
               </div>
@@ -4865,8 +4849,8 @@
               <div id="dw-black-overlay"
                 style="position:absolute;inset:0;background:#000;z-index:9;pointer-events:none;opacity:0;transition:opacity 0.05s;">
               </div>
-              <!-- bg.mp4 在 dark-wrapper(首屏下方),不該跟 hero 影片搶頻寬;
-                   改用 IntersectionObserver 路徑(移除 data-lazy-priority="high") -->
+              <!-- bg.mp4 在 dark-wrapper(首屏下方),用 IntersectionObserver 延後載入,
+                   避免跟首屏 banner 圖片搶頻寬 -->
               <video autoplay muted loop playsinline preload="none" disableRemotePlayback data-lazy-video data-lazy-on-scroll="true"
                 style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.45;">
                 <source data-src="images/bg.mp4" type="video/mp4">
@@ -4876,7 +4860,7 @@
               <div class="glow-center-left" id="ui-glow2"></div>
 
             <nav class="dark-nav" id="ui-nav">
-              <a href="#section-2-content" data-transition-label="About">About</a><a href="work.html#project-top"
+              <a href="#section-2-content" data-transition-label="About">About</a><a href="work.html"
                 data-transition-label="Work">Work</a><a href="labs/labs1.html" data-transition-label="Labs">Labs</a><a
                 href="#site-footer" data-transition-label="Contact">Contact</a>
             </nav>
@@ -5819,10 +5803,10 @@
               </div>
               <div class="web_add">臺中市北屯區文心路三段447號</div>
               <nav class="footer-nav-links">
-                <a href="index.html#nav" data-transition-label="Home">Home</a>
-                <a href="work.html#project-top" data-transition-label="Work">Work</a>
+                <a href="index.html" data-transition-label="Home">Home</a>
+                <a href="work.html" data-transition-label="Work">Work</a>
                 <a href="labs/labs1.html" data-transition-label="Labs">Labs</a>
-                <a href="index.html#site-footer" data-transition-label="Contact">Contact</a>
+                <a href="index.html" data-transition-label="Contact">Contact</a>
               </nav>
             </div>
 
@@ -5905,22 +5889,18 @@
       return Array.from(document.querySelectorAll(".slide__img"))
         .map((el, index) => {
           const desktopImage = readHeroMediaAttr(el, "image");
-          const desktopVideo = readHeroMediaAttr(el, "video");
           const desktopThumb = readHeroMediaAttr(el, "thumb");
           const mobileImage = readHeroMediaAttr(el, "mobileImage");
-          const mobileVideo = readHeroMediaAttr(el, "mobileVideo");
           const mobileThumb = readHeroMediaAttr(el, "mobileThumb");
-          const hasMobileAsset = Boolean(mobileImage || mobileVideo);
-          const assetUrl = useMobileMedia && hasMobileAsset
-            ? (mobileVideo || mobileImage)
-            : (desktopVideo || desktopImage);
+          const assetUrl = useMobileMedia && mobileImage
+            ? mobileImage
+            : desktopImage;
 
           if (!assetUrl) return null;
 
-          const isVideo = /\.(mp4|webm|ogg)$/i.test(assetUrl);
           const thumbUrl = useMobileMedia
-            ? (mobileThumb || mobileImage || desktopThumb || desktopImage || (!isVideo ? assetUrl : ""))
-            : (desktopThumb || mobileThumb || mobileImage || desktopImage || (!isVideo ? assetUrl : ""));
+            ? (mobileThumb || mobileImage || desktopThumb || desktopImage || assetUrl)
+            : (desktopThumb || mobileThumb || mobileImage || desktopImage || assetUrl);
 
           return {
             assetUrl,
@@ -6015,7 +5995,6 @@
         this.activeTextureIndex = 0;
         this.textureLoader = new THREE.TextureLoader();
         this.texturePromises = {};
-        this.videoEls = {};
         this.textureResolutions = {};
 
         const initialRenderSize = this.getRenderSize();
@@ -6158,7 +6137,7 @@
                 1.0
             );
 
-            // 影片紋理未就緒時輸出透明，讓底層 poster 顯示
+            // 紋理未就緒時輸出透明，讓底層 poster 顯示
             if (uTexReady < 0.5) { gl_FragColor = vec4(0.0); return; }
             gl_FragColor = mix(t1, t2, smoothstep(0.0, 1.0, p));
           }
@@ -6223,69 +6202,6 @@
         const url = this.imageUrls[index];
         if (!url) return Promise.resolve(null);
 
-        if (/\.(mp4|webm|ogg)$/i.test(url)) {
-          this.texturePromises[index] = new Promise((resolve) => {
-            const warmupVideo = index === 0
-              && window._heroVideoPrewarm
-              && window._heroVideoPrewarmSrc === url
-              ? window._heroVideoPrewarm
-              : null;
-            const vid = warmupVideo || document.createElement('video');
-            if (warmupVideo) {
-              window._heroVideoPrewarmClaimed = true;
-              if (vid.parentNode) vid.parentNode.removeChild(vid);
-            } else {
-              vid.src = url;
-            }
-            vid.loop = true;
-            vid.muted = true;
-            vid.playsInline = true;
-            vid.preload = 'auto';
-            vid.setAttribute('muted', '');
-            vid.setAttribute('playsinline', '');
-            vid.setAttribute('webkit-playsinline', '');
-            // 手機版直接設 autoplay，確保 iOS / Android 能在無使用者互動下播放
-            if (window.matchMedia ? window.matchMedia('(max-width: 767px)').matches : window.innerWidth <= 767) {
-              vid.autoplay = true;
-              vid.setAttribute('autoplay', '');
-            }
-            this.videoEls[index] = vid;
-            const texture = new THREE.VideoTexture(vid);
-            texture.minFilter = THREE.LinearFilter;
-            texture.magFilter = THREE.LinearFilter;
-            this.textures[index] = texture;
-            const rememberVideoResolution = () => {
-              this.rememberTextureResolution(index, vid.videoWidth || 1920, vid.videoHeight || 1080);
-            };
-            vid.addEventListener('loadedmetadata', rememberVideoResolution, { once: true });
-            let didResolveTexture = false;
-            const resolveTexture = () => {
-              if (didResolveTexture) return;
-              didResolveTexture = true;
-              rememberVideoResolution();
-              if (index === 0) {
-                this.material.uniforms.uTex1.value = texture;
-                this.material.uniforms.uTexReady.value = 1;
-                this.applyTextureResolution(index, texture, 1);
-                // 初始時 uTex2 還沒綁紋理,把 slot2 也補上同一比例,避免第一次切換瞬間的壓扁
-                this.applyTextureResolution(index, texture, 2);
-              }
-              resolve(texture);
-            };
-            const resolveEmptyTexture = () => {
-              if (didResolveTexture) return;
-              didResolveTexture = true;
-              resolve(null);
-            };
-            if (vid.readyState >= 2) resolveTexture();
-            else vid.addEventListener('loadeddata', resolveTexture, { once: true });
-            vid.addEventListener('error', resolveEmptyTexture, { once: true });
-            if (!warmupVideo && vid.readyState === 0) vid.load();
-            if (index === 0) this._safePlay(vid);
-          });
-          return this.texturePromises[index];
-        }
-
         this.texturePromises[index] = new Promise((resolve) => {
           this.textureLoader.load(
             url,
@@ -6298,6 +6214,7 @@
               }
               if (index === 0) {
                 this.material.uniforms.uTex1.value = texture;
+                this.material.uniforms.uTexReady.value = 1;
                 this.applyTextureResolution(index, texture, 1);
                 // 同步補上 slot2,讓第一次切換前的渲染就以正確比例顯示
                 this.applyTextureResolution(index, texture, 2);
@@ -6315,42 +6232,10 @@
         return this.loadTextureAt(index);
       }
 
-      _safePlay(vid) {
-        if (!vid) return;
-        const playPromise = vid.play();
-        if (playPromise && typeof playPromise.catch === 'function') {
-          playPromise.catch(function (e) {
-            if (e && (e.name === 'AbortError' || e.name === 'NotAllowedError')) {
-              vid.addEventListener('canplay', function onCanPlay() {
-                vid.removeEventListener('canplay', onCanPlay);
-                vid.play().catch(function () { });
-              }, { once: true });
-            }
-          });
-        }
-      }
-
-      syncVideoPlayback() {
-        const active = this.renderPaused
-          ? new Set()
-          : new Set(Array.prototype.slice.call(arguments).map(Number));
-        Object.keys(this.videoEls || {}).forEach((key) => {
-          const vid = this.videoEls[key];
-          if (!vid) return;
-          if (active.has(Number(key))) {
-            this._safePlay(vid);
-          } else if (!vid.paused) {
-            vid.pause();
-          }
-        });
-      }
-
       setRenderPaused(paused) {
         if (this.renderPaused === paused) return;
         this.renderPaused = paused;
         if (this.container) this.container.style.visibility = paused ? 'hidden' : '';
-        if (paused) this.syncVideoPlayback();
-        else this.syncVideoPlayback(this.activeTextureIndex);
       }
 
       onResize() {
@@ -6364,7 +6249,7 @@
       }
 
       render() {
-        // 🎯 dark-wrapper 蓋住首屏後,hero WebGL 不再可見;直接停 render 與影片 texture
+        // 🎯 dark-wrapper 蓋住首屏後,hero WebGL 不再可見;直接停 render
         const scrollY = window._lenis && typeof window._lenis.scroll === 'number'
           ? window._lenis.scroll
           : window.scrollY;
@@ -6377,16 +6262,6 @@
         this.mouse.lerp(this.targetMouse, 0.05);
         this.material.uniforms.uMouse.value.copy(this.mouse);
 
-        const t1 = this.material.uniforms.uTex1.value;
-        const t2 = this.material.uniforms.uTex2.value;
-
-        for (const idx in this.videoEls) {
-          const vid = this.videoEls[idx];
-          const tex = this.textures[idx];
-          if (tex && (tex === t1 || tex === t2) && vid.readyState >= 2) {
-            tex.needsUpdate = true;
-          }
-        }
         this.renderer.render(this.scene, this.camera);
       }
 
@@ -6412,7 +6287,6 @@
           this.material.uniforms.uDirection.value = direction;
           this.material.uniforms.uProgress.value = 0;
           this.activeTextureIndex = currentIndex;
-          this.syncVideoPlayback(currentIndex, nextIndex);
 
           gsap.to(this.material.uniforms.uProgress, {
             value: 1,
@@ -6425,7 +6299,6 @@
               // uTex1 現在指向 nextTexture,同步把 slot1 的解析度更新成 next
               this.applyTextureResolution(nextIndex, nextTexture, 1);
               this.applyTextureResolution(nextIndex, nextTexture, 2);
-              this.syncVideoPlayback(nextIndex);
               if (onCompleteCallback) onCompleteCallback();
             }
           });
@@ -6558,9 +6431,6 @@
             thumb.className = "slide-thumb";
             if (slide.thumbUrl) {
               thumb.style.backgroundImage = `url("${slide.thumbUrl}")`;
-            } else if (/\.(mp4|webm|ogg)$/i.test(slide.assetUrl)) {
-              thumb.style.background = '#111';
-              thumb.innerHTML = '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;opacity:0.6;">&#9654;</span>';
             } else {
               thumb.style.backgroundImage = `url("${slide.assetUrl}")`;
             }
@@ -8305,8 +8175,10 @@
         }
 
         function closeNavScrollMenu(options = {}) {
-          if (!navScrollMenuTl || (!isNavScrollMenuOpen && !navScrollMenuAnimating)) return;
+          const menuClassOpen = navScrollContainer?.classList.contains('is-menu-open');
+          if (!navScrollMenuTl || (!isNavScrollMenuOpen && !navScrollMenuAnimating && !menuClassOpen)) return;
           const immediate = options.immediate === true;
+          const onAfterClose = typeof options.onAfterClose === 'function' ? options.onAfterClose : null;
           isNavScrollMenuOpen = false;
           navScrollMenuAnimating = true;
           hideNavScrollPreview(activeNavShowcaseRow, true);
@@ -8314,6 +8186,7 @@
             stopNavScrollCloseTimeline();
             navScrollMenuTl.pause(0);
             finalizeNavScrollClosedState();
+            if (onAfterClose) onAfterClose();
             return;
           }
           hideNavScrollPreview(activeNavShowcaseRow, true);
@@ -8327,6 +8200,7 @@
             defaults: { overwrite: 'auto' },
             onComplete: () => {
               finalizeNavScrollClosedState();
+              if (onAfterClose) onAfterClose();
             }
           });
 
@@ -8387,10 +8261,44 @@
         });
 
         navScrollLinks.forEach((link) => {
-          link.addEventListener('click', () => {
-            closeNavScrollMenu();
+          link.addEventListener('click', (e) => {
+            const menuClassOpen = navScrollContainer?.classList.contains('is-menu-open');
+            if (!isNavScrollMenuOpen && !navScrollMenuAnimating && !menuClassOpen) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const href = link.getAttribute('href');
+            const label = link.dataset.transitionLabel || '';
+            document.documentElement.classList.add('is-menu-link-transition');
+            closeNavScrollMenu({
+              onAfterClose: () => {
+                document.documentElement.classList.remove('is-menu-link-transition');
+                if (!href) return;
+                const dest = new URL(href, window.location.href);
+                const isSamePage = isSameOriginSamePath(dest);
+                if (isSamePage && dest.hash) {
+                  const target = document.querySelector(dest.hash);
+                  if (target) {
+                    if (window._lenis && typeof window._lenis.scrollTo === 'function') {
+                      window._lenis.scrollTo(target, { duration: 1.15, offset: -24 });
+                    } else {
+                      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }
+                } else if (window._nudotNavigate) {
+                  window._nudotNavigate(dest.href, label);
+                } else {
+                  window.location.href = dest.href;
+                }
+              }
+            });
           });
         });
+
+        function isSameOriginSamePath(url) {
+          if (url.origin !== window.location.origin) return false;
+          const normalize = (p) => p.replace(/\/index\.html$/i, '/').replace(/\/$/, '') || '/';
+          return normalize(url.pathname) === normalize(window.location.pathname);
+        }
 
         navShowcaseRows.forEach((row) => {
           row.addEventListener('pointerenter', () => {
@@ -8676,8 +8584,9 @@
           COLOR: '#ffffff'
         };
 
-        let activeBlocks = [];
-        let activeBlockKeys = new Set();
+        const pool = [];
+        let poolIndex = 0;
+        const activeBlockKeys = new Set();
         let prevX = null;
         let prevY = null;
         let gridCols = 0;
@@ -8696,7 +8605,10 @@
                     width: ${settings.GRID_SIZE}px;
                     height: ${settings.GRID_SIZE}px;
                     background-color: ${settings.COLOR};
-                    animation-duration: ${settings.FADE_OUT_DURATION}s;
+                    animation: none !important;
+                    opacity: 0;
+                    top: 0; left: 0;
+                    will-change: transform, opacity;
                 }
             `;
         };
@@ -8707,9 +8619,18 @@
           gridCols = Math.ceil(width / settings.GRID_SIZE);
           gridRows = Math.ceil(height / settings.GRID_SIZE);
 
-          activeBlocks.forEach(el => el.remove());
-          activeBlocks = [];
           activeBlockKeys.clear();
+
+          if (pool.length === 0) {
+            const fragment = document.createDocumentFragment();
+            for (let i = 0; i < settings.MAX_BLOCKS; i++) {
+              const el = document.createElement('div');
+              el.className = 'mouseTracker--01';
+              fragment.appendChild(el);
+              pool.push(el);
+            }
+            document.body.appendChild(fragment);
+          }
         };
 
         const getInterpolatedPoints = (x1, y1, x2, y2) => {
@@ -8750,21 +8671,34 @@
           const key = `${x},${y}`;
           if (activeBlockKeys.has(key)) return;
 
-          if (activeBlocks.length >= settings.MAX_BLOCKS) {
-            const oldest = activeBlocks.shift();
-            if (oldest) activeBlockKeys.delete(oldest.dataset.pos);
-            oldest.remove();
+          const el = pool[poolIndex];
+          poolIndex = (poolIndex + 1) % settings.MAX_BLOCKS;
+
+          if (el.dataset.pos) {
+            activeBlockKeys.delete(el.dataset.pos);
           }
 
-          const el = document.createElement('div');
-          el.className = 'mouseTracker--01';
-          el.style.left = `${x}px`;
-          el.style.top = `${y}px`;
           el.dataset.pos = key;
-
-          document.body.appendChild(el);
-          activeBlocks.push(el);
           activeBlockKeys.add(key);
+
+          el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+
+          if (el._anim) {
+            el._anim.cancel();
+          }
+
+          el._anim = el.animate([
+            { opacity: 1 },
+            { opacity: 0 }
+          ], {
+            duration: settings.FADE_OUT_DURATION * 1000,
+            fill: 'forwards'
+          });
+
+          el._anim.onfinish = () => {
+            activeBlockKeys.delete(key);
+            el.dataset.pos = "";
+          };
         };
 
         updateDynamicStyles();
@@ -9159,13 +9093,14 @@
     });
   </script>
 
-  <canvas id="film-grain-canvas" style="
+  <canvas id="film-grain-canvas" aria-hidden="true" style="
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
     z-index: 9999;
     pointer-events: none;
     opacity: 0.06;
+    mix-blend-mode: screen;
     transform: translateZ(0);
     will-change: opacity;
     contain: strict;
@@ -9174,86 +9109,68 @@
     (function () {
       const canvas = document.getElementById('film-grain-canvas');
       const ctx = canvas.getContext('2d');
-      const DESKTOP_FILM_GRAIN_OPACITY = 0.06;
-      const MOBILE_FILM_GRAIN_BREAKPOINT = 900;
-      let wWidth, wHeight;
+      let width = 0;
+      let height = 0;
       let noiseData = [];
       let frame = 0;
-      let loopTimeout;
+      let loopTimeout = 0;
       let rafId = 0;
       let resizeTimeout = 0;
-      let scrollHoldUntil = 0;
-      const SCROLL_HOLD_MS = 180;
 
-      function holdFilmGrainDuringScroll() {
-        scrollHoldUntil = performance.now() + SCROLL_HOLD_MS;
-      }
-
-      function getFilmGrainViewportWidth() {
-        const visualWidth = window.visualViewport && typeof window.visualViewport.width === 'number'
-          ? window.visualViewport.width
-          : 0;
-        return visualWidth > 0 ? visualWidth : window.innerWidth;
-      }
-
-      function isFilmGrainDisabled() {
-        return getFilmGrainViewportWidth() <= MOBILE_FILM_GRAIN_BREAKPOINT;
-      }
-
-      const createNoise = () => {
-        const idata = ctx.createImageData(wWidth, wHeight);
-        const buffer32 = new Uint32Array(idata.data.buffer);
-        const len = buffer32.length;
-        for (let i = 0; i < len; i++) {
+      function createNoiseFrame() {
+        const imageData = ctx.createImageData(width, height);
+        const buffer = new Uint32Array(imageData.data.buffer);
+        const length = buffer.length;
+        for (let index = 0; index < length; index += 1) {
           if (Math.random() < 0.5) {
-            buffer32[i] = 0xffffffff;
+            buffer[index] = 0xffffffff;
           }
         }
-        noiseData.push(idata);
-      };
+        noiseData.push(imageData);
+      }
 
-      const paintNoise = () => {
-        if (frame === 9) { frame = 0; } else { frame++; }
+      function paintNoise() {
+        if (!noiseData.length) return;
+        frame = frame === noiseData.length - 1 ? 0 : frame + 1;
         ctx.putImageData(noiseData[frame], 0, 0);
-      };
+      }
 
-      const loop = () => {
-        const now = performance.now();
-        const isScrollCoolingDown = now < scrollHoldUntil;
-        if (!isScrollCoolingDown && document.visibilityState !== 'hidden') {
-          paintNoise();
-        }
+      function loop() {
+        paintNoise();
         loopTimeout = window.setTimeout(() => {
           rafId = window.requestAnimationFrame(loop);
-        }, isScrollCoolingDown ? 1000 / 12 : 1000 / 25);
-      };
+        }, 1000 / 25);
+      }
 
-      const setup = () => {
+      function stop() {
         window.clearTimeout(loopTimeout);
         if (rafId) window.cancelAnimationFrame(rafId);
         rafId = 0;
-        wWidth = window.innerWidth;
-        wHeight = window.innerHeight;
-        const disableFilmGrain = isFilmGrainDisabled();
-        canvas.style.opacity = disableFilmGrain ? '0' : String(DESKTOP_FILM_GRAIN_OPACITY);
-        canvas.width = wWidth;
-        canvas.height = wHeight;
-        canvas.style.imageRendering = '';
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function setup() {
+        stop();
+        width = window.innerWidth || document.documentElement.clientWidth || 1;
+        height = window.innerHeight || document.documentElement.clientHeight || 1;
+        canvas.width = width;
+        canvas.height = height;
         noiseData = [];
-        if (disableFilmGrain) return;
-        for (let i = 0; i < 10; i++) { createNoise(); }
+        frame = 0;
+        for (let index = 0; index < 10; index += 1) {
+          createNoiseFrame();
+        }
         loop();
-      };
+      }
 
       window.addEventListener('resize', () => {
         window.clearTimeout(resizeTimeout);
         resizeTimeout = window.setTimeout(setup, 160);
       }, { passive: true });
-      window.addEventListener('scroll', holdFilmGrainDuringScroll, { passive: true });
-      window.setTimeout(() => {
-        if (window._lenis) window._lenis.on('scroll', holdFilmGrainDuringScroll);
-      }, 300);
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) { stop(); return; }
+        loop();
+      });
 
       setup();
     })();
