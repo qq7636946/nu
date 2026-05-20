@@ -3814,21 +3814,31 @@
       --cursor-label-enter-duration: 0.16s;
       --cursor-label-exit-duration: 0.14s;
       --cursor-label-ease: cubic-bezier(0.22, 1, 0.36, 1);
-      width: 36px;
-      height: 36px;
-      border: 1px solid transparent;
+      --cursor-ring-size: 68px;
+      --cursor-ring-rest-scale: 0.5294117647;
+      width: var(--cursor-ring-size);
+      height: var(--cursor-ring-size);
+      border: 0;
       /* Hidden by default */
       border-radius: 50%;
-      margin: -18px 0 0 -18px;
+      margin: calc(var(--cursor-ring-size) / -2) 0 0 calc(var(--cursor-ring-size) / -2);
       mix-blend-mode: difference;
       will-change: transform;
-      transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1),
-        height 0.4s cubic-bezier(0.23, 1, 0.32, 1),
-        margin 0.4s cubic-bezier(0.23, 1, 0.32, 1),
-        border-radius 0.4s cubic-bezier(0.23, 1, 0.32, 1),
-        background 0.4s ease,
-        border-color 0.4s ease,
-        opacity 0.3s ease;
+      contain: layout paint style;
+      transition: opacity 0.3s ease;
+    }
+
+    #cursor-ring::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0);
+      transform: scale(var(--cursor-ring-rest-scale));
+      transition: transform 0.24s cubic-bezier(0.23, 1, 0.32, 1),
+        background-color 0.24s ease,
+        opacity 0.24s ease;
+      will-change: transform, opacity;
     }
     
     
@@ -3857,33 +3867,21 @@
     #cursor-ring.is-leaving {
       position: fixed;
       display: block;
-      background: rgba(255, 255, 255, 0);
+      background: transparent;
       border-color: transparent;
       mix-blend-mode: difference;
       translate: none;
-      transition: width 0.24s cubic-bezier(0.23, 1, 0.32, 1),
-        height 0.24s cubic-bezier(0.23, 1, 0.32, 1),
-        margin 0.24s cubic-bezier(0.23, 1, 0.32, 1),
-        background-color 0.24s ease,
-        opacity 0.24s ease;
+      transition: opacity 0.24s ease;
     }
 
-    #cursor-ring.is-link:not(.is-leaving) {
-      width: 68px;
-      height: 68px;
-      margin: -34px 0 0 -34px;
-      border-radius: 50%;
+    #cursor-ring.is-link:not(.is-leaving)::before {
+      transform: scale(1);
       background: #fff;
-      border-color: transparent;
     }
 
-    #cursor-ring.is-leaving {
-      width: 36px;
-      height: 36px;
-      margin: -18px 0 0 -18px;
-      border-radius: 50%;
+    #cursor-ring.is-leaving::before {
+      transform: scale(var(--cursor-ring-rest-scale));
       background: rgba(255, 255, 255, 0);
-      border-color: transparent;
     }
 
     #cursor-ring.is-link::after,
@@ -7316,7 +7314,7 @@
             let ease = easeInOutCubic(pr);
 
             currentScale = 1.5 * ease;
-            currentX = -15 * (1 - ease);
+            currentX = -15 * (1 - ease) + 360 * ease;
             currentY = baseRotY * (1 - ease) + targetY_Phase1 * ease;
 
             gsap.set(section2, { opacity: 1, pointerEvents: 'none', zIndex: 18 });
@@ -7328,7 +7326,7 @@
             let ease = easeInOutCubic(pr);
 
             currentScale = 1.5;
-            currentX = 0;
+            currentX = 360;
             currentY = targetY_Phase1 + 360 * ease;
 
             gsap.set(section2, { opacity: 1, pointerEvents: 'none', zIndex: 18 });
@@ -7343,7 +7341,7 @@
             const targetSceneSize = zoomedSceneSize;
             currentSceneSize = spinDisplaySize + (targetSceneSize - spinDisplaySize) * ease;
             currentScale = 1;
-            currentX = 0;
+            currentX = 360;
             currentY = targetY_Phase1 + 360;
 
             const titleExitPr = Math.max(0, Math.min(ease, 1));
@@ -7377,7 +7375,7 @@
           const targetSceneSize = zoomedSceneSize;
           currentSceneSize = targetSceneSize;
           currentScale = 1;
-          currentX = 0;
+          currentX = 360;
           currentY = targetY_Phase1 + 360;
 
           gsap.set(section2, { opacity: 0, pointerEvents: 'none', zIndex: 18 });
@@ -8840,6 +8838,7 @@
         let magRect = null;
         let magnetStrength = 0.22;
         let cursorLeaveTimer = null;
+        let cursorEnterRaf = 0;
         const cursorExitDuration = 140;
 
         // 🎯 效能優化:追蹤上次寫入值,靜止時跳過 style.transform 寫入
@@ -8864,12 +8863,19 @@
           ring.setAttribute('data-cursor-label', label);
           ring.setAttribute('data-cursor-side', side);
 
-          void ring.offsetWidth;
-          ring.classList.add('is-link');
-          wakeCursorLoop();
+          if (cursorEnterRaf) cancelAnimationFrame(cursorEnterRaf);
+          cursorEnterRaf = requestAnimationFrame(() => {
+            cursorEnterRaf = 0;
+            ring.classList.add('is-link');
+            wakeCursorLoop();
+          });
         };
 
         const hideCursorLabel = () => {
+          if (cursorEnterRaf) {
+            cancelAnimationFrame(cursorEnterRaf);
+            cursorEnterRaf = 0;
+          }
           ring.classList.remove('is-link');
           ring.classList.add('is-leaving');
           wakeCursorLoop();
@@ -8938,10 +8944,13 @@
           const previous = getCursorTarget(e.relatedTarget);
           if (previous === el) return;
 
+          const shouldMagnetize = el.offsetWidth < 300;
+          const nextMagRect = shouldMagnetize ? el.getBoundingClientRect() : null;
+
           showCursorLabel(el.dataset.cursor || 'EXPLORE', el.dataset.cursorSide || 'right');
-          if (el.offsetWidth < 300) {
+          if (shouldMagnetize) {
             magnetTarget = el;
-            magRect = el.getBoundingClientRect();
+            magRect = nextMagRect;
           } else {
             magnetTarget = null;
             magRect = null;
@@ -9443,7 +9452,7 @@
         autoImageStartIndex: 1,
         autoImageCount: 25,
         autoImageZeroPad: 2,
-        autoImageExtension: ".jpg",
+        autoImageExtension: ".webp",
         placeholderImageUrls: Array.from({ length: circleImgTotalCount }, (_, index) => {
           return `https://picsum.photos/id/${index + 1}/320/400`;
         })
@@ -9467,6 +9476,7 @@
         this.isDragging = false;
         this.dragEnabled = true;
         this.isRendering = false;
+        this.isPrewarmed = false;
         this.viewportObserver = null;
         this.lastPointer = { x: 0, y: 0 };
         this.mouse = new THREE.Vector2(0, 0);
@@ -9536,12 +9546,38 @@
         this.buildGallery(textures);
         this.setupScrollAnimations();
 
+        // 預熱 GPU：在 IntersectionObserver 開始 loop 之前強制編譯 shader 和上傳貼圖
+        // 避免第一幀因 shader compile / texture upload 造成主執行緒凍結（卡頓感）
+        try {
+          this.renderer.compile(this.scene, this.camera);
+          this.renderer.compile(this.postScene, this.postCamera);
+        } catch (_) {}
+
+        this.schedulePrewarm();
         this.setupViewportRendering();
+      }
+
+      schedulePrewarm() {
+        const runPrewarm = () => this.prewarmRenderer();
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(runPrewarm, { timeout: 700 });
+        } else {
+          window.setTimeout(runPrewarm, 160);
+        }
+      }
+
+      prewarmRenderer() {
+        if (this.isPrewarmed) return;
+        this.isPrewarmed = true;
+        try {
+          this.renderFrame();
+        } catch (_) {}
       }
 
       setupViewportRendering() {
         const start = () => {
           if (this.isRendering) return;
+          this.prewarmRenderer();
           this.isRendering = true;
           this.renderer.setAnimationLoop(this.renderFrame);
         };
@@ -9557,12 +9593,13 @@
           return;
         }
 
+        const leadPx = Math.round(Math.max(900, window.innerHeight * 1.25));
         this.viewportObserver = new IntersectionObserver((entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) start();
             else stop();
           });
-        }, { rootMargin: '180px 0px' });
+        }, { rootMargin: `${leadPx}px 0px` });
         this.viewportObserver.observe(this.container);
       }
 
@@ -9589,7 +9626,7 @@
 
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
-        const pixelRatio = typeof getOptimalDPR === 'function' ? getOptimalDPR() : Math.min(window.devicePixelRatio || 1, 2);
+        const pixelRatio = this.getRenderPixelRatio();
         const renderWidth = Math.max(1, Math.floor(width * pixelRatio));
         const renderHeight = Math.max(1, Math.floor(height * pixelRatio));
 
@@ -9638,6 +9675,15 @@
         return Array.from({ length: circleImgTotalCount }, (_, index) => {
           return activeSourceList[index % activeSourceList.length];
         });
+      }
+
+      getRenderPixelRatio() {
+        const baseDpr = typeof getOptimalDPR === 'function'
+          ? getOptimalDPR()
+          : Math.min(window.devicePixelRatio || 1, 2);
+
+        if (window.innerWidth <= 768) return Math.min(baseDpr, 1.1);
+        return Math.min(baseDpr, 1.35);
       }
 
       probeImageUrl(url) {
@@ -9727,26 +9773,30 @@
         const loader = new THREE.TextureLoader();
         loader.setCrossOrigin("anonymous");
 
-        const loadTexture = (url, index) => {
-          return new Promise((resolve) => {
-            loader.load(
-              url,
-              (texture) => {
-                texture.minFilter = THREE.LinearFilter;
-                texture.magFilter = THREE.LinearFilter;
-                resolve(texture);
-              },
-              undefined,
-              () => {
-                resolve(this.createFallbackTexture(index));
-              }
-            );
-          });
+        const textureUrls = await this.resolveTextureUrlList();
+        const textureCache = new Map();
+
+        const loadTextureOnce = (url, index) => {
+          if (!textureCache.has(url)) {
+            textureCache.set(url, new Promise((resolve) => {
+              loader.load(
+                url,
+                (texture) => {
+                  texture.minFilter = THREE.LinearFilter;
+                  texture.magFilter = THREE.LinearFilter;
+                  resolve(texture);
+                },
+                undefined,
+                () => {
+                  resolve(this.createFallbackTexture(index));
+                }
+              );
+            }));
+          }
+          return textureCache.get(url);
         };
 
-        const textureUrls = await this.resolveTextureUrlList();
-
-        return Promise.all(textureUrls.map((url, index) => loadTexture(url, index)));
+        return Promise.all(textureUrls.map((url, index) => loadTextureOnce(url, index)));
       }
 
       buildGallery(textures) {
@@ -9943,16 +9993,22 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       // 直接在 idle 時初始化，不等滾到附近再載，消除進場黑畫面
+      let sketchInitialized = false;
       const initSketch = () => {
+        if (sketchInitialized) return;
         const sketchRoot = document.querySelector("#core-capabilities #sketch");
         if (!sketchRoot) return;
+        sketchInitialized = true;
         const sketch = new Sketch("#core-capabilities #sketch");
         sketch.create();
       };
-      if (window.requestIdleCallback) {
-        window.requestIdleCallback(initSketch, { timeout: 1200 });
+      const ccapSection = document.getElementById("core-capabilities");
+      if (typeof runWhenNear === "function" && ccapSection) {
+        runWhenNear(ccapSection, initSketch, "2200px 0px");
+      } else if (window.requestIdleCallback) {
+        window.requestIdleCallback(initSketch, { timeout: 600 });
       } else {
-        window.setTimeout(initSketch, 400);
+        window.setTimeout(initSketch, 180);
       }
     });
   </script>
@@ -10080,6 +10136,9 @@
 
       /* ── CCAP EXIT: overlay darkens + main content pulls back ── */
       if (ccap && ccapOverlay && ccapMain && typeof ScrollTrigger !== 'undefined') {
+        const setCcapOverlayOpacity = gsap.quickSetter(ccapOverlay, 'opacity');
+        const setCcapMainScale = gsap.quickSetter(ccapMain, 'scale');
+        const setCcapMainY = gsap.quickSetter(ccapMain, 'y', 'px');
         ScrollTrigger.create({
           trigger: ccap,
           start: 'bottom bottom',
@@ -10087,8 +10146,9 @@
           scrub: 0.35,
           onUpdate: (self) => {
             const e = _ease(self.progress);
-            gsap.set(ccapOverlay, { opacity: e * 0.74 });
-            gsap.set(ccapMain, { scale: 1 - e * 0.046, y: -e * 24 });
+            setCcapOverlayOpacity(e * 0.74);
+            setCcapMainScale(1 - e * 0.046);
+            setCcapMainY(-e * 24);
           }
         });
       }
