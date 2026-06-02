@@ -65,7 +65,7 @@
     (function () {
       var isDesktop = !!(window.matchMedia && window.matchMedia('(min-width: 768px)').matches);
       var src = isDesktop
-        ? 'images/home/slider_video01.mp4'
+        ? 'images/home/about.mp4'
         : 'images/home/slider_video01_s.mp4';
       var v = document.createElement('video');
       v.src = src;
@@ -143,6 +143,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer fetchpriority="high"></script>
   <script src="js/Flip.min.js" defer fetchpriority="low"></script>
   <script src="js/ScrambleTextPlugin.min.js" defer fetchpriority="low"></script>
+  <!-- hls.js：讓 Chrome / Firefox / Edge 也能解碼 HLS (.m3u8) 串流。
+       Safari 原生支援 HLS，不需要此函式庫；但載入不會造成錯誤，hls.js 會自動讓位。
+       放在 barba 之前確保 DOMContentLoaded 時 Hls 已定義。 -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js" defer fetchpriority="low"></script>
   <script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.min.js" defer fetchpriority="low"></script>
   <script src="./transitions.js?v=20260517-4" defer fetchpriority="low"></script>
   <style>
@@ -1533,10 +1537,12 @@
 
     .section-2-content .huge-title,
     .new-text-group .huge-title {
-      font-family: 'Zalando Sans SemiExpanded', 'DM Sans', sans-serif;
+      /* font-family: 'Zalando Sans SemiExpanded', 'DM Sans', sans-serif; */
+      font-family: "Bitcount Grid Single", monospace;
       font-stretch: semi-expanded;
-      font-size: 8vw;
-      font-weight: 600;
+      font-size: 10vw;
+      /* font-weight: 600; */
+      font-weight: 400;
       line-height: 1;
       text-align: center;
       margin: 0;
@@ -4820,7 +4826,7 @@
             <div class="slides">
 
                  <div class="slide">
-                <div class="slide__img" data-video="images/home/slider_video01.mp4"
+                <div class="slide__img" data-video="images/home/about.mp4"
                   data-mobile-video="images/home/slider_video01_s.mp4"
                   data-thumb="images/home/slider_video01.jpg" data-title="Immersive Film">
                 </div>
@@ -4934,7 +4940,7 @@
                   <div class="ip-thumb-line"></div>
                 </div>
               </div>
-              <canvas id="ip-reveal-canvas"
+              <canvas id="ip-reveal-canvas" data-reveal-mode="css-mask"
                 style="position:absolute;inset:0;width:100%;height:100%;mix-blend-mode:destination-out;pointer-events:none;z-index:200;display:none;"></canvas>
             </div>
 
@@ -5651,7 +5657,8 @@
 
         .site-footer,
         .dxm-marquee-section {
-          font-family: var(--font-family-body);
+          font-family: 'Zalando Sans SemiExpanded', 'DM Sans', sans-serif;
+          /* font-family: var(--font-family-body); */
         }
 
         @media (max-width: 900px) {
@@ -5918,7 +5925,7 @@
 
           if (!assetUrl) return null;
 
-          const isVideo = /\.(mp4|webm|ogg)$/i.test(assetUrl);
+          const isVideo = /\.(mp4|webm|ogg|m3u8)$/i.test(assetUrl);
           const thumbUrl = useMobileMedia
             ? (mobileThumb || mobileImage || desktopThumb || desktopImage || (!isVideo ? assetUrl : ""))
             : (desktopThumb || mobileThumb || mobileImage || desktopImage || (!isVideo ? assetUrl : ""));
@@ -5999,6 +6006,41 @@
       if (mem <= 4) return 1;
       if (window.innerWidth <= 768) return Math.min(dpr, 1.5);
       return Math.min(dpr, 2);
+    }
+
+    // =========================================================
+    // HLS Helper — 讓 HLS (.m3u8) 影片無縫融入 WebGLManager
+    // =========================================================
+    /**
+     * 將 HLS 串流附加到 <video> 元素。
+     * 執行順序優先級：
+     *   1. Safari / iOS — 原生支援 HLS，直接設定 vid.src
+     *   2. Chrome / Firefox / Edge — 透過 hls.js 軟解
+     *   3. 萬用 fallback — 嘗試同名 .mp4（server 端需準備好 fallback）
+     */
+    function attachHLSToVideo(vid, hlsUrl) {
+      // ① Safari / iOS 原生 HLS
+      if (vid.canPlayType('application/vnd.apple.mpegurl')) {
+        vid.src = hlsUrl;
+        return;
+      }
+      // ② hls.js（Chrome / Firefox / Edge）
+      if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+        const hls = new Hls({
+          maxBufferLength: 30,       // 預緩衝 30 秒
+          maxMaxBufferLength: 60,
+          startLevel: -1,            // ABR：自動選畫質（-1 = auto）
+          autoStartLoad: true,
+          enableWorker: true,
+        });
+        hls.loadSource(hlsUrl);
+        hls.attachMedia(vid);
+        vid._hls = hls;             // 保存參照供 cleanup 使用
+        return;
+      }
+      // ③ 最終 fallback：把 .m3u8 換成 .mp4（需 server 同時提供）
+      const mp4 = hlsUrl.replace(/\.m3u8(\?.*)?$/i, '.mp4');
+      if (mp4 !== hlsUrl) vid.src = mp4;
     }
 
     // =========================================================
@@ -6224,10 +6266,10 @@
         const url = this.imageUrls[index];
         if (!url) return Promise.resolve(null);
 
-        if (/\.(mp4|webm|ogg)$/i.test(url)) {
+        if (/\.(mp4|webm|ogg|m3u8)$/i.test(url)) {
           this.texturePromises[index] = new Promise((resolve) => {
             const vid = document.createElement('video');
-            vid.src = url;
+            // 先設定所有播放屬性，再掛入 src / HLS，確保 iOS Safari autoplay policy 能命中
             vid.loop = true;
             vid.muted = true;
             vid.playsInline = true;
@@ -6239,6 +6281,12 @@
             if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
               vid.autoplay = true;
               vid.setAttribute('autoplay', '');
+            }
+            // 掛入 src：HLS (.m3u8) 走 attachHLSToVideo()，其餘直接設 src
+            if (/\.m3u8(\?.*)?$/i.test(url)) {
+              attachHLSToVideo(vid, url);
+            } else {
+              vid.src = url;
             }
             this.container.appendChild(vid);
             vid.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
@@ -6252,9 +6300,16 @@
             };
             vid.addEventListener('loadedmetadata', rememberVideoResolution, { once: true });
             let didResolveTexture = false;
+            let textureFallbackTimer = null;
+            const clearTextureFallback = () => {
+              if (!textureFallbackTimer) return;
+              clearTimeout(textureFallbackTimer);
+              textureFallbackTimer = null;
+            };
             const resolveTexture = () => {
               if (didResolveTexture) return;
               didResolveTexture = true;
+              clearTextureFallback();
               rememberVideoResolution();
               if (index === 0) {
                 this.material.uniforms.uTex1.value = texture;
@@ -6268,12 +6323,15 @@
             const resolveEmptyTexture = () => {
               if (didResolveTexture) return;
               didResolveTexture = true;
+              clearTextureFallback();
               resolve(null);
             };
+            textureFallbackTimer = setTimeout(resolveTexture, 2500);
             if (vid.readyState >= 2) resolveTexture();
             else vid.addEventListener('loadeddata', resolveTexture, { once: true });
             vid.addEventListener('error', resolveEmptyTexture, { once: true });
-            if (vid.readyState === 0) vid.load();
+            // hls.js 自己管理載入流程，不需要也不該呼叫 vid.load()（會重置串流）
+            if (vid.readyState === 0 && !vid._hls) vid.load();
             if (index === 0) this._safePlay(vid);
           });
           return this.texturePromises[index];
@@ -6609,8 +6667,8 @@
 
         const thumbsArea = document.querySelector(".thumbs-container");
         if (thumbsArea) {
-          thumbsArea.addEventListener("mouseenter", () => mouseOverThumbnails = true);
-          thumbsArea.addEventListener("mouseleave", () => { mouseOverThumbnails = false; currentHoveredThumb = null; updateDragLines(slideshow.current, true); });
+          thumbsArea.addEventListener("mouseenter", () => { mouseOverThumbnails = true; stopAutoLoop(); });
+          thumbsArea.addEventListener("mouseleave", () => { mouseOverThumbnails = false; currentHoveredThumb = null; updateDragLines(slideshow.current, true); startAutoLoop(); });
         }
 
         let dragStartX = 0;
@@ -6656,7 +6714,10 @@
             });
           const activeTextureReady = webglManager?.preloadTexture(slideshow.current);
           const textureReady = activeTextureReady && typeof activeTextureReady.then === 'function'
-            ? activeTextureReady
+            ? Promise.race([
+              activeTextureReady.catch(() => null),
+              new Promise((resolve) => setTimeout(resolve, 1800))
+            ])
             : Promise.resolve();
           Promise.allSettled([loaderReady, textureReady]).then(armAutoLoop);
         }
@@ -6665,10 +6726,6 @@
           if (autoLoopTimer) { clearInterval(autoLoopTimer); autoLoopTimer = null; }
         }
         startAutoLoop();
-        if (heroEl) {
-          heroEl.addEventListener('mouseenter', stopAutoLoop);
-          heroEl.addEventListener('mouseleave', startAutoLoop);
-        }
 
         let touchStartY = 0;
         document.addEventListener("touchstart", (e) => { touchStartY = e.touches[0].clientY; window._touchStartX = e.touches[0].clientX; }, { passive: true });
@@ -7095,7 +7152,10 @@
       }
 
       const revealCanvas = document.getElementById('ip-reveal-canvas');
-      const revealGL = revealCanvas && revealCanvas.style.display !== 'none'
+      // WebGL reveal is currently opt-in. The default path uses the CSS clip-path mask above
+      // because the canvas stays display:none and should not allocate a WebGL context.
+      const enableIpRevealGL = revealCanvas?.dataset.revealMode === 'webgl';
+      const revealGL = enableIpRevealGL
         ? new RevealGL(revealCanvas)
         : null;
 
@@ -7599,7 +7659,7 @@
           });
 
           if (wordSpans.length) {
-            exitTl.to(wordSpans, { yPercent: 130, ease: 'power2.in', stagger: { each: 0.04, from: 'end' } }, 0);
+            exitTl.to(wordSpans, { yPercent: -130, ease: 'power2.in', stagger: { each: 0.04, from: 'start' } }, 0);
           }
           if (label) exitTl.to(label, { autoAlpha: 0, y: -15, ease: 'power2.in' }, 0);
           if (sub) exitTl.to(sub, { autoAlpha: 0, y: -15, ease: 'power2.in' }, 0.05);
@@ -8599,12 +8659,43 @@
       (function initFooterClock() {
         const el = document.getElementById('footer-time');
         if (!el) return;
+
+        if (typeof window.__nudotCleanupFooterClock === 'function') {
+          window.__nudotCleanupFooterClock();
+        }
+
         function tick() {
           const now = new Date();
           el.textContent = now.toLocaleTimeString('en-GB', { hour12: false, timeZone: 'Asia/Taipei' });
         }
+
+        const intervalId = window.setInterval(tick, 1000);
+
+        window.__nudotCleanupFooterClock = function cleanupFooterClock() {
+          window.clearInterval(intervalId);
+          if (window.__nudotCleanupFooterClock === cleanupFooterClock) {
+            window.__nudotCleanupFooterClock = null;
+          }
+        };
+
+        if (!window.__nudotFooterClockCleanupBound) {
+          const runFooterClockCleanup = () => {
+            if (typeof window.__nudotCleanupFooterClock === 'function') {
+              window.__nudotCleanupFooterClock();
+            }
+          };
+
+          window.addEventListener('pagehide', runFooterClockCleanup);
+          document.addEventListener('nudot:before-page-swap', runFooterClockCleanup);
+          window.__nudotFooterClockCleanupBound = true;
+
+          if (!window.__nudotFooterClockBarbaHookBound && window.barba?.hooks?.leave) {
+            window.barba.hooks.leave(runFooterClockCleanup);
+            window.__nudotFooterClockBarbaHookBound = true;
+          }
+        }
+
         tick();
-        setInterval(tick, 1000);
       })();
 
       runWhenNear(document.getElementById('site-footer'), function () {
